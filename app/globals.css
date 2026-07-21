@@ -1,0 +1,68 @@
+/* Importar fuentes desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset base con fondo oscuro */
+html,
+body {
+  background-color: #070A12;
+  color: #F1F5F9;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar personalizada — estilo oscuro coherente */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0B0F1A;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.4);
+}
+
+/* Transición estándar para hover en botones y tarjetas */
+@layer utilities {
+  .transition-standard {
+    transition: all 150ms ease-in-out;
+  }
+}
+
+/* ─── Animaciones de la pizarra ────────────────────────── */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.3), 0 0 0 1px rgba(239, 68, 68, 0.2); }
+  50%       { box-shadow: 0 0 20px rgba(239, 68, 68, 0.6), 0 0 0 1px rgba(239, 68, 68, 0.5); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(8px); }
+}
+
+/* Registrar la animación como utilidad Tailwind */
+@layer utilities {
+  .animate-glow-pulse {
+    animation: glowPulse 2s ease-in-out infinite;
+  }
+  .animate-slide-in {
+    animation: slideIn 200ms ease-out;
+  }
+  .animate-slide-out {
+    animation: slideOut 200ms ease-in;
+  }
+}
