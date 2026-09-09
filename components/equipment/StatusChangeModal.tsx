@@ -38,6 +38,7 @@ export default function StatusChangeModal({
   const [isOverride, setIsOverride] = useState(false)
   const [allStates, setAllStates] = useState<Array<{ id: number; name: string }>>([])
   const [overrideReason, setOverrideReason] = useState('')
+  const [notifyByEmail, setNotifyByEmail] = useState(false)
 
   // Technicians list
   const [techs, setTechs] = useState<Array<{ id: number; username: string }>>([])
@@ -101,6 +102,7 @@ export default function StatusChangeModal({
       setNotes('')
       setIsOverride(false)
       setOverrideReason('')
+      setNotifyByEmail(false)
       setReportNumber('')
     }
   }, [isOpen])
@@ -139,6 +141,7 @@ export default function StatusChangeModal({
         ? {
             new_status_id: parseInt(targetStatusId, 10),
             override_reason: overrideReason,
+            notify_by_email: notifyByEmail,
           }
         : {
             new_status_id: parseInt(targetStatusId, 10),
@@ -321,6 +324,22 @@ export default function StatusChangeModal({
                   rows={3}
                   className="w-full bg-bg-elevated border border-neon-purple/50 rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-neon-purple focus:shadow-[0_0_8px_rgba(157,78,221,0.2)] focus:outline-none transition-all resize-none"
                 />
+                {/* Checkbox: notificar por correo */}
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-neon-purple/20">
+                  <input
+                    type="checkbox"
+                    id="notify-email-checkbox"
+                    checked={notifyByEmail}
+                    onChange={(e) => setNotifyByEmail(e.target.checked)}
+                    className="w-4 h-4 text-neon-purple bg-bg-base border-border-subtle rounded focus:ring-neon-purple focus:ring-2 focus:ring-offset-bg-base cursor-pointer"
+                  />
+                  <label
+                    htmlFor="notify-email-checkbox"
+                    className="text-xs text-text-secondary cursor-pointer select-none"
+                  >
+                    Enviar notificación interna por correo de este override
+                  </label>
+                </div>
               </div>
             )}
 

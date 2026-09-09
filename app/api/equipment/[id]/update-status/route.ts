@@ -44,10 +44,10 @@ export async function POST(
 
     const { new_status_id, assigned_technician_ids, notes, report_number } = parsed.data
 
-    // 4. Verificar existencia de equipo
+    // 4. Verificar existencia del equipo y obtener datos completos para el correo
     const { data: equipment, error: eqError } = await supabase
       .from('equipment_records')
-      .select('current_status_id')
+      .select('current_status_id, fr_number, client_name, brand, model, serial_number')
       .eq('id', equipmentId)
       .single()
 
@@ -60,10 +60,22 @@ export async function POST(
     // 5. Verificar si el equipo ya está en estado terminal
     const isTerminal = await WorkflowEngine.isTerminal(activeEquipment.current_status_id)
     if (isTerminal) {
-      return NextResponse.json({ success: false, error: 'El equipo ya está en estado terminal y no puede avanzar' }, { status: 422 })
+      return NextResponse.json(
+        { success: false, error: 'El equipo ya está en estado terminal y no puede avanzar' },
+        { status: 422 }
+      )
     }
 
-    // 6. Obtener los detalles del estado destino
+    // 6. Obtener nombre del estado anterior para el log del correo
+    const { data: previousState } = await supabase
+      .from('workflow_states')
+      .select('name')
+      .eq('id', activeEquipment.current_status_id)
+      .single()
+
+    const previousStateName = (previousState as any)?.name ?? null
+
+    // 7. Obtener los detalles del estado destino
     const { data: targetState, error: targetError } = await supabase
       .from('workflow_states')
       .select('name, color')
@@ -73,10 +85,13 @@ export async function POST(
     const activeTargetState = targetState as any
 
     if (targetError || !activeTargetState) {
-      return NextResponse.json({ success: false, error: 'El estado destino seleccionado no existe en el workflow' }, { status: 404 })
+      return NextResponse.json(
+        { success: false, error: 'El estado destino seleccionado no existe en el workflow' },
+        { status: 404 }
+      )
     }
 
-    // 7. Validar transiciones según motor de workflow
+    // 8. Validar transición según motor de workflow
     const validation = await WorkflowEngine.validateTransition(
       activeEquipment.current_status_id,
       new_status_id,
@@ -84,28 +99,35 @@ export async function POST(
     )
 
     if (!validation.isValid) {
-      return NextResponse.json({ success: false, error: validation.error || 'Transición de estado no permitida' }, { status: 422 })
+      return NextResponse.json(
+        { success: false, error: validation.error || 'Transición de estado no permitida' },
+        { status: 422 }
+      )
     }
 
-    // 8. Validaciones específicas del negocio
+    // 9. Validaciones específicas del negocio (técnico obligatorio para diagnóstico/mantenimiento)
     const isDiagnosis = activeTargetState.name.trim().toLowerCase() === 'en diagnóstico'
     const isMaintenance = activeTargetState.name.trim().toLowerCase() === 'en mantenimiento'
 
     if (isDiagnosis || isMaintenance) {
       if (!assigned_technician_ids || assigned_technician_ids.length === 0) {
-        return NextResponse.json({ success: false, error: 'El técnico asignado es requerido para cambiar a este estado' }, { status: 400 })
+        return NextResponse.json(
+          { success: false, error: 'El técnico asignado es requerido para cambiar a este estado' },
+          { status: 400 }
+        )
       }
     }
 
-    // 9. Actualizar el equipo en la BD
+    // 10. Construir payload de actualización
     const updateData: Record<string, any> = {
       current_status_id: new_status_id,
       additional_observations: notes?.trim().toUpperCase() || null,
     }
 
-    // Si el estado es de aprobación y no hay número de informe, generamos uno interno
-    const isTargetApproval = activeTargetState.name.trim().toLowerCase() === 'pendiente de aprobación' || activeTargetState.name.trim().toLowerCase() === 'aprobado'
-    
+    const isTargetApproval =
+      activeTargetState.name.trim().toLowerCase() === 'pendiente de aprobación' ||
+      activeTargetState.name.trim().toLowerCase() === 'aprobado'
+
     if (isTargetApproval && !report_number) {
       updateData.report_number = `INT-${Date.now()}`
     } else if (report_number) {
@@ -116,6 +138,7 @@ export async function POST(
       updateData.assigned_technician_ids = assigned_technician_ids
     }
 
+    // 11. Actualizar equipo en BD
     const { error: updateError } = await (supabase
       .from('equipment_records') as any)
       .update(updateData)
@@ -123,42 +146,25 @@ export async function POST(
 
     if (updateError) {
       console.error('[POST update-status] Database update error:', updateError)
-      return NextResponse.json({ success: false, error: 'Ocurrió un error al actualizar el estado del equipo en la base de datos' }, { status: 500 })
+      return NextResponse.json(
+        { success: false, error: 'Ocurrió un error al actualizar el estado del equipo en la base de datos' },
+        { status: 500 }
+      )
     }
 
-    // 10. Enviar Notificaciones Internas (Email) según estado
-    try {
-      // Necesitamos los datos del equipo para el correo
-      const { data: eqFull } = await supabase
-        .from('equipment_records')
-        .select('fr_number, client_name, brand, model')
-        .eq('id', equipmentId)
-        .single()
-
-      if (eqFull) {
-        const full = eqFull as any
-        const statusName = activeTargetState.name.trim().toLowerCase()
-
-        if (statusName === 'aprobado') {
-          mailer.sendEquipmentApproved({
-            fr_number: full.fr_number,
-            client_name: full.client_name,
-            brand: full.brand,
-            model: full.model
-          })
-        } else if (statusName.includes('repuesto')) {
-          mailer.sendPartsRequest({
-            fr_number: full.fr_number,
-            client_name: full.client_name,
-            brand: full.brand,
-            model: full.model,
-            status: activeTargetState.name
-          })
-        }
-      }
-    } catch (mailErr) {
-      console.error('[POST update-status] Background mailer error:', mailErr)
-    }
+    // 12. Disparar correo interno para CUALQUIER cambio de estado (fire-and-forget)
+    mailer.sendStatusChange({
+      fr_number: activeEquipment.fr_number,
+      client_name: activeEquipment.client_name,
+      brand: activeEquipment.brand,
+      model: activeEquipment.model,
+      serial_number: activeEquipment.serial_number,
+      new_status_name: activeTargetState.name,
+      previous_status_name: previousStateName,
+      changed_by: activeProfile.username,
+    }).catch((err) => {
+      console.error('[POST update-status] Background mailer error:', err)
+    })
 
     return NextResponse.json({
       success: true,

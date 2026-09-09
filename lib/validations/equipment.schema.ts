@@ -27,6 +27,8 @@ export const updateStatusSchema = z.object({
 export const forceStatusSchema = z.object({
   new_status_id: z.number().int({ message: 'ID de estado inválido' }),
   override_reason: z.string().min(5, { message: 'El motivo del override debe tener al menos 5 caracteres' }),
+  /** Si es true, se enviará una notificación interna por correo del cambio forzado */
+  notify_by_email: z.boolean().default(false),
 })
 
 export type CreateEquipmentInput = {
@@ -44,3 +46,4 @@ export type CreateEquipmentInput = {
 }
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>
 export type ForceStatusInput = z.infer<typeof forceStatusSchema>
+// notify_by_email está incluido vía z.infer → { new_status_id, override_reason, notify_by_email }

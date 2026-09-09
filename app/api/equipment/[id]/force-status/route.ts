@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { forceStatusSchema } from '@/lib/validations/equipment.schema'
+import { mailer } from '@/lib/mail/mailer'
 
 export async function POST(
   request: NextRequest,
@@ -9,7 +10,8 @@ export async function POST(
 ) {
   try {
     const { id: equipmentId } = await params
-    // 1. Crear el cliente normal para verificar sesión y rol RLS
+
+    // 1. Cliente normal para verificar sesión y rol (respeta RLS)
     const normalSupabase = await createServerClient()
 
     // 2. Verificar sesión
@@ -37,7 +39,10 @@ export async function POST(
 
     // 4. Doble verificación de Superadmin
     if (activeProfile.role !== 'superadmin' || !activeProfile.is_superadmin) {
-      return NextResponse.json({ success: false, error: 'Acceso denegado. Solo el superadmin puede forzar estados' }, { status: 403 })
+      return NextResponse.json(
+        { success: false, error: 'Acceso denegado. Solo el superadmin puede forzar estados' },
+        { status: 403 }
+      )
     }
 
     // 5. Validar body con Zod
@@ -50,7 +55,7 @@ export async function POST(
       )
     }
 
-    const { new_status_id, override_reason } = parsed.data
+    const { new_status_id, override_reason, notify_by_email } = parsed.data
 
     // 6. Verificar que el estado destino existe
     const { data: targetState, error: stateError } = await normalSupabase
@@ -65,10 +70,10 @@ export async function POST(
 
     const activeTargetState = targetState as any
 
-    // 7. Verificar que el equipo existe
+    // 7. Verificar que el equipo existe y obtener datos completos para el correo
     const { data: equipment, error: eqError } = await normalSupabase
       .from('equipment_records')
-      .select('current_status_id')
+      .select('current_status_id, fr_number, client_name, brand, model, serial_number')
       .eq('id', equipmentId)
       .single()
 
@@ -78,19 +83,19 @@ export async function POST(
 
     const activeEquipment = equipment as any
 
-    // Obtener nombre del estado anterior para el log manual de override
+    // 8. Obtener nombre del estado anterior para el historial y el correo
     const { data: previousState } = await normalSupabase
       .from('workflow_states')
       .select('name')
       .eq('id', activeEquipment.current_status_id)
       .single()
 
-    const activePrevState = previousState as any
+    const previousStateName = (previousState as any)?.name ?? 'DESCONOCIDO'
 
-    // 8. Crear cliente Admin con service_role para hacer el bypass de RLS en la escritura directa del log y equipo
+    // 9. Cliente Admin con service_role para bypass de RLS en escritura
     const adminSupabase = createAdminClient()
 
-    // 9. Actualizar el estado del equipo
+    // 10. Actualizar el estado del equipo
     const { error: updateError } = await (adminSupabase
       .from('equipment_records') as any)
       .update({
@@ -101,15 +106,18 @@ export async function POST(
 
     if (updateError) {
       console.error('[POST force-status] Database update error:', updateError)
-      return NextResponse.json({ success: false, error: 'Ocurrió un error al forzar el estado del equipo' }, { status: 500 })
+      return NextResponse.json(
+        { success: false, error: 'Ocurrió un error al forzar el estado del equipo' },
+        { status: 500 }
+      )
     }
 
-    // 10. Escribir entrada manual en el historial para documentar el override con la razón obligatoria
+    // 11. Escribir entrada manual en el historial (audit log)
     const { error: historyError } = await (adminSupabase
       .from('status_history') as any)
       .insert({
         equipment_id: equipmentId,
-        previous_status: activePrevState?.name || 'DESCONOCIDO',
+        previous_status: previousStateName,
         new_status: activeTargetState.name,
         changed_by_id: session.user.id,
         changed_by_username: activeProfile.username,
@@ -118,8 +126,28 @@ export async function POST(
       })
 
     if (historyError) {
+      // No fallamos la petición porque el estado del equipo ya cambió
       console.error('[POST force-status] Error writing status history:', historyError)
-      // No fallamos la petición entera porque el estado del equipo ya cambió
+    }
+
+    // 12. Correo interno — solo si el superadmin activó la casilla notify_by_email
+    if (notify_by_email) {
+      mailer.sendStatusChange(
+        {
+          fr_number: activeEquipment.fr_number,
+          client_name: activeEquipment.client_name,
+          brand: activeEquipment.brand,
+          model: activeEquipment.model,
+          serial_number: activeEquipment.serial_number,
+          new_status_name: activeTargetState.name,
+          previous_status_name: previousStateName,
+          override_reason: override_reason.trim().toUpperCase(),
+          changed_by: activeProfile.username,
+        },
+        true // isOverride = true → banner amarillo en el correo
+      ).catch((err) => {
+        console.error('[POST force-status] Background mailer error:', err)
+      })
     }
 
     return NextResponse.json({
