@@ -15,6 +15,8 @@ export const createEquipmentSchema = z.object({
   condition_in: z.string().optional().nullable(),
   additional_observations: z.string().optional().nullable(),
   priority_level: z.number().int().min(0).max(3).default(0),
+  /** Correos adicionales en copia seleccionados al ingresar el equipo */
+  cc_extra: z.array(z.string().email()).optional().default([]),
 })
 
 export const updateStatusSchema = z.object({
@@ -31,19 +33,52 @@ export const forceStatusSchema = z.object({
   notify_by_email: z.boolean().default(false),
 })
 
-export type CreateEquipmentInput = {
-  fr_number: string
-  client_name: string
-  service_type: 'GARANTIA_CABELAB' | 'GARANTIA_ESAB' | 'REVISION_GENERAL'
-  brand?: string | null
-  model?: string | null
-  serial_number?: string | null
-  client_report?: string | null
-  accessories?: string | null
-  condition_in?: string | null
-  additional_observations?: string | null
-  priority_level?: number
-}
+// ─── Schemas para los payloads de correo por evento ───────────────────────────
+
+export const informeODPSchema = z.object({
+  new_status_id: z.number().int(),
+  assigned_technician_ids: z.array(z.number()).optional(),
+  notes: z.string().optional().nullable(),
+  // Campos del correo
+  diagnostico: z.string().min(1, { message: 'El diagnóstico es obligatorio' }),
+  // pdf_buffer se procesa aparte desde FormData, no va en este schema
+})
+
+export const aprobacionVentasSchema = z.object({
+  new_status_id: z.number().int(),
+  notes: z.string().optional().nullable(),
+  // Campos del correo
+  items: z.array(z.object({
+    descripcion: z.string().min(1),
+    cantidad: z.string().min(1),
+    precio: z.string().min(1),
+  })).min(1, { message: 'Debe agregar al menos un ítem' }),
+  observaciones: z.string().optional().default(''),
+})
+
+export const entregaLogisticaSchema = z.object({
+  new_status_id: z.number().int(),
+  notes: z.string().optional().nullable(),
+  // Campos del correo
+  items: z.array(z.object({
+    descripcion: z.string().min(1),
+    cantidad: z.string().min(1),
+    nota: z.string().optional().default(''),
+  })).min(1, { message: 'Debe agregar al menos un repuesto' }),
+  observaciones: z.string().optional().default(''),
+})
+
+export const culminadoODPSchema = z.object({
+  new_status_id: z.number().int(),
+  notes: z.string().optional().nullable(),
+  // Campos del correo
+  observaciones: z.string().optional().default(''),
+})
+
+export type CreateEquipmentInput = z.infer<typeof createEquipmentSchema>
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>
 export type ForceStatusInput = z.infer<typeof forceStatusSchema>
-// notify_by_email está incluido vía z.infer → { new_status_id, override_reason, notify_by_email }
+export type InformeODPInput = z.infer<typeof informeODPSchema>
+export type AprobacionVentasInput = z.infer<typeof aprobacionVentasSchema>
+export type EntregaLogisticaInput = z.infer<typeof entregaLogisticaSchema>
+export type CulminadoODPInput = z.infer<typeof culminadoODPSchema>

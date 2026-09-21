@@ -6,6 +6,16 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
 import StatusBadge from './StatusBadge'
+import ModalInformeODP from './modals/ModalInformeODP'
+import ModalAprobacionVentas, { VentasItem } from './modals/ModalAprobacionVentas'
+import ModalEntregaLogistica, { LogisticaItem } from './modals/ModalEntregaLogistica'
+import ModalCulminadoODP from './modals/ModalCulminadoODP'
+
+// Estados que muestran un sub-modal de correo (en minúsculas)
+const ESTADO_INFORME_ODP       = 'pendiente de aprobación'
+const ESTADO_APROBACION_VENTAS = 'aprobado'
+const ESTADO_ENTREGA_LOGISTICA = 'en espera de repuesto'
+const ESTADO_CULMINADO_ODP     = 'listo para entrega'
 
 interface StatusChangeModalProps {
   isOpen: boolean
@@ -28,73 +38,79 @@ export default function StatusChangeModal({
   nextStates,
   onSuccess,
 }: StatusChangeModalProps) {
-  const { user, profile, role } = useUser()
-  const [targetStatusId, setTargetStatusId] = useState<string>('')
+  const { role } = useUser()
+
+  // ── Estado base ──────────────────────────────────────────────────────────
+  const [targetStatusId, setTargetStatusId]   = useState<string>('')
   const [selectedTechIds, setSelectedTechIds] = useState<number[]>([])
-  const [notes, setNotes] = useState<string>('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [notes, setNotes]                     = useState<string>('')
+  const [isSubmitting, setIsSubmitting]       = useState(false)
 
-  // Superadmin override status
-  const [isOverride, setIsOverride] = useState(false)
-  const [allStates, setAllStates] = useState<Array<{ id: number; name: string }>>([])
-  const [overrideReason, setOverrideReason] = useState('')
-  const [notifyByEmail, setNotifyByEmail] = useState(false)
+  // ── Superadmin override ──────────────────────────────────────────────────
+  const [isOverride, setIsOverride]           = useState(false)
+  const [allStates, setAllStates]             = useState<Array<{ id: number; name: string }>>([])
+  const [overrideReason, setOverrideReason]   = useState('')
+  const [notifyByEmail, setNotifyByEmail]     = useState(false)
 
-  // Technicians list
-  const [techs, setTechs] = useState<Array<{ id: number; username: string }>>([])
+  // ── Técnicos ─────────────────────────────────────────────────────────────
+  const [techs, setTechs]           = useState<Array<{ id: number; username: string }>>([])
   const [loadingTechs, setLoadingTechs] = useState(false)
 
-  const [reportNumber, setReportNumber] = useState('')
+  // ── Campos sub-modales de correo ─────────────────────────────────────────
+  // Informe ODP
+  const [diagnostico, setDiagnostico] = useState('')
+  const [pdfFile, setPdfFile]         = useState<File | null>(null)
+  // Aprobación Ventas
+  const [ventasItems, setVentasItems]           = useState<VentasItem[]>([{ descripcion: '', cantidad: '1', precio: '' }])
+  const [ventasObservaciones, setVentasObs]     = useState('')
+  // Entrega Logística
+  const [logisticaItems, setLogisticaItems]     = useState<LogisticaItem[]>([{ descripcion: '', cantidad: '1', nota: '' }])
+  const [logisticaObservaciones, setLogisticaObs] = useState('')
+  // Culminado ODP
+  const [culminadoObs, setCulminadoObs]         = useState('')
 
-  // Target state object
+  // ── Estado destino seleccionado ──────────────────────────────────────────
   const selectedStateObj = isOverride
-    ? allStates.find((s) => s.id === parseInt(targetStatusId, 10))
-    : nextStates.find((s) => s.id === parseInt(targetStatusId, 10))
+    ? allStates.find(s => s.id === parseInt(targetStatusId, 10))
+    : nextStates.find(s => s.id === parseInt(targetStatusId, 10))
 
-  const isTargetDiagnosis = selectedStateObj?.name.trim().toLowerCase() === 'en diagnóstico'
-  const isTargetMaintenance = selectedStateObj?.name.trim().toLowerCase() === 'en mantenimiento'
-  const isTargetApproval = selectedStateObj?.name.trim().toLowerCase() === 'pendiente de aprobación' || selectedStateObj?.name.trim().toLowerCase() === 'aprobado'
+  const targetNameLower = selectedStateObj?.name.trim().toLowerCase() ?? ''
+  const isTargetDiagnosis   = targetNameLower === 'en diagnóstico'
+  const isTargetMaintenance = targetNameLower === 'en mantenimiento'
+  const requiresTech        = isTargetDiagnosis || isTargetMaintenance
 
-  const requiresTech = isTargetDiagnosis || isTargetMaintenance
-  // El número de informe ya no es obligatorio ni se solicita en el modal
-  const requiresReportNumber = false
+  const showInformeODP       = !isOverride && targetNameLower === ESTADO_INFORME_ODP
+  const showAprobacionVentas = !isOverride && targetNameLower === ESTADO_APROBACION_VENTAS
+  const showEntregaLogistica = !isOverride && targetNameLower === ESTADO_ENTREGA_LOGISTICA
+  const showCulminadoODP     = !isOverride && targetNameLower === ESTADO_CULMINADO_ODP
 
-  // Fetch techs if needed
+  // ── Fetch técnicos ───────────────────────────────────────────────────────
   useEffect(() => {
     if (isOpen) {
       setLoadingTechs(true)
       fetch('/api/users/technicians')
-        .then((res) => res.json())
-        .then((data) => {
+        .then(r => r.json())
+        .then(data => {
           if (data.success) {
-            // Mapeamos de vuelta a id numérico ya que la API lo manda como string para compatibilidad legacy
-            const formatted = (data.data || []).map((t: any) => ({
-              id: parseInt(t.id, 10),
-              username: t.username
-            }))
-            setTechs(formatted)
+            setTechs((data.data || []).map((t: any) => ({ id: parseInt(t.id, 10), username: t.username })))
           }
         })
-        .catch((err) => console.error('Error loading techs:', err))
+        .catch(err => console.error('Error loading techs:', err))
         .finally(() => setLoadingTechs(false))
     }
   }, [isOpen])
 
-  // Fetch all states for superadmin override
+  // ── Fetch all states (superadmin) ────────────────────────────────────────
   useEffect(() => {
     if (isOpen && role === 'superadmin') {
       fetch('/api/workflow/states')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setAllStates(data.data || [])
-          }
-        })
-        .catch((err) => console.error('Error loading all states:', err))
+        .then(r => r.json())
+        .then(data => { if (data.success) setAllStates(data.data || []) })
+        .catch(err => console.error('Error loading states:', err))
     }
   }, [isOpen, role])
 
-  // Reset form when opened/closed
+  // ── Reset al abrir/cerrar ────────────────────────────────────────────────
   useEffect(() => {
     if (isOpen) {
       setTargetStatusId('')
@@ -103,31 +119,39 @@ export default function StatusChangeModal({
       setIsOverride(false)
       setOverrideReason('')
       setNotifyByEmail(false)
-      setReportNumber('')
+      setDiagnostico('')
+      setPdfFile(null)
+      setVentasItems([{ descripcion: '', cantidad: '1', precio: '' }])
+      setVentasObs('')
+      setLogisticaItems([{ descripcion: '', cantidad: '1', nota: '' }])
+      setLogisticaObs('')
+      setCulminadoObs('')
     }
   }, [isOpen])
 
   const toggleTechnician = (id: number) => {
-    setSelectedTechIds(prev => 
-      prev.includes(id) ? prev.filter(tid => tid !== id) : [...prev, id]
-    )
+    setSelectedTechIds(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id])
   }
 
+  // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!targetStatusId) {
-      toast.error('Debe seleccionar un estado destino')
-      return
-    }
+    if (!targetStatusId) { toast.error('Debe seleccionar un estado destino'); return }
+    if (requiresTech && selectedTechIds.length === 0) { toast.error('Debe asignar al menos un técnico'); return }
+    if (isOverride && !overrideReason.trim()) { toast.error('Debe especificar el motivo del override'); return }
 
-    if (requiresTech && selectedTechIds.length === 0) {
-      toast.error('Debe asignar al menos un técnico')
-      return
+    // Validaciones por evento de correo
+    if (showInformeODP) {
+      if (!diagnostico.trim()) { toast.error('El diagnóstico técnico es obligatorio'); return }
+      if (!pdfFile) { toast.error('Debe adjuntar el PDF del informe'); return }
     }
-
-    if (isOverride && !overrideReason.trim()) {
-      toast.error('Debe especificar el motivo del override')
-      return
+    if (showAprobacionVentas) {
+      const valid = ventasItems.every(i => i.descripcion.trim() && i.cantidad.trim() && i.precio.trim())
+      if (!valid) { toast.error('Complete todos los campos de la tabla de aprobación'); return }
+    }
+    if (showEntregaLogistica) {
+      const valid = logisticaItems.every(i => i.descripcion.trim() && i.cantidad.trim())
+      if (!valid) { toast.error('Complete descripción y cantidad de cada repuesto'); return }
     }
 
     setIsSubmitting(true)
@@ -137,29 +161,58 @@ export default function StatusChangeModal({
         ? `/api/equipment/${equipmentId}/force-status`
         : `/api/equipment/${equipmentId}/update-status`
 
-      const payload: Record<string, any> = isOverride
-        ? {
+      let response: Response
+
+      if (isOverride) {
+        // Override siempre como JSON
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             new_status_id: parseInt(targetStatusId, 10),
             override_reason: overrideReason,
             notify_by_email: notifyByEmail,
-          }
-        : {
-            new_status_id: parseInt(targetStatusId, 10),
-            notes: notes,
-            report_number: requiresReportNumber ? reportNumber : undefined,
-            diagnosis_tech_id: isTargetDiagnosis ? selectedTechIds[0].toString() : null, // Legacy support
-            maintenance_tech_id: isTargetMaintenance ? selectedTechIds[0].toString() : null, // Legacy support
-            assigned_technician_ids: selectedTechIds, // New multi-tech support
-          }
+          }),
+        })
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      } else if (showInformeODP && pdfFile) {
+        // Informe ODP como FormData (lleva PDF)
+        const fd = new FormData()
+        fd.append('new_status_id', targetStatusId)
+        fd.append('diagnostico', diagnostico)
+        if (notes) fd.append('notes', notes)
+        if (selectedTechIds.length > 0) {
+          fd.append('assigned_technician_ids', JSON.stringify(selectedTechIds))
+        }
+        fd.append('pdf', pdfFile)
+        response = await fetch(endpoint, { method: 'POST', body: fd })
+
+      } else {
+        // Resto de eventos como JSON
+        const payload: Record<string, any> = {
+          new_status_id: parseInt(targetStatusId, 10),
+          notes: notes || null,
+          assigned_technician_ids: selectedTechIds,
+        }
+
+        if (showAprobacionVentas) {
+          payload.items = ventasItems
+          payload.observaciones = ventasObservaciones
+        } else if (showEntregaLogistica) {
+          payload.items = logisticaItems
+          payload.observaciones = logisticaObservaciones
+        } else if (showCulminadoODP) {
+          payload.observaciones = culminadoObs
+        }
+
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+      }
 
       const resData = await response.json()
-
       if (!response.ok || !resData.success) {
         throw new Error(resData.error || 'Ocurrió un error al actualizar el estado')
       }
@@ -185,7 +238,7 @@ export default function StatusChangeModal({
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-bg-base/85 backdrop-blur-sm z-50 transition-opacity" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[500px] bg-bg-surface border border-neon-blue/30 rounded-xl shadow-neon-blue p-6 md:p-8 z-50 font-sans text-text-primary animate-in fade-in zoom-in-95 duration-150">
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[540px] max-h-[90vh] overflow-y-auto bg-bg-surface border border-neon-blue/30 rounded-xl shadow-neon-blue p-6 md:p-8 z-50 font-sans text-text-primary animate-in fade-in zoom-in-95 duration-150">
           <Dialog.Title className="text-xl font-bold text-neon-blue mb-4 flex items-center gap-2">
             ⚙️ Actualizar Estado
           </Dialog.Title>
@@ -197,19 +250,15 @@ export default function StatusChangeModal({
               <StatusBadge status={currentStatusName} color={currentStatusColor} />
             </div>
 
-            {/* Selector de Modo (Normal u Override) */}
+            {/* Override (solo superadmin) */}
             {isSuperadmin && (
               <div className="flex items-center gap-2 p-2 bg-neon-purple/10 border border-neon-purple/30 rounded-lg">
                 <input
                   type="checkbox"
                   id="override-checkbox"
                   checked={isOverride}
-                  onChange={(e) => {
-                    setIsOverride(e.target.checked)
-                    setTargetStatusId('')
-                    setSelectedTechIds([])
-                  }}
-                  className="w-4 h-4 text-neon-purple bg-bg-base border-border-subtle rounded focus:ring-neon-purple focus:ring-2 focus:ring-offset-bg-base"
+                  onChange={(e) => { setIsOverride(e.target.checked); setTargetStatusId(''); setSelectedTechIds([]) }}
+                  className="w-4 h-4 text-neon-purple bg-bg-base border-border-subtle rounded focus:ring-neon-purple"
                 />
                 <label htmlFor="override-checkbox" className="text-xs font-bold text-neon-purple cursor-pointer uppercase tracking-wider">
                   ⚡ Activar Override de Superadmin
@@ -217,7 +266,7 @@ export default function StatusChangeModal({
               </div>
             )}
 
-            {/* Selección de nuevo estado */}
+            {/* Selector de estado destino */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
                 {isOverride ? 'Forzar a Estado Destino *' : 'Siguiente Estado *'}
@@ -230,39 +279,17 @@ export default function StatusChangeModal({
               >
                 <option value="" disabled>Seleccione un estado...</option>
                 {isOverride
-                  ? allStates
-                      .filter((s) => s.id !== currentStatusId)
-                      .map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))
-                  : nextStates.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
+                  ? allStates.filter(s => s.id !== currentStatusId).map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))
+                  : nextStates.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))
+                }
               </select>
             </div>
 
-            {/* Número de Informe Condicional */}
-            {requiresReportNumber && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neon-blue uppercase tracking-wider">
-                  Número de Informe *
-                </label>
-                <input
-                  type="text"
-                  value={reportNumber}
-                  onChange={(e) => setReportNumber(e.target.value)}
-                  placeholder="Ej: INF-001"
-                  required
-                  className="w-full bg-bg-elevated border border-neon-blue/50 rounded-lg px-3 py-2.5 text-sm text-text-primary focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,229,255,0.2)] focus:outline-none transition-all uppercase font-mono"
-                />
-              </div>
-            )}
-
-            {/* Asignación de Técnico Condicional */}
+            {/* Asignación de técnico (diagnóstico / mantenimiento) */}
             {requiresTech && (
               <div className="space-y-2">
                 <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block">
@@ -271,25 +298,23 @@ export default function StatusChangeModal({
                 <div className="flex flex-wrap gap-2 p-1">
                   {loadingTechs ? (
                     <span className="text-[10px] text-text-muted animate-pulse font-mono">Cargando personal...</span>
-                  ) : (
-                    techs.map((t) => {
-                      const isSelected = selectedTechIds.includes(t.id)
-                      return (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => toggleTechnician(t.id)}
-                          className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${
-                            isSelected 
-                              ? 'bg-neon-blue/20 border-neon-blue text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]' 
-                              : 'bg-bg-elevated border-border-subtle text-text-muted hover:border-white/20'
-                          }`}
-                        >
-                          {t.username.toUpperCase()}
-                        </button>
-                      )
-                    })
-                  )}
+                  ) : techs.map(t => {
+                    const isSelected = selectedTechIds.includes(t.id)
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => toggleTechnician(t.id)}
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${
+                          isSelected
+                            ? 'bg-neon-blue/20 border-neon-blue text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]'
+                            : 'bg-bg-elevated border-border-subtle text-text-muted hover:border-white/20'
+                        }`}
+                      >
+                        {t.username.toUpperCase()}
+                      </button>
+                    )
+                  })}
                   {!loadingTechs && techs.length === 0 && (
                     <span className="text-[10px] text-red-400 font-mono">No se encontró personal activo</span>
                   )}
@@ -297,8 +322,43 @@ export default function StatusChangeModal({
               </div>
             )}
 
-            {/* Notas / Observaciones */}
-            {!isOverride ? (
+            {/* Sub-modal de correo según estado destino */}
+            {showInformeODP && (
+              <ModalInformeODP
+                diagnostico={diagnostico}
+                onDiagnosticoChange={setDiagnostico}
+                pdfFile={pdfFile}
+                onPdfChange={setPdfFile}
+              />
+            )}
+
+            {showAprobacionVentas && (
+              <ModalAprobacionVentas
+                items={ventasItems}
+                onItemsChange={setVentasItems}
+                observaciones={ventasObservaciones}
+                onObservacionesChange={setVentasObs}
+              />
+            )}
+
+            {showEntregaLogistica && (
+              <ModalEntregaLogistica
+                items={logisticaItems}
+                onItemsChange={setLogisticaItems}
+                observaciones={logisticaObservaciones}
+                onObservacionesChange={setLogisticaObs}
+              />
+            )}
+
+            {showCulminadoODP && (
+              <ModalCulminadoODP
+                observaciones={culminadoObs}
+                onObservacionesChange={setCulminadoObs}
+              />
+            )}
+
+            {/* Observaciones / Motivo override */}
+            {!isOverride && !showInformeODP && !showAprobacionVentas && !showEntregaLogistica && !showCulminadoODP && (
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
                   Observaciones adicionales
@@ -311,39 +371,37 @@ export default function StatusChangeModal({
                   className="w-full bg-bg-elevated border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,229,255,0.2)] focus:outline-none transition-all resize-none"
                 />
               </div>
-            ) : (
+            )}
+
+            {isOverride && (
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neon-purple uppercase tracking-wider">
-                  Motivo del Override de Superadmin *
+                  Motivo del Override *
                 </label>
                 <textarea
                   value={overrideReason}
                   onChange={(e) => setOverrideReason(e.target.value)}
-                  placeholder="Debe ingresar la justificación para forzar este estado..."
+                  placeholder="Justificación para forzar este estado..."
                   required
                   rows={3}
                   className="w-full bg-bg-elevated border border-neon-purple/50 rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-neon-purple focus:shadow-[0_0_8px_rgba(157,78,221,0.2)] focus:outline-none transition-all resize-none"
                 />
-                {/* Checkbox: notificar por correo */}
                 <div className="flex items-center gap-2 mt-2 pt-2 border-t border-neon-purple/20">
                   <input
                     type="checkbox"
                     id="notify-email-checkbox"
                     checked={notifyByEmail}
                     onChange={(e) => setNotifyByEmail(e.target.checked)}
-                    className="w-4 h-4 text-neon-purple bg-bg-base border-border-subtle rounded focus:ring-neon-purple focus:ring-2 focus:ring-offset-bg-base cursor-pointer"
+                    className="w-4 h-4 text-neon-purple bg-bg-base border-border-subtle rounded focus:ring-neon-purple cursor-pointer"
                   />
-                  <label
-                    htmlFor="notify-email-checkbox"
-                    className="text-xs text-text-secondary cursor-pointer select-none"
-                  >
+                  <label htmlFor="notify-email-checkbox" className="text-xs text-text-secondary cursor-pointer select-none">
                     Enviar notificación interna por correo de este override
                   </label>
                 </div>
               </div>
             )}
 
-            {/* Botones de Acción */}
+            {/* Botones */}
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"

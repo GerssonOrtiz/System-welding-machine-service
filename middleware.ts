@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 // Rutas que NO requieren autenticación
-const PUBLIC_ROUTES = ['/login', '/register']
+const PUBLIC_ROUTES = ['/login']
 
 // Rutas exclusivas del superadmin
 const SUPERADMIN_ROUTES = ['/admin/usuarios', '/admin/workflow', '/admin/configuracion']
@@ -13,6 +13,11 @@ const SUPERADMIN_ROUTES = ['/admin/usuarios', '/admin/workflow', '/admin/configu
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user, supabase } = await updateSession(request)
   const pathname = request.nextUrl.pathname
+
+  // Bloquear acceso a registro público
+  if (pathname === '/register') {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
 
   // 1. Ruta pública: dejar pasar
   if (PUBLIC_ROUTES.includes(pathname)) {

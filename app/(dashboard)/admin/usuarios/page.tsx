@@ -15,6 +15,20 @@ export default function AdminUsuariosPage() {
   const [importing, setImporting] = useState(false)
   const [importResults, setImportResults] = useState<any | null>(null)
 
+  // Estados para nuevo usuario
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [creatingUser, setCreatingUser] = useState(false)
+  const [newUserData, setNewUserData] = useState({
+    username: '',
+    password: '',
+    role: 'recepcion',
+  })
+
+  // Estados para restablecer contraseña
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<{ id: string; username: string } | null>(null)
+  const [resettingPassword, setResettingPassword] = useState(false)
+  const [newPasswordValue, setNewPasswordValue] = useState('')
+
   // Roles válidos para asignar (excluyendo superadmin)
   const validRoles = ['admin', 'operaciones', 'recepcion', 'almacen', 'visualizador']
 
@@ -168,6 +182,70 @@ export default function AdminUsuariosPage() {
     }
   }
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newUserData.username.trim()) {
+      toast.error('Ingrese el nombre de usuario')
+      return
+    }
+    if (newUserData.password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
+    try {
+      setCreatingUser(true)
+      const res = await fetch('/api/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUserData),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`Usuario ${newUserData.username} creado con éxito`)
+        setIsCreateModalOpen(false)
+        setNewUserData({ username: '', password: '', role: 'recepcion' })
+        fetchUsers()
+      } else {
+        toast.error(data.error || 'Error al crear usuario')
+      }
+    } catch {
+      toast.error('Error de red al crear usuario')
+    } finally {
+      setCreatingUser(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!resetPasswordTarget) return
+    if (newPasswordValue.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
+    try {
+      setResettingPassword(true)
+      const res = await fetch(`/api/users/${resetPasswordTarget.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: newPasswordValue }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(data.message || 'Contraseña actualizada con éxito')
+        setResetPasswordTarget(null)
+        setNewPasswordValue('')
+      } else {
+        toast.error(data.error || 'Error al restablecer contraseña')
+      }
+    } catch {
+      toast.error('Error de red al restablecer contraseña')
+    } finally {
+      setResettingPassword(false)
+    }
+  }
+
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -211,8 +289,15 @@ export default function AdminUsuariosPage() {
           </p>
         </div>
 
-        {/* Botones de Importación/Exportación */}
+        {/* Botones de Acción */}
         <div className="flex flex-wrap gap-2.5">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-electric hover:brightness-110 active:scale-[0.98] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)] flex items-center gap-1.5"
+          >
+            <span>➕</span> Crear Usuario
+          </button>
+
           <label className="cursor-pointer bg-bg-surface hover:bg-bg-surface/80 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2 rounded transition-all select-none">
             {importing ? 'Importando...' : '📥 Importar Equipos (Excel)'}
             <input
@@ -412,6 +497,16 @@ export default function AdminUsuariosPage() {
                         <td className="py-3 text-right">
                           <div className="inline-flex gap-2">
                             <button
+                              onClick={() => {
+                                setResetPasswordTarget({ id: user.id, username: user.username })
+                                setNewPasswordValue('')
+                              }}
+                              className="border border-neon-blue/30 hover:bg-neon-blue/10 text-neon-blue text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
+                              title="Cambiar contraseña de este usuario"
+                            >
+                              🔑 Clave
+                            </button>
+                            <button
                               onClick={() => handleBlock(user.id)}
                               className="border border-amber-500/30 hover:bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
                             >
@@ -462,6 +557,16 @@ export default function AdminUsuariosPage() {
                           <td className="py-3 text-right">
                             <div className="inline-flex gap-2">
                               <button
+                                onClick={() => {
+                                  setResetPasswordTarget({ id: user.id, username: user.username })
+                                  setNewPasswordValue('')
+                                }}
+                                className="border border-neon-blue/30 hover:bg-neon-blue/10 text-neon-blue text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
+                                title="Cambiar contraseña de este usuario"
+                              >
+                                🔑 Clave
+                              </button>
+                              <button
                                 onClick={() => handleReactivate(user.id, user.role)}
                                 className="border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
                               >
@@ -483,6 +588,154 @@ export default function AdminUsuariosPage() {
             </section>
           )}
         </>
+      )}
+
+      {/* ➕ MODAL CREAR USUARIO */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-bg-surface border border-neon-blue/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+              <h3 className="text-base font-extrabold uppercase text-neon-blue tracking-wider">
+                ➕ Registrar Nuevo Usuario
+              </h3>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-text-muted hover:text-white text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Nombre de Usuario
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={creatingUser}
+                  placeholder="ej. mbeltran"
+                  value={newUserData.username}
+                  onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
+                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
+                />
+                <p className="text-[10px] text-text-muted">
+                  Se le asignará automáticamente el correo <span className="font-mono text-neon-blue">{newUserData.username.toLowerCase() || 'usuario'}@cabelab.local</span>
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Contraseña Inicial
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  disabled={creatingUser}
+                  placeholder="Mínimo 6 caracteres"
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Rol Asignado
+                </label>
+                <select
+                  value={newUserData.role}
+                  disabled={creatingUser}
+                  onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+                  className="w-full bg-bg-elevated border border-border-subtle rounded px-3 py-2 text-xs uppercase tracking-wider text-text-primary focus:outline-none focus:border-neon-blue"
+                >
+                  {validRoles.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-3 justify-end pt-3 border-t border-border-subtle/50">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="bg-bg-base border border-border-subtle hover:border-text-secondary text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingUser}
+                  className="bg-electric hover:brightness-110 disabled:opacity-50 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)]"
+                >
+                  {creatingUser ? 'Creando...' : 'Crear Usuario'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🔑 MODAL RESTABLECER CONTRASEÑA */}
+      {resetPasswordTarget && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-bg-surface border border-neon-blue/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+              <h3 className="text-base font-extrabold uppercase text-neon-blue tracking-wider">
+                🔑 Cambiar Contraseña de Usuario
+              </h3>
+              <button
+                onClick={() => setResetPasswordTarget(null)}
+                className="text-text-muted hover:text-white text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-text-secondary">
+              Establecer una nueva contraseña para el usuario <strong className="text-neon-blue font-mono">{resetPasswordTarget.username}</strong>.
+            </p>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Nueva Contraseña
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  disabled={resettingPassword}
+                  placeholder="Mínimo 6 caracteres"
+                  value={newPasswordValue}
+                  onChange={(e) => setNewPasswordValue(e.target.value)}
+                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-3 border-t border-border-subtle/50">
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordTarget(null)}
+                  className="bg-bg-base border border-border-subtle hover:border-text-secondary text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={resettingPassword}
+                  className="bg-electric hover:brightness-110 disabled:opacity-50 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)]"
+                >
+                  {resettingPassword ? 'Guardando...' : 'Actualizar Contraseña'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* ⚠️ MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}

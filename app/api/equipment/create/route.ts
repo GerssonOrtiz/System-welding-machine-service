@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     const accessories = data.accessories?.trim().toUpperCase() || null
     const condition_in = data.condition_in?.trim().toUpperCase() || null
     const additional_observations = data.additional_observations?.trim().toUpperCase() || null
+    const cc_extra: string[] = data.cc_extra ?? []
 
     // 6. Verificar si el número de FR ya existe
     const { data: existingFR } = await supabase
@@ -154,6 +155,7 @@ export async function POST(request: NextRequest) {
         created_by: session.user.id,
         priority_level: data.priority_level || 0,
         is_priority: (data.priority_level || 0) > 0,
+        email_cc: cc_extra,
       } as any)
       .select('id')
       .single()
@@ -168,10 +170,9 @@ export async function POST(request: NextRequest) {
 
     const activeEquipment = newEquipment as any
 
-    // 10. Enviar Notificación Interna (Email)
+    // 10. Enviar correo de ingreso y guardar el message-id en BD para el hilo
     try {
-      // No bloqueamos el retorno de la API si el correo falla, pero lo intentamos
-      mailer.sendEquipmentEntry({
+      const threadId = await mailer.sendEquipmentEntry({
         fr_number,
         client_name,
         brand,
@@ -180,8 +181,16 @@ export async function POST(request: NextRequest) {
         service_type: data.service_type,
         client_report: client_report || 'SIN REPORTE',
         accessories: accessories || 'NINGUNO',
-        is_priority: (data.priority_level || 0) > 0
-      })
+        is_priority: (data.priority_level || 0) > 0,
+      }, cc_extra)
+
+      // Si Resend devolvió un message-id, lo guardamos para enhebrar los replies
+      if (threadId) {
+        await supabase
+          .from('equipment_records')
+          .update({ email_thread_id: threadId } as any)
+          .eq('id', activeEquipment.id)
+      }
     } catch (mailErr) {
       console.error('[POST /api/equipment/create] Background mailer error:', mailErr)
     }

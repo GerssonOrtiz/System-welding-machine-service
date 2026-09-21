@@ -55,7 +55,7 @@ export async function POST(
       )
     }
 
-    const { new_status_id, override_reason, notify_by_email } = parsed.data
+    const { new_status_id, override_reason, notify_by_email, cc_extra } = parsed.data
 
     // 6. Verificar que el estado destino existe
     const { data: targetState, error: stateError } = await normalSupabase
@@ -144,7 +144,8 @@ export async function POST(
           override_reason: override_reason.trim().toUpperCase(),
           changed_by: activeProfile.username,
         },
-        true // isOverride = true → banner amarillo en el correo
+        true, // isOverride = true → banner amarillo en el correo
+        cc_extra ?? []
       ).catch((err) => {
         console.error('[POST force-status] Background mailer error:', err)
       })

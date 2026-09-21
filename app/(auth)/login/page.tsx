@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { loginSchema, type LoginInput } from '@/lib/validations/user.schema'
-import Link from 'next/link'
 import { ROLE_HOME_ROUTE, type UserProfile } from '@/types/user'
 
 function LoginContent() {
@@ -162,18 +161,7 @@ function LoginContent() {
           </button>
         </form>
 
-        {/* Enlace al registro */}
-        <div className="mt-8 text-center border-t border-white/6 pt-6">
-          <p className="text-text-secondary text-xs">
-            ¿No tienes cuenta?{' '}
-            <Link
-              href="/register"
-              className="text-neon-blue hover:text-neon-blue/80 transition-standard font-medium ml-1"
-            >
-              Registrarse aquí
-            </Link>
-          </p>
-        </div>
+
 
       </div>
     </div>

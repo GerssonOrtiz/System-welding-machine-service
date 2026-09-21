@@ -1,4 +1,4 @@
-# PROJECT_CONTEXT.md — CABELAB v2.3
+# PROJECT_CONTEXT.md — CABELAB v2.4
 > Documento de contexto técnico optimizado para lectura por IA. Contiene arquitectura, estructura, flujos y convenciones. Leer antes de tocar cualquier archivo.
 
 ---
@@ -23,7 +23,7 @@
 | Iconos | Lucide React | ^1.18.0 |
 | Formularios | react-hook-form + Zod | ^7 + ^4 |
 | Notificaciones UI | Sonner (Toasts) | ^2.0.7 |
-| Email | Resend | ^6.12.4 (pendiente config) |
+| Email | Resend | ^6.12.4 — **pendiente configurar RESEND_API_KEY** |
 | Export | xlsx | ^0.18.5 |
 | UI Primitives | Radix UI (Dialog, Select, Dropdown) | — |
 
@@ -39,10 +39,11 @@ Next.js App Router
 │   ├── admin/             → Páginas de administración (fuera del layout dashboard)
 │   └── api/               → API Routes (REST, server-side)
 ├── components/            → Componentes React reutilizables (client-side)
+│   └── equipment/modals/  → Sub-modales de correo por evento de estado
 ├── lib/                   → Lógica de servidor: Supabase, workflow, validaciones, mail
 ├── hooks/                 → Custom hooks SWR (client-side data fetching)
 ├── types/                 → Tipos TypeScript derivados del esquema de BD
-└── supabase/migrations/   → Historial SQL del esquema (001–012)
+└── supabase/migrations/   → Historial SQL del esquema (001–013)
 ```
 
 **Patrón de renderizado:** Server Components por defecto en `app/`. Directiva `'use client'` solo donde se necesita estado/interactividad. Las API Routes actúan como capa de acceso a Supabase desde el cliente.
@@ -52,8 +53,7 @@ Next.js App Router
 ## 4. ESTRUCTURA DETALLADA
 
 ### `/app/(auth)/`
-- `login/page.tsx` — Formulario de login. Autenticación por nombre de usuario → email virtual `usuario@cabelab.local`.
-- `register/page.tsx` — Auto-registro. El usuario queda `is_active = false` hasta aprobación del superadmin.
+- `login/page.tsx` — Formulario de login. Autenticación por nombre de usuario → email virtual `usuario@cabelab.local`. Registro público deshabilitado (solo superadmin crea cuentas).
 
 ### `/app/(dashboard)/`
 Layout en `layout.tsx` incluye `Sidebar` y `Navbar`. Rutas hijas:
@@ -87,7 +87,9 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
 | `/api/equipment/serial/[serial]` | GET | DNA: historial completo por número de serie |
 | `/api/equipment/export` | GET | Exportar a Excel (.xlsx) |
 | `/api/equipment/import` | POST | Importar desde Excel |
-| `/api/equipment/create` | POST | Alias de creación (legacy) |
+| `/api/equipment/create` | POST | Creación de equipo. Guarda `email_thread_id` y `email_cc` |
+| `/api/equipment/[id]/update-status` | POST | Cambio de estado. Detecta estado destino y dispara correo-reply específico. Acepta JSON o FormData (informe ODP con PDF) |
+| `/api/equipment/[id]/force-status` | POST | Override de estado (solo superadmin). Notificación por correo opcional |
 | `/api/workflow/states` | GET/POST | CRUD de estados del workflow |
 | `/api/workflow/transitions` | GET/POST | CRUD de transiciones del workflow |
 | `/api/users/list` | GET | Lista de usuarios con email (solo superadmin) |
@@ -104,14 +106,18 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
 |---|---|
 | `layout/Sidebar.tsx` | Navegación lateral. Items visibles según `SIDEBAR_ITEMS_BY_ROLE` del tipo `user.ts` |
 | `layout/Navbar.tsx` | Barra superior con usuario activo y logout |
-| `equipment/EquipmentForm.tsx` | Formulario de creación/edición. Usa `ClientSelector`, `BrandSelector`, VIP selector |
+| `equipment/EquipmentForm.tsx` | Formulario de creación/edición. Incluye selector de CC para el correo de ingreso |
 | `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Historial, cambio de estado, edición de timestamps (superadmin) |
 | `equipment/EquipmentTable.tsx` | Tabla paginada con indicadores VIP y filtros |
-| `equipment/StatusChangeModal.tsx` | Modal para transicionar estado. Consulta `next_states` via API |
+| `equipment/StatusChangeModal.tsx` | Modal principal de cambio de estado. Renderiza sub-modales de correo según estado destino |
 | `equipment/StatusBadge.tsx` | Badge de color dinámico según `status_color` de la vista |
 | `equipment/ClientSelector.tsx` | Búsqueda predictiva de clientes existentes + registro de nuevos |
 | `equipment/BrandSelector.tsx` | Búsqueda predictiva de marcas del catálogo. Auto-registra marcas nuevas |
 | `equipment/ModelSelector.tsx` | Selector de modelos filtrado por marca seleccionada |
+| `equipment/modals/ModalInformeODP.tsx` | Sub-modal: diagnóstico técnico + upload PDF (estado "Pendiente de aprobación") |
+| `equipment/modals/ModalAprobacionVentas.tsx` | Sub-modal: tabla dinámica repuestos/servicios aprobados + observaciones (estado "Aprobado") |
+| `equipment/modals/ModalEntregaLogistica.tsx` | Sub-modal: tabla de repuestos entregados con nota de compatibles (estado "En espera de repuesto") |
+| `equipment/modals/ModalCulminadoODP.tsx` | Sub-modal: texto predefinido + observaciones finales (estado "Listo para entrega") |
 | `pizarra/PizarraBoard.tsx` | Tablero kanban realtime. Columnas = estados activos. Usa `useRealtimePizarra` |
 | `pizarra/PizarraCard.tsx` | Tarjeta de equipo con estrellas VIP ⭐ y efecto glow pulsante según `priority_level` |
 | `admin/BrandModelManager.tsx` | CRUD de marcas y modelos del catálogo |
@@ -125,10 +131,10 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
 | `supabase/client.ts` | Cliente Supabase para browser (`createBrowserClient`) |
 | `supabase/server.ts` | Cliente Supabase para Server Components y API Routes (`createServerClient`) |
 | `supabase/middleware.ts` | `updateSession()` — refresca cookies de sesión en cada request |
-| `workflow/engine.ts` | `WorkflowEngine` — clase estática con métodos: `validateTransition`, `getNextStates`, `isTerminal`. Consulta la BD directamente |
-| `validations/equipment.schema.ts` | Schema Zod para validar inputs de equipos |
+| `workflow/engine.ts` | `WorkflowEngine` — clase estática: `validateTransition`, `getNextStates`, `isTerminal` |
+| `validations/equipment.schema.ts` | Schemas Zod: `createEquipmentSchema` (con `cc_extra`), `updateStatusSchema`, `forceStatusSchema`, + 4 schemas de eventos de correo |
 | `validations/user.schema.ts` | Schema Zod para validar inputs de usuarios |
-| `mail/mailer.ts` | Envío de emails con Resend. Falla silenciosamente si `RESEND_API_KEY` no está configurada |
+| `mail/mailer.ts` | Sistema de correos en hilo con Resend. Ver sección 11 para detalle completo |
 | `env.ts` | Validación de variables de entorno al arrancar |
 | `permissions.ts` | (vacío — lógica de permisos está en `types/user.ts`) |
 
@@ -143,8 +149,8 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
 | Archivo | Contenido |
 |---|---|
 | `database.types.ts` | Tipos auto-generados del esquema de Supabase (fuente de verdad de tipos de BD) |
-| `equipment.ts` | `EquipmentRecord`, `EquipmentWithStatus`, `WorkflowState`, helpers de negocio (`isEquipmentOverdue`, `ROLE_RELEVANT_STATES`) |
-| `user.ts` | `UserProfile`, `UserRole`, helpers de permisos (`canCreateEquipment`, etc.), `SIDEBAR_ITEMS_BY_ROLE`, `ROLE_HOME_ROUTE` |
+| `equipment.ts` | `EquipmentRecord`, `EquipmentWithStatus`, `WorkflowState`, helpers de negocio |
+| `user.ts` | `UserProfile`, `UserRole`, helpers de permisos, `SIDEBAR_ITEMS_BY_ROLE`, `ROLE_HOME_ROUTE` |
 | `catalog.ts` | Tipos para `CatalogBrand`, `CatalogModel`, `Part` |
 
 ---
@@ -155,7 +161,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
 | Tabla | Descripción clave |
 |---|---|
 | `user_profiles` | `id` (FK auth.users), `username`, `role` (enum), `is_active`, `is_superadmin` |
-| `equipment_records` | Tabla central. `fr_number` (ID operativo), `serial_number` (ID histórico/DNA), `current_status_id` (FK workflow_states), `priority_level` (0=normal, 1-3=VIP), timestamps por fase |
+| `equipment_records` | Tabla central. `fr_number`, `serial_number`, `current_status_id`, `priority_level` (0-3 VIP), timestamps por fase, `email_thread_id`, `email_cc[]` |
 | `workflow_states` | `id`, `name`, `color`, `is_initial`, `is_terminal`, `order_index` |
 | `workflow_transitions` | `from_state_id`, `to_state_id`, `allowed_roles[]` |
 | `status_history` | Audit log inmutable. `equipment_id`, `new_status`, `previous_status`, `changed_by_username`, `is_override` |
@@ -165,30 +171,28 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
 | `parts_catalog` | `part_number` UNIQUE, `name`, `specifications` |
 | `part_compatibilities` | JOIN table parts ↔ models |
 
+### Columnas de correo en `equipment_records` (migración 013)
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `email_thread_id` | `TEXT` | Message-ID devuelto por Resend al enviar el correo de ingreso. Se usa como `In-Reply-To` en todos los replies del hilo |
+| `email_cc` | `TEXT[]` | Correos CC elegidos al ingresar el equipo. Se reutilizan en todos los correos del hilo |
+
 ### Vista central: `equipment_with_status`
-JOIN de `equipment_records` + `workflow_states`. Agrega:
-- `status_name`, `status_color`, `is_terminal`
-- `days_elapsed` — días desde `date_in`
-- `phase_1_days` — ingreso → pending_approval
-- `phase_2_days` — pending_approval → approval
-- `phase_3_days` — approval → finalized
-- `assigned_technicians[]` — nombres via subquery a `technicians`
-- `priority_level` (desde migración 011)
+JOIN de `equipment_records` + `workflow_states`. Agrega `status_name`, `status_color`, `is_terminal`, `days_elapsed`, `phase_1/2/3_days`, `assigned_technicians[]`, `priority_level`.
 
 ### Flujo de estados (workflow por defecto)
 ```
 En espera de diagnóstico
   → En diagnóstico
-    → Pendiente de aprobación
-      → Aprobado / Rechazado
+    → Pendiente de aprobación   ← correo: Informe ODP (con PDF adjunto)
+      → Aprobado                ← correo: Aprobación Ventas (tabla repuestos)
         → En mantenimiento
-          → En espera de repuesto → (vuelve a En diagnóstico o En mantenimiento)
+          → En espera de repuesto ← correo: Entrega Logística (tabla repuestos entregados)
             → En espera de repuesto adicional
           → Control de calidad
-            → Listo para entrega
+            → Listo para entrega  ← correo: Culminado ODP (texto predefinido)
               → Entregado (terminal)
 ```
-El superadmin puede editar estados y transiciones en caliente desde `/admin/workflow`.
 
 ---
 
@@ -223,8 +227,7 @@ Usuario → Componente (client) → fetch /api/... → API Route (server)
                                                       ↓
                                               createServerClient()
                                                       ↓
-                                              Supabase PostgreSQL
-                                              (con RLS activo)
+                                              Supabase PostgreSQL (RLS activo)
                                                       ↓
                                               Respuesta JSON → SWR cache → Re-render
 
@@ -232,34 +235,28 @@ Realtime (Pizarra):
 Supabase Realtime → useRealtimePizarra (WebSocket) → setState → Re-render PizarraBoard
 ```
 
-**Mutación de estado después de una acción:**
-1. API Route ejecuta UPDATE en Supabase.
-2. Inserta registro en `status_history`.
-3. Responde `{ success: true, data: ... }`.
-4. Cliente llama `mutate()` de SWR para revalidar.
-5. Pizarra se actualiza sola vía WebSocket sin intervención.
-
 ---
 
 ## 8. PATRONES DE DISEÑO
 
-- **Server/Client split:** Server Components para fetching inicial, `'use client'` para interactividad. API Routes como capa de acceso a BD.
+- **Server/Client split:** Server Components para fetching inicial, `'use client'` para interactividad.
 - **Repository pattern vía API Routes:** Toda la lógica de BD está en `/app/api/`, los componentes nunca tocan Supabase directamente.
-- **Schema-first typing:** `database.types.ts` es la fuente de verdad. Los tipos de `types/` son derivaciones de este.
-- **Workflow Engine dinámico:** `WorkflowEngine` (lib/workflow/engine.ts) consulta la BD en runtime, no hay estados hardcodeados en el código.
-- **Zod validation en boundary:** Validación en la API Route, no en el componente. Los schemas están en `lib/validations/`.
-- **SWR para cache + revalidación:** `mutate()` manual tras mutaciones. No se usa React Query ni Context global.
+- **Schema-first typing:** `database.types.ts` es la fuente de verdad.
+- **Workflow Engine dinámico:** `WorkflowEngine` consulta la BD en runtime, no hay estados hardcodeados.
+- **Zod validation en boundary:** Validación en la API Route, no en el componente.
+- **SWR para cache + revalidación:** `mutate()` manual tras mutaciones.
 - **Audit Log obligatorio:** Todo cambio de estado escribe en `status_history` (inmutable).
+- **Correos en hilo:** El correo de ingreso genera un `message_id` que se persiste en BD. Todos los eventos posteriores usan `In-Reply-To` para aparecer en el mismo hilo en Gmail/Outlook.
 
 ---
 
 ## 9. CONVENCIONES DE CÓDIGO
 
-- **Imports:** Alias `@/` apunta a la raíz del proyecto (configurado en `tsconfig.json`).
-- **Supabase cliente:** Usar `createServerClient()` (de `lib/supabase/server.ts`) en API Routes/Server Components. Usar `createBrowserClient()` (de `lib/supabase/client.ts`) solo en hooks o componentes client-side.
+- **Imports:** Alias `@/` apunta a la raíz del proyecto.
+- **Supabase cliente:** `createServerClient()` en API Routes/Server Components. `createBrowserClient()` solo en hooks o componentes client-side.
 - **Respuestas API:** Formato uniforme `{ success: boolean, data?: any, error?: string }`.
-- **Estilos:** Solo Tailwind CSS. Tema personalizado en `tailwind.config.ts`. Colores clave: `neon-blue`, `neon-purple`, `bg-base`, `bg-surface`, `bg-elevated`, `text-primary`, `text-secondary`, `border-subtle`.
-- **Fondos sólidos:** SIEMPRE usar `bg-bg-elevated` en dropdowns, modales, filtros y selectores. No usar transparencias (`bg-opacity`, `backdrop-blur`) en elementos interactivos.
+- **Estilos:** Solo Tailwind CSS. Colores clave: `neon-blue`, `neon-purple`, `bg-base`, `bg-surface`, `bg-elevated`, `text-primary`, `text-secondary`, `border-subtle`.
+- **Fondos sólidos:** SIEMPRE usar `bg-bg-elevated` en dropdowns, modales, filtros y selectores. No usar transparencias en elementos interactivos.
 - **Iconos:** Solo `lucide-react`. No instalar otras librerías de iconos.
 
 ---
@@ -270,16 +267,115 @@ Supabase Realtime → useRealtimePizarra (WebSocket) → setState → Re-render 
 NEXT_PUBLIC_SUPABASE_URL=...        # URL del proyecto Supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...   # Anon key pública
 SUPABASE_SERVICE_ROLE_KEY=...       # Service role key (solo servidor, para admin ops)
-RESEND_API_KEY=...                  # Opcional: para emails automáticos (Resend)
+RESEND_API_KEY=re_xxxxxxxxxxxx      # Obtener en resend.com — sin esto los correos se omiten silenciosamente
 ```
 
 ---
 
-## 11. ESTADO ACTUAL Y PENDIENTES
+## 11. SISTEMA DE CORREOS EN HILO — DETALLE COMPLETO
 
-> Última sesión: 09/09/2026
+> Última actualización: 11/09/2026
+
+### Arquitectura general
+
+- **Proveedor:** [Resend](https://resend.com) — infraestructura de email como servicio. No requiere cuentas de correo reales. Solo la `RESEND_API_KEY`.
+- **Remitente actual:** `Ventas Cabelab <onboarding@resend.dev>` (dominio de prueba de Resend).
+- **Remitente en producción:** Cambiar a `notificaciones@cabelab.com` una vez verificado el dominio `cabelab.com` en el panel de Resend.
+- **Hilo de correo:** El correo de ingreso guarda su `message-id` en `equipment_records.email_thread_id`. Todos los correos posteriores del mismo equipo usan `In-Reply-To: <thread_id>` y asunto `RE:` idéntico → aparecen en el mismo hilo en Gmail y Outlook.
+- **Los correos del workflow NO se almacenan en BD** — solo van al correo. Ahorra espacio en Supabase gratuito (500 MB límite).
+
+### Destinatarios fijos del correo de ingreso (TO)
+```
+ventas@cabelab.com       → Recepción / Ventas
+odp@cabelab.com          → Operaciones
+heady.mamani@cabelab.com → Logística
+daniel.rojas@cabelab.com → Fijo adicional
+vivian.mamani@cabelab.com → Fijo adicional
+```
+
+### CC opcionales (selector en el formulario de ingreso)
+```
+mauricio.beltran@cabelab.com
+gersson.ortiz@cabelab.com
+```
+Los CC se guardan en `equipment_records.email_cc[]` y se reutilizan automáticamente en todos los correos del hilo.
+
+### Puntos de disparo de correo
+
+| Estado destino | Quién lo hace | Correo que se envía | Datos requeridos en el modal |
+|---|---|---|---|
+| **Ingreso** (al crear equipo) | Recepción / Ventas | Tabla horizontal con datos del equipo | Selector CC opcional |
+| **Pendiente de aprobación** | ODP | Informe técnico con PDF adjunto | Texto de diagnóstico + archivo PDF |
+| **Aprobado** | Ventas | Tabla de repuestos/servicios aprobados | Filas: descripción / cantidad / precio + observaciones |
+| **En espera de repuesto** | Logística | Lista de repuestos entregados | Filas: descripción / cantidad / nota-compatible + observaciones |
+| **Listo para entrega** | ODP | Texto predefinido de culminado | Observaciones adicionales (opcional) |
+| Otros estados | — | **Sin correo** | — |
+| **Override superadmin** | Superadmin | Correo con banner amarillo de advertencia | Solo si activa el checkbox "notificar por correo" |
+
+### Archivos del sistema de correos
+
+```
+lib/mail/mailer.ts                              → Lógica central. ENTRY_TO[], CC_OPTIONS[], 5 funciones de envío
+lib/validations/equipment.schema.ts             → 4 schemas Zod para eventos de correo
+app/api/equipment/create/route.ts               → Guarda email_thread_id y email_cc tras el envío
+app/api/equipment/[id]/update-status/route.ts   → Detecta estado destino y dispara el correo correcto
+app/api/equipment/[id]/force-status/route.ts    → Override con correo opcional
+components/equipment/EquipmentForm.tsx          → Selector CC en el formulario de ingreso
+components/equipment/StatusChangeModal.tsx      → Orquesta sub-modales según estado destino
+components/equipment/modals/ModalInformeODP.tsx         → Diagnóstico + upload PDF
+components/equipment/modals/ModalAprobacionVentas.tsx   → Tabla dinámica repuestos aprobados
+components/equipment/modals/ModalEntregaLogistica.tsx   → Tabla repuestos entregados
+components/equipment/modals/ModalCulminadoODP.tsx       → Texto predefinido + observaciones
+supabase/migrations/013_email_thread.sql        → Columnas email_thread_id y email_cc
+```
+
+### Funciones del mailer
+
+| Función | Descripción |
+|---|---|
+| `sendEquipmentEntry(data, cc_extra[])` | Correo de ingreso. **Devuelve** el `message-id` para guardarlo en BD |
+| `sendInformeODP(data)` | Reply con diagnóstico + PDF adjunto (Buffer) |
+| `sendAprobacionVentas(data)` | Reply con tabla de ítems aprobados |
+| `sendEntregaLogistica(data)` | Reply con tabla de repuestos entregados |
+| `sendCulminadoODP(data)` | Reply con texto predefinido + observaciones |
+
+### `update-status/route.ts` — lógica de detección
+
+El route acepta tanto **JSON** como **FormData** (`multipart/form-data`):
+- `multipart/form-data` → estado "Pendiente de aprobación" (lleva PDF como `File`)
+- `application/json` → todos los demás estados
+
+Solo dispara correo si `equipment_records.email_thread_id` no es null (el equipo tiene correo de ingreso registrado).
+
+### Para modificar destinatarios o CC opcionales
+
+Editar directamente `lib/mail/mailer.ts`:
+```typescript
+// Destinatarios fijos de todos los correos:
+const ENTRY_TO = [ ... ]
+
+// CC opcionales que aparecen en el selector del frontend:
+export const CC_OPTIONS: CcOption[] = [ ... ]
+```
+
+### Pasos pendientes para activar el sistema de correos
+
+1. **Ejecutar migración** `013_email_thread.sql` en el panel SQL de Supabase
+2. **Configurar** `RESEND_API_KEY` en `.env.local` o en Variables de Entorno de Vercel
+3. **Verificar dominio** `cabelab.com` en [resend.com/domains](https://resend.com/domains) (agregar registros DNS SPF + DKIM)
+4. **Cambiar el remitente** en `lib/mail/mailer.ts`:
+   ```typescript
+   const FROM_ADDRESS = 'CABELAB <notificaciones@cabelab.com>'
+   ```
+
+---
+
+## 12. ESTADO ACTUAL Y PENDIENTES
+
+> Última sesión: 11/09/2026
 
 ### ✅ Implementado y funcional
+
 - Sistema de roles y autenticación por username completo
 - Workflow dinámico configurable por superadmin
 - Pizarra realtime con agrupación por estados
@@ -293,80 +389,20 @@ RESEND_API_KEY=...                  # Opcional: para emails automáticos (Resend
 - Audit log inmutable (`status_history`)
 - Timestamps operativos por fase + edición superadmin
 - Buscador instantáneo (FR, cliente, serie)
-- **Sistema de notificaciones internas por email** — completo y funcional (pendiente solo `RESEND_API_KEY`)
+- **Sistema de correos en hilo completo** (código listo, pendiente solo configuración)
 
----
+### ⚠️ Listo en código pero pendiente de activar
 
-### 📧 Sistema de Notificaciones por Email (COMPLETO)
+| Pendiente | Qué hacer |
+|---|---|
+| Correos en producción | Ejecutar migración 013, configurar `RESEND_API_KEY`, verificar dominio en Resend |
+| Remitente con dominio propio | Cambiar `FROM_ADDRESS` en `mailer.ts` a `notificaciones@cabelab.com` |
 
-**Archivos involucrados:**
-- `lib/mail/mailer.ts` — lógica central
-- `app/api/equipment/create/route.ts` — disparo en ingreso
-- `app/api/equipment/[id]/update-status/route.ts` — disparo en cambio de estado normal
-- `app/api/equipment/[id]/force-status/route.ts` — disparo condicional en override de superadmin
-- `lib/validations/equipment.schema.ts` — campo `notify_by_email` en `forceStatusSchema`
-- `components/equipment/StatusChangeModal.tsx` — checkbox UI para el override
-
-**Puntos de disparo:**
-
-| Evento | Archivo | Comportamiento |
-|---|---|---|
-| Equipo ingresado | `create/route.ts` | `mailer.sendEquipmentEntry()` — tabla horizontal oficial, siempre |
-| Cambio de estado (workflow normal) | `update-status/route.ts` | `mailer.sendStatusChange()` — fire-and-forget, en **todo** cambio de estado |
-| Cambio forzado (superadmin override) | `force-status/route.ts` | `mailer.sendStatusChange(isOverride=true)` — solo si superadmin marca el checkbox en el modal |
-
-**Estructura de `mailer.ts`:**
-- `RECIPIENTS[]` + `CC_RECIPIENTS[]` — arrays hardcodeados de destinatarios internos. Editar aquí para agregar/quitar.
-- `STATE_CONFIGS` — objeto con config por estado: `subject`, `headerColor`, `icon`, `description`. Clave = nombre del estado en minúsculas. Agregar aquí para cubrir nuevos estados.
-- `DEFAULT_STATE_CONFIG` — fallback genérico para estados sin config explícita.
-- `sendEquipmentEntry(data)` — template tabla horizontal para ingresos.
-- `sendStatusChange(data, isOverride?)` — template genérico para todos los cambios de estado. Incluye: banner de color, tabla con FR/Cliente/Equipo/Serie/Estado anterior/Nuevo estado/Usuario/Fecha. Si `isOverride=true`: banner amarillo de advertencia + fila de motivo.
-- `buildSignature()` — firma institucional compartida (Diana Salazar + datos CABELAB).
-
-**Checkbox en el modal de override (UI):**
-- Estado local `notifyByEmail` en `StatusChangeModal.tsx`, desmarcado por defecto.
-- Aparece debajo del textarea de motivo, solo cuando el modo override está activo.
-- Se envía como `notify_by_email: boolean` en el body del POST a `force-status`.
-
-**Para personalizar:**
-- Cambiar asunto/color/ícono/descripción de un estado → editar su entrada en `STATE_CONFIGS`
-- Agregar campo extra al cuerpo del correo → editar `buildStatusChangeHtml()` en `mailer.ts`
-- Cambiar firma → editar `buildSignature()`
-- Agregar destinatario → agregar email a `RECIPIENTS` o `CC_RECIPIENTS`
-
----
-
-### ⚠️ Requiere configuración para activar emails
-```env
-RESEND_API_KEY=re_xxxxxxxxxxxx
-```
-Sin esta variable, todos los correos se omiten silenciosamente (el sistema sigue funcionando). Configurar en el panel de Vercel o en `.env.local` para desarrollo.
-
----
-
-### 🔜 Próximo paso sugerido: Generación de PDF de Informe Técnico
-
-**Por qué es el siguiente paso lógico:**
-El sistema ya registra toda la información operativa del equipo (diagnóstico, técnico, timestamps, observaciones, número de informe). El PDF es la materialización de eso en un documento entregable al cliente y archivable para CABELAB.
-
-**Qué implicaría:**
-- Instalar una librería de generación de PDF. La opción recomendada para Next.js es `@react-pdf/renderer` (genera PDFs desde componentes React) o `puppeteer` (renderiza HTML a PDF). Para este proyecto se recomienda `@react-pdf/renderer` por ser más ligero y sin dependencias de Chromium.
-- Crear un API Route `GET /api/equipment/[id]/pdf` que genere y devuelva el PDF como `application/pdf`.
-- El PDF incluiría: membrete CABELAB, datos del equipo, diagnóstico, técnico asignado, timestamps de fases, observaciones y firma.
-- En `EquipmentDetail.tsx` agregar un botón "Descargar PDF" visible para roles `superadmin`, `admin` y `recepcion`.
-
-**Archivos a crear/modificar:**
-- `app/api/equipment/[id]/pdf/route.ts` — nuevo endpoint
-- `components/equipment/EquipmentPDF.tsx` — componente de diseño del PDF (con `@react-pdf/renderer`)
-- `components/equipment/EquipmentDetail.tsx` — agregar botón de descarga
-
----
-
-### 📋 Roadmap completo pendiente
+### 📋 Roadmap pendiente
 
 | Prioridad | Feature | Descripción |
 |---|---|---|
-| 🔜 Alta | **Generación de PDF** | Informe técnico descargable con membrete CABELAB |
+| 🔜 Alta | **Generación de PDF del sistema** | Informe técnico generado automáticamente por el sistema con membrete CABELAB. Usar `@react-pdf/renderer`. Endpoint `GET /api/equipment/[id]/pdf`. Botón en `EquipmentDetail.tsx` para roles superadmin/admin/recepcion |
 | 🔜 Alta | **Códigos QR** | Etiqueta imprimible por equipo que enlaza a su ficha |
 | 🟡 Media | **Carga multimedia** | Subir fotos/videos del estado físico al ingresar (Supabase Storage) |
 | 🟡 Media | **Inventario vinculado** | Descuento automático de stock de repuestos al finalizar servicio |
@@ -376,7 +412,7 @@ El sistema ya registra toda la información operativa del equipo (diagnóstico, 
 
 ---
 
-## 12. MIGRACIONES SQL (orden cronológico)
+## 13. MIGRACIONES SQL (orden cronológico)
 
 | # | Archivo | Qué hace |
 |---|---|---|
@@ -392,3 +428,4 @@ El sistema ya registra toda la información operativa del equipo (diagnóstico, 
 | 010 | `010_parts_and_compatibility.sql` | Tablas de catálogo: `catalog_brands`, `catalog_models`, `parts_catalog`, `part_compatibilities` |
 | 011 | `011_vip_priorities.sql` | Columna `priority_level` (0-3), recrea vista `equipment_with_status` |
 | 012 | `012_seed_major_brands.sql` | Seed de marcas principales (ESAB, MILLER, LINCOLN, etc.) |
+| 013 | `013_email_thread.sql` | Columnas `email_thread_id TEXT` y `email_cc TEXT[]` en `equipment_records` |
