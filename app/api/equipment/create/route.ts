@@ -156,6 +156,7 @@ export async function POST(request: NextRequest) {
         priority_level: data.priority_level || 0,
         is_priority: (data.priority_level || 0) > 0,
         email_cc: cc_extra,
+        report_url: data.report_url?.trim() || null,
       } as any)
       .select('id')
       .single()

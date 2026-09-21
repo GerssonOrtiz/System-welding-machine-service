@@ -49,6 +49,7 @@ export async function PUT(
     if (body.serial_number !== undefined) updateData.serial_number = body.serial_number.trim() ? body.serial_number.trim().toUpperCase() : 'N/S'
     
     if (body.report_number !== undefined) updateData.report_number = body.report_number.trim().toUpperCase() || null
+    if (body.report_url !== undefined) updateData.report_url = body.report_url?.trim() || null
     if (body.client_report !== undefined) updateData.client_report = body.client_report.trim().toUpperCase() || null
     if (body.accessories !== undefined) updateData.accessories = body.accessories.trim().toUpperCase() || null
     if (body.condition_in !== undefined) updateData.condition_in = body.condition_in.trim().toUpperCase() || null

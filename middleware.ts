@@ -14,12 +14,17 @@ export async function middleware(request: NextRequest) {
   const { supabaseResponse, user, supabase } = await updateSession(request)
   const pathname = request.nextUrl.pathname
 
+  // Permitir acceso público a documentación de equipos por QR y su API pública
+  if (pathname.startsWith('/doc') || pathname.startsWith('/api/public')) {
+    return supabaseResponse
+  }
+
   // Bloquear acceso a registro público
   if (pathname === '/register') {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // 1. Ruta pública: dejar pasar
+  // 1. Ruta pública de login: dejar pasar o redirigir si ya tiene sesión
   if (PUBLIC_ROUTES.includes(pathname)) {
     // Si ya tiene sesión activa, redirigir al inicio correspondiente a su rol o al dashboard base
     if (user) {

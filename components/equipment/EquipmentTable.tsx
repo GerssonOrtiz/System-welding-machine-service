@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
 import StatusBadge from './StatusBadge'
 import EquipmentDetail from './EquipmentDetail'
+import QRPrintModal from './QRPrintModal'
 
 interface EquipmentTableProps {
   equipments: any[]
@@ -28,6 +29,7 @@ export default function EquipmentTable({
   const [selectedEqId, setSelectedEqId] = useState<string | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [qrModalEq, setQrModalEq] = useState<any | null>(null)
 
   const handleOpenDetail = (id: string) => {
     setSelectedEqId(id)
@@ -134,7 +136,17 @@ export default function EquipmentTable({
                         {eq.maintenance_tech_username || eq.diagnosis_tech_username || '-'}
                       </td>
                     )}
-                    <td className="px-5 py-4 text-right space-x-2">
+                    <td className="px-5 py-4 text-right space-x-2 whitespace-nowrap">
+                      {eq.serial_number &&
+                        !['N/S', 'S/N', 'N/A', 'SIN SERIE', 'SIN N/S', '-', '.'].includes(eq.serial_number.trim().toUpperCase()) && (
+                          <button
+                            onClick={() => setQrModalEq(eq)}
+                            title="Generar e imprimir código QR"
+                            className="px-2.5 py-1 rounded border border-border-subtle hover:border-[#00E5FF] text-slate-300 hover:text-[#00E5FF] transition-all font-semibold uppercase text-[10px]"
+                          >
+                            QR 📱
+                          </button>
+                      )}
                       <button
                         onClick={() => handleOpenDetail(eq.id)}
                         className="px-3 py-1 rounded border border-neon-blue text-neon-blue hover:bg-neon-blue/10 transition-all font-semibold uppercase text-[10px]"
@@ -195,6 +207,19 @@ export default function EquipmentTable({
           }}
           equipmentId={selectedEqId}
           onStatusUpdated={onUpdateSuccess}
+        />
+      )}
+
+      {/* Modal de impresión de etiqueta QR */}
+      {qrModalEq && (
+        <QRPrintModal
+          isOpen={Boolean(qrModalEq)}
+          onClose={() => setQrModalEq(null)}
+          serialNumber={qrModalEq.serial_number || ''}
+          frNumber={qrModalEq.fr_number || ''}
+          brand={qrModalEq.brand || ''}
+          model={qrModalEq.model || ''}
+          clientName={qrModalEq.client_name || ''}
         />
       )}
     </div>

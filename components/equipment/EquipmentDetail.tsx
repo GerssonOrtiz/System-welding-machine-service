@@ -10,6 +10,7 @@ import StatusBadge from './StatusBadge'
 import StatusChangeModal from './StatusChangeModal'
 import ClientSelector from './ClientSelector'
 import BrandSelector from './BrandSelector'
+import QRPrintModal from './QRPrintModal'
 
 interface EquipmentDetailProps {
   isOpen: boolean
@@ -27,6 +28,7 @@ export default function EquipmentDetail({
   const { user, profile, role } = useUser()
   const { equipment, history, nextStates, canAdvance, isLoading, mutate } = useEquipmentDetail(equipmentId)
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -38,6 +40,7 @@ export default function EquipmentDetail({
   const [editModel, setEditModel] = useState('')
   const [editSerial, setEditSerial] = useState('')
   const [editReportNumber, setEditReportNumber] = useState('')
+  const [editReportUrl, setEditReportUrl] = useState('')
   const [editServiceType, setEditServiceType] = useState('')
   const [editDateIn, setEditDateIn] = useState('')
   const [editClientReport, setEditClientReport] = useState('')
@@ -98,6 +101,7 @@ export default function EquipmentDetail({
     setEditModel(equipment.model || '')
     setEditSerial(equipment.serial_number || '')
     setEditReportNumber(equipment.report_number || '')
+    setEditReportUrl((equipment as any).report_url || '')
     setEditServiceType(equipment.service_type || 'REVISION_GENERAL')
     setEditPriorityLevel(equipment.priority_level || (equipment.is_priority ? 1 : 0))
     if (equipment.date_in) {
@@ -142,6 +146,7 @@ export default function EquipmentDetail({
           model: editModel,
           serial_number: editSerial,
           report_number: editReportNumber,
+          report_url: editReportUrl,
           service_type: editServiceType,
           priority_level: editPriorityLevel,
           is_priority: editPriorityLevel > 0,
@@ -221,7 +226,19 @@ export default function EquipmentDetail({
                   </div>
 
                   {/* Acciones de cambio de estado / edición */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {equipment.serial_number && 
+                     !['N/S', 'S/N', 'N/A', 'SIN SERIE', 'SIN N/S', '-', '.'].includes(equipment.serial_number.trim().toUpperCase()) && (
+                      <button
+                        type="button"
+                        onClick={() => setIsQrModalOpen(true)}
+                        className="px-3.5 py-2.5 rounded-lg border border-neon-blue/60 text-neon-blue hover:bg-neon-blue/10 text-xs font-bold uppercase transition-all flex items-center gap-1.5"
+                        title="Ver e imprimir etiqueta física con código QR"
+                      >
+                        <span>📱 Etiqueta QR</span>
+                      </button>
+                    )}
+
                     {isSuperadmin && (
                       <button
                         onClick={isEditing ? handleSaveEdit : startEditMode}
@@ -369,14 +386,40 @@ export default function EquipmentDetail({
                             placeholder="Ej: INF-001"
                             className="col-span-2 bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-xs focus:border-neon-blue focus:outline-none font-mono text-text-primary"
                           />
+                          <span className="text-text-secondary font-semibold uppercase">Enlace PDF:</span>
+                          <input
+                            type="url"
+                            value={editReportUrl}
+                            onChange={(e) => setEditReportUrl(e.target.value)}
+                            placeholder="https://drive.google.com/..."
+                            className="col-span-2 bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-xs focus:border-neon-blue focus:outline-none font-mono text-text-primary"
+                          />
                         </>
                       ) : (
-                        equipment.report_number && !equipment.report_number.startsWith('INT-') && (
-                          <>
-                            <span className="text-text-secondary font-semibold uppercase">N° Informe:</span>
-                            <span className="col-span-2 font-mono text-neon-blue font-semibold">{equipment.report_number}</span>
-                          </>
-                        )
+                        <>
+                          {equipment.report_number && !equipment.report_number.startsWith('INT-') && (
+                            <>
+                              <span className="text-text-secondary font-semibold uppercase">N° Informe:</span>
+                              <span className="col-span-2 font-mono text-neon-blue font-semibold">{equipment.report_number}</span>
+                            </>
+                          )}
+                          {(equipment as any).report_url && (
+                            <>
+                              <span className="text-text-secondary font-semibold uppercase">Informe PDF:</span>
+                              <div className="col-span-2 flex items-center gap-2">
+                                <a
+                                  href={(equipment as any).report_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#00E5FF]/10 border border-[#00E5FF]/30 text-[#00E5FF] hover:bg-[#00E5FF]/20 font-bold text-[11px] transition-colors"
+                                >
+                                  <span>📄 Ver Informe en Google Drive</span>
+                                  <span>↗</span>
+                                </a>
+                              </div>
+                            </>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -621,6 +664,19 @@ export default function EquipmentDetail({
           currentStatusColor={equipment.status_color}
           nextStates={nextStates}
           onSuccess={handleStatusChangeSuccess}
+        />
+      )}
+
+      {/* Modal de etiqueta QR para impresión */}
+      {equipment && (
+        <QRPrintModal
+          isOpen={isQrModalOpen}
+          onClose={() => setIsQrModalOpen(false)}
+          serialNumber={equipment.serial_number || ''}
+          frNumber={equipment.fr_number || ''}
+          brand={equipment.brand || ''}
+          model={equipment.model || ''}
+          clientName={equipment.client_name || ''}
         />
       )}
     </>

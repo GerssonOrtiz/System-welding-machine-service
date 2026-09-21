@@ -15,6 +15,7 @@ export const createEquipmentSchema = z.object({
   condition_in: z.string().optional().nullable(),
   additional_observations: z.string().optional().nullable(),
   priority_level: z.number().int().min(0).max(3).default(0),
+  report_url: z.string().url({ message: 'El enlace del informe debe ser una URL válida' }).optional().nullable().or(z.literal('')),
   /** Correos adicionales en copia seleccionados al ingresar el equipo */
   cc_extra: z.array(z.string().email()).optional().default([]),
 })
@@ -24,6 +25,7 @@ export const updateStatusSchema = z.object({
   assigned_technician_ids: z.array(z.number()).optional(),
   notes: z.string().optional().nullable(),
   report_number: z.string().optional().nullable(),
+  report_url: z.string().url({ message: 'El enlace del informe debe ser una URL válida' }).optional().nullable().or(z.literal('')),
 })
 
 export const forceStatusSchema = z.object({

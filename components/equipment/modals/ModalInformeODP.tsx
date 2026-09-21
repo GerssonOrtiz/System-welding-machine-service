@@ -9,6 +9,8 @@ interface ModalInformeODPProps {
   onDiagnosticoChange: (v: string) => void
   pdfFile: File | null
   onPdfChange: (f: File | null) => void
+  reportUrl?: string
+  onReportUrlChange?: (v: string) => void
 }
 
 export default function ModalInformeODP({
@@ -16,6 +18,8 @@ export default function ModalInformeODP({
   onDiagnosticoChange,
   pdfFile,
   onPdfChange,
+  reportUrl = '',
+  onReportUrlChange,
 }: ModalInformeODPProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -92,6 +96,25 @@ export default function ModalInformeODP({
         />
         <p className="text-[9px] text-text-muted">Solo archivos .pdf</p>
       </div>
+
+      {/* Enlace Google Drive opcional */}
+      {onReportUrlChange && (
+        <div className="space-y-1.5 pt-1">
+          <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+            Enlace de Google Drive del informe (opcional para QR)
+          </label>
+          <input
+            type="url"
+            value={reportUrl}
+            onChange={(e) => onReportUrlChange(e.target.value)}
+            placeholder="https://drive.google.com/file/d/..."
+            className="w-full bg-bg-elevated border border-border-subtle rounded-lg px-3 py-2 text-xs text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:outline-none transition-all font-mono"
+          />
+          <p className="text-[9px] text-text-muted">
+            Este enlace se asociará al equipo y estará disponible al escanear la etiqueta QR física.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

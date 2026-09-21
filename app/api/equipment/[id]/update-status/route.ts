@@ -175,6 +175,10 @@ export async function POST(
       updateData.assigned_technician_ids = rawBody.assigned_technician_ids
     }
 
+    if (rawBody.report_url !== undefined) {
+      updateData.report_url = rawBody.report_url?.trim() || null
+    }
+
     // 12. Actualizar BD
     const { error: updateError } = await (supabase.from('equipment_records') as any)
       .update(updateData)

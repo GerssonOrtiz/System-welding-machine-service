@@ -60,6 +60,7 @@ export default function StatusChangeModal({
   // Informe ODP
   const [diagnostico, setDiagnostico] = useState('')
   const [pdfFile, setPdfFile]         = useState<File | null>(null)
+  const [reportUrl, setReportUrl]     = useState('')
   // Aprobación Ventas
   const [ventasItems, setVentasItems]           = useState<VentasItem[]>([{ descripcion: '', cantidad: '1', precio: '' }])
   const [ventasObservaciones, setVentasObs]     = useState('')
@@ -180,6 +181,7 @@ export default function StatusChangeModal({
         const fd = new FormData()
         fd.append('new_status_id', targetStatusId)
         fd.append('diagnostico', diagnostico)
+        if (reportUrl) fd.append('report_url', reportUrl)
         if (notes) fd.append('notes', notes)
         if (selectedTechIds.length > 0) {
           fd.append('assigned_technician_ids', JSON.stringify(selectedTechIds))
@@ -329,6 +331,8 @@ export default function StatusChangeModal({
                 onDiagnosticoChange={setDiagnostico}
                 pdfFile={pdfFile}
                 onPdfChange={setPdfFile}
+                reportUrl={reportUrl}
+                onReportUrlChange={setReportUrl}
               />
             )}
 
