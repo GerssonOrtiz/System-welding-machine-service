@@ -31,6 +31,8 @@ export const forceStatusSchema = z.object({
   override_reason: z.string().min(5, { message: 'El motivo del override debe tener al menos 5 caracteres' }),
   /** Si es true, se enviará una notificación interna por correo del cambio forzado */
   notify_by_email: z.boolean().default(false),
+  /** Correos adicionales en copia seleccionados para notificar el cambio forzado */
+  cc_extra: z.array(z.string().email()).optional().default([]),
 })
 
 // ─── Schemas para los payloads de correo por evento ───────────────────────────

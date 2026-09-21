@@ -126,7 +126,6 @@ export async function POST(
       })
 
     if (historyError) {
-      // No fallamos la petición porque el estado del equipo ya cambió
       console.error('[POST force-status] Error writing status history:', historyError)
     }
 
