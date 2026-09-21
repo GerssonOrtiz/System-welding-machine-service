@@ -1,15 +1,18 @@
-// components/equipment/EquipmentForm.tsx
 'use client'
 
 import React, { useState } from 'react'
 import { useForm, Controller, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { createEquipmentSchema, CreateEquipmentInput } from '@/lib/validations/equipment.schema'
+import { z } from 'zod'
+import { createEquipmentSchema, type CreateEquipmentInput } from '@/lib/validations/equipment.schema'
 import { CC_OPTIONS } from '@/lib/mail/mailer'
 import ClientSelector from './ClientSelector'
 import BrandSelector from './BrandSelector'
 import ModelSelector from './ModelSelector'
+
+// Usamos z.input para garantizar coincidencia de tipos con el zodResolver
+type CreateEquipmentFormData = z.input<typeof createEquipmentSchema>
 
 interface EquipmentFormProps {
   onSuccess?: () => void
@@ -26,11 +29,14 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
     )
   }
 
+  // Extraemos control y reset que faltaban
   const {
     register,
     handleSubmit,
+    control,
+    reset,
     formState: { errors },
-  } = useForm<CreateEquipmentInput>({
+  } = useForm<CreateEquipmentFormData>({
     resolver: zodResolver(createEquipmentSchema),
     defaultValues: {
       fr_number: '',
@@ -52,9 +58,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
     name: 'brand',
   })
 
-  const BRANDS = ["ESAB", "MILLER", "LINCOLN ELECTRIC", "DAF", "KENDE", "HYPERTHERM"]
-
-  const onSubmit = async (data: CreateEquipmentInput) => {
+  const onSubmit = async (data: CreateEquipmentFormData) => {
     setIsSubmitting(true)
     try {
       const response = await fetch('/api/equipment/create', {
@@ -116,7 +120,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
             autoComplete="off"
           />
           {errors.fr_number && (
-            <p className="text-red-400 text-xs mt-1">{errors.fr_number.message}</p>
+            <p className="text-red-400 text-xs mt-1">{String(errors.fr_number.message)}</p>
           )}
         </div>
 
@@ -127,9 +131,9 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
             control={control}
             render={({ field }) => (
               <ClientSelector
-                value={field.value}
+                value={field.value || ''}
                 onChange={field.onChange}
-                error={errors.client_name?.message}
+                error={errors.client_name?.message as string}
                 label="Nombre del Cliente *"
               />
             )}
@@ -152,7 +156,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
             <option value="REVISION_GENERAL">REVISIÓN GENERAL</option>
           </select>
           {errors.service_type && (
-            <p className="text-red-400 text-xs mt-1">{errors.service_type.message}</p>
+            <p className="text-red-400 text-xs mt-1">{String(errors.service_type.message)}</p>
           )}
         </div>
 
@@ -165,7 +169,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
               <BrandSelector
                 value={field.value || ''}
                 onChange={field.onChange}
-                error={errors.brand?.message}
+                error={errors.brand?.message as string}
                 label="Marca"
               />
             )}
@@ -182,7 +186,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
                 value={field.value || ''}
                 onChange={field.onChange}
                 brand={selectedBrand || undefined}
-                error={errors.model?.message}
+                error={errors.model?.message as string}
                 label="Modelo"
               />
             )}
@@ -204,7 +208,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
             autoComplete="off"
           />
           {errors.serial_number && (
-            <p className="text-red-400 text-xs mt-1">{errors.serial_number.message}</p>
+            <p className="text-red-400 text-xs mt-1">{String(errors.serial_number.message)}</p>
           )}
         </div>
       </div>
@@ -238,22 +242,8 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
           />
         </div>
 
-        {/* Condición de ingreso */}
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-            Condición física de ingreso
-          </label>
-          <textarea
-            {...register('condition_in')}
-            placeholder="ej: GOLPE EN PANEL LATERAL"
-            rows={3}
-            className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue rounded-lg px-3.5 py-2 text-sm focus:outline-none transition-all resize-none"
-            autoComplete="off"
-          />
-        </div>
-
         {/* Observaciones adicionales */}
-        <div className="space-y-1">
+        <div className="space-y-1 md:col-span-2">
           <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
             Observaciones adicionales
           </label>
