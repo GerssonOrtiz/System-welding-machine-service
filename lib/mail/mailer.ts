@@ -84,7 +84,7 @@ function buildSignature(): string {
       </table>
     </div>
     <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 10px; font-size: 9px; color: #888; text-align: justify; font-family: Calibri, sans-serif;">
-      <strong>Aviso de confidencialidad:</strong> El presente correo, incluido cualquier archivo adjunto, va dirigido a la persona o entidad con información confidencial y/o privilegiada. Está prohibido compartir toda información, parcial y/o completa, con otras personas y/o terceros, sin el consentimiento por escrito del remitente inicial.
+      <strong>Aviso de confidencialidad:</strong> El presente correo, incluido cualquier archivo adjunto, va dirigido a la persona o entidad con información confidencial y/o privileged. Está prohibido compartir toda información, parcial y/o completa, con otras personas y/o terceros, sin el consentimiento por escrito del remitente inicial.
     </div>
   `
 }
@@ -370,6 +370,64 @@ function buildCulminadoODPHtml(data: CulminadoODPData): string {
   `
 }
 
+function buildStatusChangeHtml(data: StatusChangeData, isOverride: boolean): string {
+  return `
+    <div style="font-family: Calibri, sans-serif; color: #1f375f; line-height: 1.5;">
+      <p>Estimados,</p>
+      <p>Se ha registrado un cambio de estado para el equipo <strong>${data.fr_number}</strong> — ${data.client_name}.</p>
+
+      ${isOverride ? `
+      <div style="border-left: 4px solid #EAB308; background-color: #FEFCE8; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+        <span style="font-size: 15px; font-weight: bold; color: #CA8A04;">⚠️ CAMBIO DE ESTADO FORZADO (OVERRIDE)</span>
+        <p style="margin: 6px 0 0 0; font-size: 11px; color: #854D0E;">
+          Realizado por Superadmin: <strong>${data.changed_by}</strong>
+        </p>
+      </div>
+      ` : `
+      <div style="border-left: 4px solid #3B82F6; background-color: #EFF6FF; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+        <span style="font-size: 15px; font-weight: bold; color: #1D4ED8;">🔄 CAMBIO DE ESTADO</span>
+        <p style="margin: 6px 0 0 0; font-size: 11px; color: #1E40AF;">
+          Actualizado por: <strong>${data.changed_by}</strong>
+        </p>
+      </div>
+      `}
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tbody>
+          <tr style="background-color: #F8FAFC;">
+            <td style="${tableCellStyle} font-weight: bold; width: 180px;">Ficha (FR):</td>
+            <td style="${tableCellStyle} font-weight: bold;">${data.fr_number}</td>
+          </tr>
+          <tr>
+            <td style="${tableCellStyle} font-weight: bold;">Cliente:</td>
+            <td style="${tableCellStyle}">${data.client_name}</td>
+          </tr>
+          <tr style="background-color: #F8FAFC;">
+            <td style="${tableCellStyle} font-weight: bold;">Equipo:</td>
+            <td style="${tableCellStyle}">${data.brand ?? ''} ${data.model ?? ''} (S/N: ${data.serial_number ?? 'N/S'})</td>
+          </tr>
+          <tr>
+            <td style="${tableCellStyle} font-weight: bold;">Estado Anterior:</td>
+            <td style="${tableCellStyle} color: #DC2626;">${data.previous_status_name}</td>
+          </tr>
+          <tr style="background-color: #F8FAFC;">
+            <td style="${tableCellStyle} font-weight: bold;">Nuevo Estado:</td>
+            <td style="${tableCellStyle} color: #16A34A; font-weight: bold;">${data.new_status_name}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      ${data.override_reason ? `
+      <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
+        <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Motivo del Override:</p>
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.override_reason}</p>
+      </div>` : ''}
+
+      ${buildSignature()}
+    </div>
+  `
+}
+
 // ─────────────────────────────────────────
 // HELPER: cabeceras de hilo
 // ─────────────────────────────────────────
@@ -505,6 +563,35 @@ export const mailer = {
       })
     } catch (error) {
       console.error('[Mailer] sendCulminadoODP error:', error)
+    }
+  },
+
+  /**
+   * Envía una notificación interna por cambio de estado forzado (o manual).
+   */
+  async sendStatusChange(
+    data: StatusChangeData,
+    isOverride: boolean = false,
+    cc_extra: string[] = []
+  ): Promise<void> {
+    if (!resend) {
+      console.warn('[Mailer] sendStatusChange — RESEND_API_KEY no configurada, correo omitido.')
+      return
+    }
+    try {
+      const subject = isOverride
+        ? `⚠️ [OVERRIDE] Cambio Forzado de Estado — ${data.fr_number} — ${data.client_name}`
+        : `🔄 Cambio de Estado — ${data.fr_number} — ${data.client_name}`
+
+      await resend.emails.send({
+        from: FROM_ADDRESS,
+        to: ENTRY_TO,
+        ...(cc_extra.length > 0 && { cc: cc_extra }),
+        subject,
+        html: buildStatusChangeHtml(data, isOverride),
+      })
+    } catch (error) {
+      console.error('[Mailer] sendStatusChange error:', error)
     }
   },
 }
