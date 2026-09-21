@@ -323,4 +323,3 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
     </form>
   )
 }
-register
