@@ -91,6 +91,12 @@ export default function ProfilePage() {
             Datos del Usuario
           </h2>
           <div className="space-y-4">
+            {(profile?.full_name || (user?.user_metadata as any)?.full_name) && (
+              <div>
+                <span className="block text-xxs font-semibold text-text-secondary uppercase tracking-wider">Nombre Completo</span>
+                <span className="text-sm font-semibold text-text-primary font-sans">{profile?.full_name || (user?.user_metadata as any)?.full_name}</span>
+              </div>
+            )}
             <div>
               <span className="block text-xxs font-semibold text-text-secondary uppercase tracking-wider">Nombre de Usuario</span>
               <span className="text-sm font-semibold text-text-primary font-mono">{profile?.username || 'Sin username'}</span>

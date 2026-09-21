@@ -10,7 +10,6 @@ export default function AdminUsuariosPage() {
   const { role, loading: userLoading } = useUser()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [assigningRoles, setAssigningRoles] = useState<Record<string, string>>({})
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
   const [importResults, setImportResults] = useState<any | null>(null)
@@ -20,6 +19,7 @@ export default function AdminUsuariosPage() {
   const [creatingUser, setCreatingUser] = useState(false)
   const [newUserData, setNewUserData] = useState({
     username: '',
+    fullName: '',
     password: '',
     role: 'recepcion',
   })
@@ -75,38 +75,7 @@ export default function AdminUsuariosPage() {
   }
 
   // Filtrados por estado
-  const pendingUsers = users.filter((u) => !u.is_active && !u.is_superadmin)
   const activeUsers = users.filter((u) => u.is_active && !u.is_superadmin)
-
-  // Manejo de roles pendientes antes de aprobar
-  const handlePendingRoleChange = (userId: string, targetRole: string) => {
-    setAssigningRoles((prev) => ({ ...prev, [userId]: targetRole }))
-  }
-
-  const handleApprove = async (userId: string) => {
-    const selectedRole = assigningRoles[userId]
-    if (!selectedRole) {
-      toast.error('Por favor, selecciona un rol primero')
-      return
-    }
-
-    try {
-      const res = await fetch(`/api/users/${userId}/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: selectedRole }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success('Usuario aprobado con éxito')
-        fetchUsers()
-      } else {
-        toast.error(data.error || 'Error al aprobar usuario')
-      }
-    } catch {
-      toast.error('Error de red al aprobar usuario')
-    }
-  }
 
   const handleBlock = async (userId: string) => {
     try {
@@ -188,6 +157,10 @@ export default function AdminUsuariosPage() {
       toast.error('Ingrese el nombre de usuario')
       return
     }
+    if (!newUserData.fullName.trim()) {
+      toast.error('Ingrese el nombre completo')
+      return
+    }
     if (newUserData.password.length < 6) {
       toast.error('La contraseña debe tener al menos 6 caracteres')
       return
@@ -204,7 +177,7 @@ export default function AdminUsuariosPage() {
       if (data.success) {
         toast.success(`Usuario ${newUserData.username} creado con éxito`)
         setIsCreateModalOpen(false)
-        setNewUserData({ username: '', password: '', role: 'recepcion' })
+        setNewUserData({ username: '', fullName: '', password: '', role: 'recepcion' })
         fetchUsers()
       } else {
         toast.error(data.error || 'Error al crear usuario')
@@ -378,75 +351,6 @@ export default function AdminUsuariosPage() {
         </div>
       ) : (
         <>
-          {/* ⏳ PENDIENTES DE APROBACIÓN */}
-          <section className="bg-bg-surface border border-border-subtle rounded-xl p-6">
-            <div className="flex items-center gap-3 border-b border-border-subtle pb-3 mb-4">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400">
-                {pendingUsers.length}
-              </span>
-              <h2 className="text-sm font-bold uppercase tracking-widest text-amber-400">
-                Pendientes de Aprobación
-              </h2>
-            </div>
-
-            {pendingUsers.length === 0 ? (
-              <p className="text-[11px] text-text-muted uppercase italic">
-                No hay solicitudes de registro pendientes de aprobación.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {pendingUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex flex-col gap-3 bg-bg-base border border-border-subtle rounded-lg p-4 transition-all hover:border-amber-500/30"
-                  >
-                    <div>
-                      <div className="text-xs font-bold font-mono tracking-wider text-text-primary">
-                        {user.username}
-                      </div>
-                      <div className="text-[10px] text-text-secondary select-all font-mono mt-0.5">
-                        {user.email}
-                      </div>
-                      <div className="text-[9px] text-text-muted uppercase tracking-wider mt-1">
-                        Registrado el: {new Date(user.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2 items-center mt-2 border-t border-border-subtle/50 pt-2.5">
-                      <select
-                        value={assigningRoles[user.id] || ''}
-                        onChange={(e) => handlePendingRoleChange(user.id, e.target.value)}
-                        className="flex-1 bg-bg-elevated border border-border-subtle text-[11px] uppercase tracking-wider text-text-primary rounded px-2.5 py-1 focus:outline-none focus:border-neon-blue"
-                      >
-                        <option value="">-- Seleccionar Rol --</option>
-                        {validRoles.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
-
-                      <button
-                        onClick={() => handleApprove(user.id)}
-                        disabled={!assigningRoles[user.id]}
-                        className="bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-black text-[10px] font-extrabold uppercase tracking-wider px-3 py-1.5 rounded transition-all"
-                      >
-                        Aprobar
-                      </button>
-
-                      <button
-                        onClick={() => setDeletingUserId(user.id)}
-                        className="bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1.5 rounded transition-all"
-                      >
-                        Rechazar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
           {/* 👥 USUARIOS DEL SISTEMA (ACTIVOS Y BLOQUEADOS) */}
           <section className="bg-bg-surface border border-border-subtle rounded-xl p-6">
             <h2 className="text-sm font-bold uppercase tracking-widest text-neon-blue border-b border-border-subtle pb-3 mb-4">
@@ -462,6 +366,7 @@ export default function AdminUsuariosPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-border-subtle text-[10px] uppercase tracking-widest text-text-muted">
+                      <th className="py-2.5">Nombre Completo</th>
                       <th className="py-2.5">Username</th>
                       <th className="py-2.5">Email</th>
                       <th className="py-2.5">Rol</th>
@@ -472,7 +377,10 @@ export default function AdminUsuariosPage() {
                   <tbody className="divide-y divide-border-subtle/30 text-xs">
                     {activeUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-bg-base/40">
-                        <td className="py-3 font-mono font-semibold tracking-wider text-text-primary">
+                        <td className="py-3 font-semibold text-text-primary">
+                          {user.full_name || <span className="text-text-muted italic font-normal text-[11px]">No asignado</span>}
+                        </td>
+                        <td className="py-3 font-mono font-semibold tracking-wider text-neon-blue">
                           {user.username}
                         </td>
                         <td className="py-3 font-mono text-text-secondary select-all">{user.email}</td>
@@ -538,6 +446,7 @@ export default function AdminUsuariosPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-border-subtle text-[10px] uppercase tracking-widest text-text-muted">
+                      <th className="py-2.5">Nombre Completo</th>
                       <th className="py-2.5">Username</th>
                       <th className="py-2.5">Email</th>
                       <th className="py-2.5">Rol Guardado</th>
@@ -549,6 +458,9 @@ export default function AdminUsuariosPage() {
                       .filter((u) => !u.is_active && u.role !== 'pendiente' && !u.is_superadmin)
                       .map((user) => (
                         <tr key={user.id} className="hover:bg-bg-base/40 opacity-70">
+                          <td className="py-3 font-semibold text-text-primary">
+                            {user.full_name || <span className="text-text-muted italic font-normal text-[11px]">No asignado</span>}
+                          </td>
                           <td className="py-3 font-mono tracking-wider text-text-primary">
                             {user.username}
                           </td>
@@ -609,7 +521,25 @@ export default function AdminUsuariosPage() {
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                  Nombre de Usuario
+                  Nombre Completo
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={creatingUser}
+                  placeholder="ej. Mauricio Beltrán"
+                  value={newUserData.fullName}
+                  onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })}
+                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-sans"
+                />
+                <p className="text-[10px] text-text-muted">
+                  Este es el nombre visible asignado a este inicio de sesión.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Nombre de Usuario (Login)
                 </label>
                 <input
                   type="text"

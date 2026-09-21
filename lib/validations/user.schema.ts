@@ -33,6 +33,9 @@ export const adminCreateUserSchema = z.object({
     .min(3, { message: 'El nombre de usuario debe tener al menos 3 caracteres' })
     .max(20, { message: 'El nombre de usuario no puede exceder los 20 caracteres' })
     .regex(/^[a-zA-Z0-9_]+$/, { message: 'Solo se permiten letras, números y guiones bajos' }),
+  fullName: z.string()
+    .min(3, { message: 'El nombre completo debe tener al menos 3 caracteres' })
+    .max(100, { message: 'El nombre completo no puede exceder los 100 caracteres' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres' }),
   role: z.enum(['admin', 'operaciones', 'recepcion', 'almacen', 'visualizador'], {
     message: 'Seleccione un rol válido',

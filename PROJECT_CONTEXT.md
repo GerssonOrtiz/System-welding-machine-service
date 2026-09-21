@@ -429,3 +429,4 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 | 011 | `011_vip_priorities.sql` | Columna `priority_level` (0-3), recrea vista `equipment_with_status` |
 | 012 | `012_seed_major_brands.sql` | Seed de marcas principales (ESAB, MILLER, LINCOLN, etc.) |
 | 013 | `013_email_thread.sql` | Columnas `email_thread_id TEXT` y `email_cc TEXT[]` en `equipment_records` |
+| 014 | `014_user_full_name.sql` | Columna `full_name TEXT` en `user_profiles` y actualización de trigger `handle_new_user` |

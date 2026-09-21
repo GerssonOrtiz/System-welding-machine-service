@@ -291,6 +291,7 @@ export type Database = {
           is_superadmin: boolean
           role: Database["public"]["Enums"]["user_role_enum"]
           username: string
+          full_name: string | null
         }
         Insert: {
           created_at?: string
@@ -299,6 +300,7 @@ export type Database = {
           is_superadmin?: boolean
           role?: Database["public"]["Enums"]["user_role_enum"]
           username: string
+          full_name?: string | null
         }
         Update: {
           created_at?: string
@@ -307,6 +309,7 @@ export type Database = {
           is_superadmin?: boolean
           role?: Database["public"]["Enums"]["user_role_enum"]
           username?: string
+          full_name?: string | null
         }
         Relationships: []
       }

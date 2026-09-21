@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
       return {
         id: authUser.id,
         username: dbProfile.username || 'SIN_PERFIL',
+        full_name: dbProfile.full_name || authUser.user_metadata?.full_name || null,
         email: authUser.email || 'sin_email@cabelab.com',
         role: dbProfile.role || 'pendiente',
         is_active: !!dbProfile.is_active,

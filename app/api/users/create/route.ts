@@ -37,8 +37,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: firstError }, { status: 400 })
     }
 
-    const { username, password, role } = validation.data
+    const { username, fullName, password, role } = validation.data
     const normalizedUsername = username.toLowerCase().trim()
+    const trimmedFullName = fullName.trim()
     const virtualEmail = `${normalizedUsername}@cabelab.local`
 
     const adminSupabase = createAdminClient()
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
       email_confirm: true,
       user_metadata: {
         username: normalizedUsername,
+        full_name: trimmedFullName,
       },
     })
 
@@ -70,11 +72,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. El trigger on_auth_user_created crea la fila en user_profiles.
-    // Procedemos a actualizar el perfil asignándole el rol elegido y activándolo de inmediato.
+    // Procedemos a actualizar el perfil asignándole el rol, nombre completo y activándolo de inmediato.
     const { data: updatedProfile, error: profileError } = await (adminSupabase
       .from('user_profiles') as any)
       .update({
         role: role,
+        full_name: trimmedFullName,
         is_active: true,
       })
       .eq('id', authUser.user.id)
@@ -83,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       console.error('[POST /api/users/create] Profile update error:', profileError)
-      return NextResponse.json({ success: false, error: 'Usuario creado pero falló la asignación de rol' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Usuario creado pero falló la asignación de perfil' }, { status: 500 })
     }
 
     return NextResponse.json({
@@ -91,6 +94,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: authUser.user.id,
         username: normalizedUsername,
+        full_name: trimmedFullName,
         email: virtualEmail,
         role: role,
         is_active: true,

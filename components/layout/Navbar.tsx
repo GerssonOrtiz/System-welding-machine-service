@@ -44,8 +44,8 @@ export function Navbar() {
       <div className="flex items-center gap-4">
         {/* Info del usuario actual */}
         <div className="hidden sm:flex flex-col text-right">
-          <span className="text-xs font-semibold text-text-primary font-mono leading-none mb-0.5">
-            {profile?.username || user?.email?.split('@')[0] || 'Cargando...'}
+          <span className="text-xs font-semibold text-text-primary font-sans leading-none mb-0.5">
+            {profile?.full_name || profile?.username || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Cargando...'}
           </span>
           <span className="text-[10px] text-text-secondary uppercase tracking-widest leading-none font-semibold">
             {role ? ROLE_LABELS[role] : 'Invitado'}
