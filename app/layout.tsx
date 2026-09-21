@@ -16,8 +16,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CABELAB",
-  description: "Sistema de gestión y seguimiento de equipos - CABELAB",
+  title: {
+    default: "CABELAB — Sistema de Motosoldadoras",
+    template: "%s | CABELAB",
+  },
+  description: "Sistema de gestión operativa para taller de mantenimiento de motosoldadoras — CABELAB, Arequipa, Perú.",
+  authors: [{ name: "Br. Gersson Ortiz" }],
 };
 
 export default function RootLayout({

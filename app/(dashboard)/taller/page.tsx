@@ -1,14 +1,16 @@
-// app/(dashboard)/taller/page.tsx
+﻿// app/(dashboard)/taller/page.tsx
 'use client'
 
 import React, { useState } from 'react'
 import { useEquipmentList } from '@/hooks/useEquipmentList'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { useRealtimePizarra } from '@/hooks/useRealtimePizarra'
 import StatusBadge from '@/components/equipment/StatusBadge'
 import EquipmentDetail from '@/components/equipment/EquipmentDetail'
 import StatusChangeModal from '@/components/equipment/StatusChangeModal'
 
 export default function TallerPage() {
+  usePageTitle('Taller')
   const { equipments, isLoading, mutate } = useEquipmentList(0, false)
   const [selectedEq, setSelectedEq] = useState<any | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -18,8 +20,8 @@ export default function TallerPage() {
   useRealtimePizarra(mutate)
 
   // Filter columns
-  // Columna 1: En diagnóstico (estados: En espera de diagnóstico, En diagnóstico)
-  const col1States = ['En espera de diagnóstico', 'En diagnóstico']
+  // Columna 1: En diagnÃ³stico (estados: En espera de diagnÃ³stico, En diagnÃ³stico)
+  const col1States = ['En espera de diagnÃ³stico', 'En diagnÃ³stico']
   const column1Equipments = equipments.filter((eq: any) => col1States.includes(eq.status_name))
 
   // Columna 2: Aprobados / Mantenimiento
@@ -47,9 +49,9 @@ export default function TallerPage() {
     const isPriority = priorityLevel > 0
 
     const priorityStars = () => {
-      if (priorityLevel === 1) return '⭐'
-      if (priorityLevel === 2) return '⭐⭐'
-      if (priorityLevel === 3) return '⭐⭐⭐'
+      if (priorityLevel === 1) return 'â­'
+      if (priorityLevel === 2) return 'â­â­'
+      if (priorityLevel === 3) return 'â­â­â­'
       return null
     }
 
@@ -95,7 +97,7 @@ export default function TallerPage() {
             <span className="text-text-secondary font-medium truncate">{eq.brand} - {eq.model}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-text-secondary uppercase">Técnico:</span>
+            <span className="text-text-secondary uppercase">TÃ©cnico:</span>
             <span className="text-text-primary truncate">
               {eq.maintenance_tech_username || eq.diagnosis_tech_username || 'SIN ASIGNAR'}
             </span>
@@ -105,14 +107,14 @@ export default function TallerPage() {
         {/* Footer */}
         <div className="flex justify-between items-center pt-2 border-t border-border-subtle/50 text-[10px]">
           <div>
-            <span className="text-text-secondary">{eq.days_elapsed} días transcurridos</span>
+            <span className="text-text-secondary">{eq.days_elapsed} dÃ­as transcurridos</span>
           </div>
 
           <button
             onClick={(e) => handleOpenStatusChange(eq, e)}
             className="px-2.5 py-1 rounded bg-electric/90 text-white font-bold uppercase hover:bg-electric transition-colors"
           >
-            Cambiar →
+            Cambiar â†’
           </button>
         </div>
       </div>
@@ -123,9 +125,9 @@ export default function TallerPage() {
     <div className="space-y-6 font-sans text-text-primary p-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase">🔧 Vista de Taller (Operaciones)</h1>
+        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase">ðŸ”§ Vista de Taller (Operaciones)</h1>
         <p className="text-text-secondary text-xs mt-1">
-          Seguimiento de diagnósticos y mantenimientos de motosoldadoras asignadas al taller.
+          Seguimiento de diagnÃ³sticos y mantenimientos de motosoldadoras asignadas al taller.
         </p>
       </div>
 
@@ -137,16 +139,16 @@ export default function TallerPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[60vh]">
-          {/* Columna 1: En diagnóstico */}
+          {/* Columna 1: En diagnÃ³stico */}
           <div className="bg-bg-surface/30 border border-border-subtle rounded-xl p-5 space-y-4">
             <div className="flex justify-between items-center border-b border-border-subtle pb-2">
               <h2 className="text-sm font-bold uppercase tracking-wider text-neon-blue">
-                🔬 En Diagnóstico ({column1Equipments.length})
+                ðŸ”¬ En DiagnÃ³stico ({column1Equipments.length})
               </h2>
             </div>
             <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin">
               {column1Equipments.length === 0 ? (
-                <p className="text-xs text-text-secondary text-center py-8">No hay equipos en diagnóstico.</p>
+                <p className="text-xs text-text-secondary text-center py-8">No hay equipos en diagnÃ³stico.</p>
               ) : (
                 column1Equipments.map(renderCard)
               )}
@@ -157,7 +159,7 @@ export default function TallerPage() {
           <div className="bg-bg-surface/30 border border-border-subtle rounded-xl p-5 space-y-4">
             <div className="flex justify-between items-center border-b border-border-subtle pb-2">
               <h2 className="text-sm font-bold uppercase tracking-wider text-emerald-400">
-                🛠️ Aprobados / En Mantenimiento ({column2Equipments.length})
+                ðŸ› ï¸ Aprobados / En Mantenimiento ({column2Equipments.length})
               </h2>
             </div>
             <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin">
@@ -186,7 +188,7 @@ export default function TallerPage() {
         />
       )}
 
-      {/* Modal Cambio de Estado Autónomo */}
+      {/* Modal Cambio de Estado AutÃ³nomo */}
       {selectedEq && (
         <EquipmentDetail
           isOpen={isChangeStatusOpen}

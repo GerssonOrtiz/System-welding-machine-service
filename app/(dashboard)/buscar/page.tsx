@@ -1,12 +1,14 @@
-// app/(dashboard)/buscar/page.tsx
+﻿// app/(dashboard)/buscar/page.tsx
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import { useEquipmentSearch } from '@/hooks/useEquipmentList'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import StatusBadge from '@/components/equipment/StatusBadge'
 import EquipmentDetail from '@/components/equipment/EquipmentDetail'
 
 export default function BuscarPage() {
+  usePageTitle('Búsqueda')
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedTerm, setDebouncedTerm] = useState('')
   const [selectedEqId, setSelectedEqId] = useState<string | null>(null)
@@ -31,9 +33,9 @@ export default function BuscarPage() {
     <div className="space-y-6 font-sans text-text-primary p-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase">🔍 Búsqueda de Equipos</h1>
+        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase">ðŸ” BÃºsqueda de Equipos</h1>
         <p className="text-text-secondary text-xs mt-1">
-          Busque motosoldadoras ingresando Ficha de Recepción, cliente, marca, modelo o número de serie.
+          Busque motosoldadoras ingresando Ficha de RecepciÃ³n, cliente, marca, modelo o nÃºmero de serie.
         </p>
       </div>
 
@@ -41,7 +43,7 @@ export default function BuscarPage() {
       <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-sm">
         <div className="relative">
           <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-text-secondary text-base">
-            🔍
+            ðŸ”
           </span>
           <input
             type="text"
@@ -52,7 +54,7 @@ export default function BuscarPage() {
           />
         </div>
         {searchTerm.trim().length > 0 && searchTerm.trim().length < 2 && (
-          <p className="text-red-400 text-xs mt-2">Ingrese al menos 2 caracteres para iniciar la búsqueda.</p>
+          <p className="text-red-400 text-xs mt-2">Ingrese al menos 2 caracteres para iniciar la bÃºsqueda.</p>
         )}
       </div>
 
@@ -61,7 +63,7 @@ export default function BuscarPage() {
         <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 space-y-4">
           <div className="flex justify-between items-center border-b border-border-subtle pb-2">
             <h2 className="text-xs font-bold uppercase tracking-wider text-neon-blue">
-              Resultados de Búsqueda ({total})
+              Resultados de BÃºsqueda ({total})
             </h2>
             {isLoading && (
               <span className="text-[10px] text-neon-blue animate-pulse font-mono uppercase tracking-widest">
@@ -71,7 +73,7 @@ export default function BuscarPage() {
           </div>
 
           {isError && (
-            <p className="text-xs text-red-400 text-center py-4">{errorMsg || 'Error al realizar la búsqueda'}</p>
+            <p className="text-xs text-red-400 text-center py-4">{errorMsg || 'Error al realizar la bÃºsqueda'}</p>
           )}
 
           {!isLoading && results.length === 0 ? (
@@ -95,7 +97,7 @@ export default function BuscarPage() {
                         </span>
                         <StatusBadge status={eq.status_name} color={eq.status_color} />
                         {isDelayed && (
-                          <span className="text-red-500 font-bold text-[10px] animate-pulse">⚠️ ATRASADO</span>
+                          <span className="text-red-500 font-bold text-[10px] animate-pulse">âš ï¸ ATRASADO</span>
                         )}
                       </div>
                       <div className="text-xs text-text-secondary">
@@ -105,7 +107,7 @@ export default function BuscarPage() {
 
                     <div className="flex items-center gap-4 text-xs">
                       <span className="text-text-secondary">
-                        {eq.days_elapsed} días transcurridos
+                        {eq.days_elapsed} dÃ­as transcurridos
                       </span>
                       <button className="px-3 py-1 text-[10px] font-semibold border border-neon-blue text-neon-blue rounded hover:bg-neon-blue/10 uppercase transition-all">
                         Detalle

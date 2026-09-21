@@ -1,4 +1,4 @@
-// app/(dashboard)/perfil/page.tsx
+﻿// app/(dashboard)/perfil/page.tsx
 'use client'
 
 import { useState } from 'react'
@@ -7,10 +7,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/hooks/useUser'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { passwordChangeSchema, type PasswordChangeInput } from '@/lib/validations/user.schema'
 import { ROLE_LABELS } from '@/types/user'
 
 export default function ProfilePage() {
+  usePageTitle('Mi Perfil')
   const { user, profile, role, isSuperadmin, loading: userLoading } = useUser()
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
@@ -27,34 +29,34 @@ export default function ProfilePage() {
   const onSubmit = async (data: PasswordChangeInput) => {
     setLoading(true)
     try {
-      // 1. Validar la contraseña actual re-autenticando al usuario (según el flujo requerido por Supabase)
+      // 1. Validar la contraseÃ±a actual re-autenticando al usuario (segÃºn el flujo requerido por Supabase)
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user?.email || '',
         password: data.currentPassword,
       })
 
       if (signInError) {
-        toast.error('La contraseña actual es incorrecta')
+        toast.error('La contraseÃ±a actual es incorrecta')
         setLoading(false)
         return
       }
 
-      // 2. Actualizar la contraseña del usuario actual
+      // 2. Actualizar la contraseÃ±a del usuario actual
       const { error: updateError } = await supabase.auth.updateUser({
         password: data.newPassword,
       })
 
       if (updateError) {
-        toast.error(updateError.message || 'Error al actualizar la contraseña')
+        toast.error(updateError.message || 'Error al actualizar la contraseÃ±a')
         setLoading(false)
         return
       }
 
-      toast.success('Contraseña actualizada con éxito')
+      toast.success('ContraseÃ±a actualizada con Ã©xito')
       reset()
     } catch (err) {
       console.error(err)
-      toast.error('Ocurrió un error inesperado al actualizar la contraseña')
+      toast.error('OcurriÃ³ un error inesperado al actualizar la contraseÃ±a')
     } finally {
       setLoading(false)
     }
@@ -75,7 +77,7 @@ export default function ProfilePage() {
     <div className="flex-1 bg-bg-base p-6 md:p-8 font-sans antialiased max-w-4xl mx-auto w-full selection:bg-neon-blue selection:text-bg-base">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-wider text-text-primary uppercase">
-          CONFIGURACIÓN DE PERFIL
+          CONFIGURACIÃ“N DE PERFIL
         </h1>
         <p className="text-text-secondary text-sm mt-1">
           Gestiona los detalles de tu cuenta y seguridad de acceso
@@ -84,7 +86,7 @@ export default function ProfilePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        {/* Tarjeta de Información General */}
+        {/* Tarjeta de InformaciÃ³n General */}
         <div className="md:col-span-1 bg-bg-surface border border-white/6 rounded-xl p-6 h-fit relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon-purple to-transparent opacity-60" />
           <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-4 font-mono text-neon-purple">
@@ -102,7 +104,7 @@ export default function ProfilePage() {
               <span className="text-sm font-semibold text-text-primary font-mono">{profile?.username || 'Sin username'}</span>
             </div>
             <div>
-              <span className="block text-xxs font-semibold text-text-secondary uppercase tracking-wider">Correo Electrónico</span>
+              <span className="block text-xxs font-semibold text-text-secondary uppercase tracking-wider">Correo ElectrÃ³nico</span>
               <span className="text-sm font-semibold text-text-primary">{user?.email || 'Sin correo'}</span>
             </div>
             <div>
@@ -122,22 +124,22 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Tarjeta de Cambio de Contraseña */}
+        {/* Tarjeta de Cambio de ContraseÃ±a */}
         <div className="md:col-span-2 bg-bg-surface border border-white/6 rounded-xl p-6 relative overflow-hidden group hover:border-neon-blue/20 transition-all duration-300">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-60" />
           <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-5 font-mono text-neon-blue">
-            Cambiar Contraseña
+            Cambiar ContraseÃ±a
           </h2>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                Contraseña Actual
+                ContraseÃ±a Actual
               </label>
               <input
                 type="password"
                 disabled={loading}
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 {...register('currentPassword')}
                 className={`w-full bg-white/3 border ${
                   errors.currentPassword ? 'border-red-500/50 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : 'border-white/8 focus:border-neon-blue/50 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)]'
@@ -150,12 +152,12 @@ export default function ProfilePage() {
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                Nueva Contraseña
+                Nueva ContraseÃ±a
               </label>
               <input
                 type="password"
                 disabled={loading}
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 {...register('newPassword')}
                 className={`w-full bg-white/3 border ${
                   errors.newPassword ? 'border-red-500/50 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : 'border-white/8 focus:border-neon-blue/50 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)]'
@@ -168,12 +170,12 @@ export default function ProfilePage() {
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                Confirmar Nueva Contraseña
+                Confirmar Nueva ContraseÃ±a
               </label>
               <input
                 type="password"
                 disabled={loading}
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 {...register('confirmNewPassword')}
                 className={`w-full bg-white/3 border ${
                   errors.confirmNewPassword ? 'border-red-500/50 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : 'border-white/8 focus:border-neon-blue/50 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)]'
@@ -192,7 +194,7 @@ export default function ProfilePage() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                'ACTUALIZAR CONTRASEÑA'
+                'ACTUALIZAR CONTRASEÃ‘A'
               )}
             </button>
           </form>

@@ -1,12 +1,14 @@
-// app/(dashboard)/admin/usuarios/page.tsx
+﻿// app/(dashboard)/admin/usuarios/page.tsx
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import { useUser } from '@/hooks/useUser'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { toast } from 'sonner'
 import TechnicianManager from '@/components/admin/TechnicianManager'
 
 export default function AdminUsuariosPage() {
+  usePageTitle('Usuarios')
   const { role, loading: userLoading } = useUser()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,12 +26,12 @@ export default function AdminUsuariosPage() {
     role: 'recepcion',
   })
 
-  // Estados para restablecer contraseña
+  // Estados para restablecer contraseÃ±a
   const [resetPasswordTarget, setResetPasswordTarget] = useState<{ id: string; username: string } | null>(null)
   const [resettingPassword, setResettingPassword] = useState(false)
   const [newPasswordValue, setNewPasswordValue] = useState('')
 
-  // Roles válidos para asignar (excluyendo superadmin)
+  // Roles vÃ¡lidos para asignar (excluyendo superadmin)
   const validRoles = ['admin', 'operaciones', 'recepcion', 'almacen', 'visualizador']
 
   const fetchUsers = async () => {
@@ -68,7 +70,7 @@ export default function AdminUsuariosPage() {
       <div className="flex flex-col items-center justify-center h-[60vh] gap-2 p-6">
         <h2 className="text-xl font-extrabold uppercase text-red-500 tracking-wider">Acceso Restringido</h2>
         <p className="text-text-secondary text-sm max-w-md text-center">
-          Esta sección está disponible exclusivamente para el rol de Superadministrador.
+          Esta secciÃ³n estÃ¡ disponible exclusivamente para el rol de Superadministrador.
         </p>
       </div>
     )
@@ -84,7 +86,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Usuario bloqueado con éxito')
+        toast.success('Usuario bloqueado con Ã©xito')
         fetchUsers()
       } else {
         toast.error(data.error || 'Error al bloquear usuario')
@@ -96,7 +98,7 @@ export default function AdminUsuariosPage() {
 
   const handleReactivate = async (userId: string, userRole: string) => {
     try {
-      // Para reactivar, usamos el endpoint de aprobación pasándole su rol actual
+      // Para reactivar, usamos el endpoint de aprobaciÃ³n pasÃ¡ndole su rol actual
       const res = await fetch(`/api/users/${userId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -104,7 +106,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Usuario reactivado con éxito')
+        toast.success('Usuario reactivado con Ã©xito')
         fetchUsers()
       } else {
         toast.error(data.error || 'Error al reactivar usuario')
@@ -123,7 +125,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Rol actualizado con éxito')
+        toast.success('Rol actualizado con Ã©xito')
         fetchUsers()
       } else {
         toast.error(data.error || 'Error al cambiar rol')
@@ -162,7 +164,7 @@ export default function AdminUsuariosPage() {
       return
     }
     if (newUserData.password.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres')
+      toast.error('La contraseÃ±a debe tener al menos 6 caracteres')
       return
     }
 
@@ -175,7 +177,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success(`Usuario ${newUserData.username} creado con éxito`)
+        toast.success(`Usuario ${newUserData.username} creado con Ã©xito`)
         setIsCreateModalOpen(false)
         setNewUserData({ username: '', fullName: '', password: '', role: 'recepcion' })
         fetchUsers()
@@ -193,7 +195,7 @@ export default function AdminUsuariosPage() {
     e.preventDefault()
     if (!resetPasswordTarget) return
     if (newPasswordValue.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres')
+      toast.error('La contraseÃ±a debe tener al menos 6 caracteres')
       return
     }
 
@@ -206,14 +208,14 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success(data.message || 'Contraseña actualizada con éxito')
+        toast.success(data.message || 'ContraseÃ±a actualizada con Ã©xito')
         setResetPasswordTarget(null)
         setNewPasswordValue('')
       } else {
-        toast.error(data.error || 'Error al restablecer contraseña')
+        toast.error(data.error || 'Error al restablecer contraseÃ±a')
       }
     } catch {
-      toast.error('Error de red al restablecer contraseña')
+      toast.error('Error de red al restablecer contraseÃ±a')
     } finally {
       setResettingPassword(false)
     }
@@ -235,7 +237,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Importación finalizada')
+        toast.success('ImportaciÃ³n finalizada')
         setImportResults(data.data)
       } else {
         toast.error(data.error || 'Error al importar datos')
@@ -255,24 +257,24 @@ export default function AdminUsuariosPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-extrabold uppercase tracking-widest text-neon-blue">
-            🛡️ Control de Acceso y Usuarios
+            ðŸ›¡ï¸ Control de Acceso y Usuarios
           </h1>
           <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">
             Panel exclusivo para el Superadministrador. Gestiona solicitudes, roles, accesos e importaciones.
           </p>
         </div>
 
-        {/* Botones de Acción */}
+        {/* Botones de AcciÃ³n */}
         <div className="flex flex-wrap gap-2.5">
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="bg-electric hover:brightness-110 active:scale-[0.98] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)] flex items-center gap-1.5"
           >
-            <span>➕</span> Crear Usuario
+            <span>âž•</span> Crear Usuario
           </button>
 
           <label className="cursor-pointer bg-bg-surface hover:bg-bg-surface/80 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2 rounded transition-all select-none">
-            {importing ? 'Importando...' : '📥 Importar Equipos (Excel)'}
+            {importing ? 'Importando...' : 'ðŸ“¥ Importar Equipos (Excel)'}
             <input
               type="file"
               accept=".xlsx"
@@ -287,17 +289,17 @@ export default function AdminUsuariosPage() {
             download
             className="bg-bg-surface hover:bg-bg-surface/80 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2 rounded transition-all inline-block select-none"
           >
-            📤 Exportar Excel
+            ðŸ“¤ Exportar Excel
           </a>
         </div>
       </div>
 
-      {/* Resumen de Importación */}
+      {/* Resumen de ImportaciÃ³n */}
       {importResults && (
         <div className="bg-bg-surface border border-neon-blue/30 rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-border-subtle pb-3">
             <h3 className="text-xs font-bold uppercase tracking-widest text-neon-blue">
-              Resumen del Proceso de Importación
+              Resumen del Proceso de ImportaciÃ³n
             </h3>
             <button
               onClick={() => setImportResults(null)}
@@ -333,7 +335,7 @@ export default function AdminUsuariosPage() {
               <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin text-[11px] font-mono">
                 {importResults.errors.map((err: any, idx: number) => (
                   <div key={idx} className="bg-red-500/5 border border-red-500/10 rounded px-3 py-1.5 text-red-300">
-                    Fila {err.row} {err.fr ? `(FR: ${err.fr})` : ''} — {err.reason}
+                    Fila {err.row} {err.fr ? `(FR: ${err.fr})` : ''} â€” {err.reason}
                   </div>
                 ))}
               </div>
@@ -342,7 +344,7 @@ export default function AdminUsuariosPage() {
         </div>
       )}
 
-      {/* 👤 GESTIÓN DE PERSONAL TÉCNICO */}
+      {/* ðŸ‘¤ GESTIÃ“N DE PERSONAL TÃ‰CNICO */}
       <TechnicianManager />
 
       {loading ? (
@@ -351,7 +353,7 @@ export default function AdminUsuariosPage() {
         </div>
       ) : (
         <>
-          {/* 👥 USUARIOS DEL SISTEMA (ACTIVOS Y BLOQUEADOS) */}
+          {/* ðŸ‘¥ USUARIOS DEL SISTEMA (ACTIVOS Y BLOQUEADOS) */}
           <section className="bg-bg-surface border border-border-subtle rounded-xl p-6">
             <h2 className="text-sm font-bold uppercase tracking-widest text-neon-blue border-b border-border-subtle pb-3 mb-4">
               Usuarios del Sistema
@@ -359,7 +361,7 @@ export default function AdminUsuariosPage() {
 
             {activeUsers.length === 0 ? (
               <p className="text-[11px] text-text-muted uppercase italic">
-                Ningún usuario registrado en la base de datos.
+                NingÃºn usuario registrado en la base de datos.
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -410,9 +412,9 @@ export default function AdminUsuariosPage() {
                                 setNewPasswordValue('')
                               }}
                               className="border border-neon-blue/30 hover:bg-neon-blue/10 text-neon-blue text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
-                              title="Cambiar contraseña de este usuario"
+                              title="Cambiar contraseÃ±a de este usuario"
                             >
-                              🔑 Clave
+                              ðŸ”‘ Clave
                             </button>
                             <button
                               onClick={() => handleBlock(user.id)}
@@ -436,7 +438,7 @@ export default function AdminUsuariosPage() {
             )}
           </section>
 
-          {/* 🚫 USUARIOS BLOQUEADOS */}
+          {/* ðŸš« USUARIOS BLOQUEADOS */}
           {users.some((u) => !u.is_active && u.role !== 'pendiente' && !u.is_superadmin) && (
             <section className="bg-bg-surface border border-border-subtle rounded-xl p-6">
               <h2 className="text-sm font-bold uppercase tracking-widest text-red-400 border-b border-border-subtle pb-3 mb-4">
@@ -474,9 +476,9 @@ export default function AdminUsuariosPage() {
                                   setNewPasswordValue('')
                                 }}
                                 className="border border-neon-blue/30 hover:bg-neon-blue/10 text-neon-blue text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
-                                title="Cambiar contraseña de este usuario"
+                                title="Cambiar contraseÃ±a de este usuario"
                               >
-                                🔑 Clave
+                                ðŸ”‘ Clave
                               </button>
                               <button
                                 onClick={() => handleReactivate(user.id, user.role)}
@@ -502,19 +504,19 @@ export default function AdminUsuariosPage() {
         </>
       )}
 
-      {/* ➕ MODAL CREAR USUARIO */}
+      {/* âž• MODAL CREAR USUARIO */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-bg-surface border border-neon-blue/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
             <div className="flex items-center justify-between border-b border-border-subtle pb-3">
               <h3 className="text-base font-extrabold uppercase text-neon-blue tracking-wider">
-                ➕ Registrar Nuevo Usuario
+                âž• Registrar Nuevo Usuario
               </h3>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
                 className="text-text-muted hover:text-white text-sm font-bold"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -527,13 +529,13 @@ export default function AdminUsuariosPage() {
                   type="text"
                   required
                   disabled={creatingUser}
-                  placeholder="ej. Mauricio Beltrán"
+                  placeholder="ej. Mauricio BeltrÃ¡n"
                   value={newUserData.fullName}
                   onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })}
                   className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-sans"
                 />
                 <p className="text-[10px] text-text-muted">
-                  Este es el nombre visible asignado a este inicio de sesión.
+                  Este es el nombre visible asignado a este inicio de sesiÃ³n.
                 </p>
               </div>
 
@@ -551,20 +553,20 @@ export default function AdminUsuariosPage() {
                   className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
                 />
                 <p className="text-[10px] text-text-muted">
-                  Se le asignará automáticamente el correo <span className="font-mono text-neon-blue">{newUserData.username.toLowerCase() || 'usuario'}@cabelab.local</span>
+                  Se le asignarÃ¡ automÃ¡ticamente el correo <span className="font-mono text-neon-blue">{newUserData.username.toLowerCase() || 'usuario'}@cabelab.local</span>
                 </p>
               </div>
 
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                  Contraseña Inicial
+                  ContraseÃ±a Inicial
                 </label>
                 <input
                   type="password"
                   required
                   minLength={6}
                   disabled={creatingUser}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="MÃ­nimo 6 caracteres"
                   value={newUserData.password}
                   onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
                   className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
@@ -610,37 +612,37 @@ export default function AdminUsuariosPage() {
         </div>
       )}
 
-      {/* 🔑 MODAL RESTABLECER CONTRASEÑA */}
+      {/* ðŸ”‘ MODAL RESTABLECER CONTRASEÃ‘A */}
       {resetPasswordTarget && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-bg-surface border border-neon-blue/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
             <div className="flex items-center justify-between border-b border-border-subtle pb-3">
               <h3 className="text-base font-extrabold uppercase text-neon-blue tracking-wider">
-                🔑 Cambiar Contraseña de Usuario
+                ðŸ”‘ Cambiar ContraseÃ±a de Usuario
               </h3>
               <button
                 onClick={() => setResetPasswordTarget(null)}
                 className="text-text-muted hover:text-white text-sm font-bold"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
             <p className="text-xs text-text-secondary">
-              Establecer una nueva contraseña para el usuario <strong className="text-neon-blue font-mono">{resetPasswordTarget.username}</strong>.
+              Establecer una nueva contraseÃ±a para el usuario <strong className="text-neon-blue font-mono">{resetPasswordTarget.username}</strong>.
             </p>
 
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                  Nueva Contraseña
+                  Nueva ContraseÃ±a
                 </label>
                 <input
                   type="password"
                   required
                   minLength={6}
                   disabled={resettingPassword}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="MÃ­nimo 6 caracteres"
                   value={newPasswordValue}
                   onChange={(e) => setNewPasswordValue(e.target.value)}
                   className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
@@ -660,7 +662,7 @@ export default function AdminUsuariosPage() {
                   disabled={resettingPassword}
                   className="bg-electric hover:brightness-110 disabled:opacity-50 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)]"
                 >
-                  {resettingPassword ? 'Guardando...' : 'Actualizar Contraseña'}
+                  {resettingPassword ? 'Guardando...' : 'Actualizar ContraseÃ±a'}
                 </button>
               </div>
             </form>
@@ -668,15 +670,15 @@ export default function AdminUsuariosPage() {
         </div>
       )}
 
-      {/* ⚠️ MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+      {/* âš ï¸ MODAL DE CONFIRMACIÃ“N DE ELIMINACIÃ“N */}
       {deletingUserId && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-bg-surface border border-red-500/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
             <h3 className="text-base font-extrabold uppercase text-red-400 tracking-wider">
-              ¿Eliminar Usuario Permanentemente?
+              Â¿Eliminar Usuario Permanentemente?
             </h3>
             <p className="text-xs text-text-secondary">
-              Esta acción no se puede deshacer. Se removerán los perfiles del usuario en el sistema de autenticación de Supabase y en la base de datos de manera definitiva.
+              Esta acciÃ³n no se puede deshacer. Se removerÃ¡n los perfiles del usuario en el sistema de autenticaciÃ³n de Supabase y en la base de datos de manera definitiva.
             </p>
             <div className="flex gap-3 justify-end pt-2 border-t border-border-subtle/50">
               <button
@@ -689,7 +691,7 @@ export default function AdminUsuariosPage() {
                 onClick={() => handleDelete(deletingUserId)}
                 className="bg-red-500 hover:bg-red-600 text-black text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
               >
-                Confirmar Eliminación
+                Confirmar EliminaciÃ³n
               </button>
             </div>
           </div>

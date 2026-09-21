@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { loginSchema, type LoginInput } from '@/lib/validations/user.schema'
 import { ROLE_HOME_ROUTE, type UserProfile } from '@/types/user'
+import { CabelabLogo } from '@/components/ui/CabelabLogo'
 
 function LoginContent() {
   const [loading, setLoading] = useState(false)
@@ -98,16 +99,13 @@ function LoginContent() {
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-60" />
 
         {/* Encabezado */}
-        <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-neon-blue/10 border border-neon-blue/20 text-neon-blue mb-4 shadow-[0_0_15px_rgba(0,229,255,0.1)]">
-            <span className="font-mono font-bold text-xl">CL</span>
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <CabelabLogo size={36} />
+          <div className="text-center">
+            <p className="text-text-secondary text-xs mt-1">
+              Taller de Motosoldadoras — Arequipa, Perú
+            </p>
           </div>
-          <h1 className="text-2xl font-bold tracking-wider text-text-primary uppercase font-sans">
-            CABELAB <span className="text-neon-blue font-mono font-normal"> SYSTEM</span>
-          </h1>
-          <p className="text-text-secondary text-sm mt-1">
-            Sistema operativo de control
-          </p>
         </div>
 
         {/* Formulario */}
@@ -161,7 +159,16 @@ function LoginContent() {
           </button>
         </form>
 
-
+        {/* Footer de autoría */}
+        <div className="mt-6 pt-5 border-t border-white/6 text-center space-y-0.5">
+          <p className="text-[10px] text-text-muted font-mono">
+            Desarrollado por{' '}
+            <span className="text-text-secondary font-semibold">Br. Gersson Ortiz</span>
+          </p>
+          <p className="text-[10px] text-text-muted font-mono">
+            CABELAB v2.4 · Arequipa, Perú · {new Date().getFullYear()}
+          </p>
+        </div>
 
       </div>
     </div>

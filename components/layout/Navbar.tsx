@@ -6,6 +6,8 @@ import { useUser } from '@/hooks/useUser'
 import { useRouter } from 'next/navigation'
 import { ROLE_LABELS } from '@/types/user'
 import { toast } from 'sonner'
+import { CabelabLogo } from '@/components/ui/CabelabLogo'
+import { LogOut } from 'lucide-react'
 
 export function Navbar() {
   const { user, profile, role, isSuperadmin } = useUser()
@@ -30,14 +32,17 @@ export function Navbar() {
 
   return (
     <header className="h-14 bg-bg-surface border-b border-white/6 px-6 flex items-center justify-between sticky top-0 z-40 selection:bg-neon-blue selection:text-bg-base font-sans">
-      {/* Sección Izquierda: Logo */}
+      {/* Sección Izquierda: Logo y autoría */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-8 h-8 rounded bg-neon-blue/10 border border-neon-blue/20 text-neon-blue font-mono font-bold text-sm">
-          CL
+        <CabelabLogo size={28} compact />
+        <div className="flex flex-col">
+          <span className="font-bold tracking-wider text-xs text-text-primary uppercase flex items-center gap-1.5">
+            CABELAB <span className="text-neon-blue font-mono font-medium text-[10px]">SYSTEM</span>
+          </span>
+          <span className="text-[9px] text-text-muted font-mono hidden md:inline">
+            por <strong className="text-text-secondary font-medium">Br. Gersson Ortiz</strong>
+          </span>
         </div>
-        <span className="font-bold tracking-wider text-sm text-text-primary uppercase">
-          CABELAB <span className="text-neon-blue font-mono font-normal"></span>
-        </span>
       </div>
 
       {/* Sección Derecha: Información de usuario y Logout */}

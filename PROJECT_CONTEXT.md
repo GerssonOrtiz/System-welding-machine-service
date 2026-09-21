@@ -23,6 +23,7 @@
 | Iconos | Lucide React | ^1.18.0 |
 | Formularios | react-hook-form + Zod | ^7 + ^4 |
 | Notificaciones UI | Sonner (Toasts) | ^2.0.7 |
+| Códigos QR | qrcode.react (SVG / Canvas) | ^4.2.0 |
 | Email | Resend | ^6.12.4 — **pendiente configurar RESEND_API_KEY** |
 | Export | xlsx | ^0.18.5 |
 | UI Primitives | Radix UI (Dialog, Select, Dropdown) | — |
@@ -36,14 +37,16 @@ Next.js App Router
 ├── app/                   → Páginas y API Routes (server-side por defecto)
 │   ├── (auth)/            → Rutas públicas: /login, /register
 │   ├── (dashboard)/       → Rutas protegidas con layout compartido
+│   ├── doc/               → Ruta pública para escaneo QR de motosoldadoras (/doc/[serial])
 │   ├── admin/             → Páginas de administración (fuera del layout dashboard)
 │   └── api/               → API Routes (REST, server-side)
+│       └── public/        → API Routes públicas sin autenticación (/api/public/equipment/...)
 ├── components/            → Componentes React reutilizables (client-side)
 │   └── equipment/modals/  → Sub-modales de correo por evento de estado
 ├── lib/                   → Lógica de servidor: Supabase, workflow, validaciones, mail
 ├── hooks/                 → Custom hooks SWR (client-side data fetching)
 ├── types/                 → Tipos TypeScript derivados del esquema de BD
-└── supabase/migrations/   → Historial SQL del esquema (001–013)
+└── supabase/migrations/   → Historial SQL del esquema (001–015)
 ```
 
 **Patrón de renderizado:** Server Components por defecto en `app/`. Directiva `'use client'` solo donde se necesita estado/interactividad. Las API Routes actúan como capa de acceso a Supabase desde el cliente.
@@ -54,6 +57,9 @@ Next.js App Router
 
 ### `/app/(auth)/`
 - `login/page.tsx` — Formulario de login. Autenticación por nombre de usuario → email virtual `usuario@cabelab.local`. Registro público deshabilitado (solo superadmin crea cuentas).
+
+### `/app/doc/`
+- `[serial]/page.tsx` — **Página pública de documentación técnica y trazabilidad por QR**. Responsiva para móviles, exenta de autenticación en `middleware.ts`. Muestra datos del equipo, botón destacado para ver/descargar el último informe en Google Drive, y línea cronológica de todos los servicios anteriores.
 
 ### `/app/(dashboard)/`
 Layout en `layout.tsx` incluye `Sidebar` y `Navbar`. Rutas hijas:
@@ -75,7 +81,7 @@ Layout en `layout.tsx` incluye `Sidebar` y `Navbar`. Rutas hijas:
 - `catalog/page.tsx` — Gestión de catálogo (marcas, modelos, repuestos). Fuera del layout dashboard para diseño full-screen.
 
 ### `/app/api/`
-Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
+Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, salvo `/api/public/` que usa `createAdminClient()`.
 | Endpoint | Método | Función |
 |---|---|---|
 | `/api/equipment` | GET | Listado paginado con filtros y permisos por rol |
@@ -84,11 +90,13 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
 | `/api/equipment/[id]` | PATCH | Actualizar campos (superadmin puede editar timestamps) |
 | `/api/equipment/[id]` | DELETE | Eliminar (solo superadmin/admin) |
 | `/api/equipment/search` | GET | Búsqueda por FR, cliente, serie |
-| `/api/equipment/serial/[serial]` | GET | DNA: historial completo por número de serie |
+| `/api/equipment/serial/[serial]` | GET | DNA: historial completo por número de serie (autenticado) |
+| `/api/public/equipment/serial/[serial]` | GET | **Público**: consulta de ficha técnica, último informe PDF e intervenciones por QR |
 | `/api/equipment/export` | GET | Exportar a Excel (.xlsx) |
 | `/api/equipment/import` | POST | Importar desde Excel |
-| `/api/equipment/create` | POST | Creación de equipo. Guarda `email_thread_id` y `email_cc` |
-| `/api/equipment/[id]/update-status` | POST | Cambio de estado. Detecta estado destino y dispara correo-reply específico. Acepta JSON o FormData (informe ODP con PDF) |
+| `/api/equipment/create` | POST | Creación de equipo. Guarda `email_thread_id`, `email_cc` y `report_url` |
+| `/api/equipment/[id]/update-status` | POST | Cambio de estado. Detecta estado destino y dispara correo-reply específico. Acepta JSON o FormData (informe ODP con PDF y `report_url`) |
+| `/api/equipment/[id]/update` | PUT | Edición completa por superadmin (incluye `report_url`) |
 | `/api/equipment/[id]/force-status` | POST | Override de estado (solo superadmin). Notificación por correo opcional |
 | `/api/workflow/states` | GET/POST | CRUD de estados del workflow |
 | `/api/workflow/transitions` | GET/POST | CRUD de transiciones del workflow |
@@ -107,8 +115,9 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
 | `layout/Sidebar.tsx` | Navegación lateral. Items visibles según `SIDEBAR_ITEMS_BY_ROLE` del tipo `user.ts` |
 | `layout/Navbar.tsx` | Barra superior con usuario activo y logout |
 | `equipment/EquipmentForm.tsx` | Formulario de creación/edición. Incluye selector de CC para el correo de ingreso |
-| `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Historial, cambio de estado, edición de timestamps (superadmin) |
-| `equipment/EquipmentTable.tsx` | Tabla paginada con indicadores VIP y filtros |
+| `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Historial, cambio de estado, edición de timestamps (superadmin), botón de QR y visualización de informe |
+| `equipment/EquipmentTable.tsx` | Tabla paginada con indicadores VIP, filtros y botón directo de etiqueta QR |
+| `equipment/QRPrintModal.tsx` | Modal con generación de código QR (qrcode.react) e impresión optimizada de etiqueta física |
 | `equipment/StatusChangeModal.tsx` | Modal principal de cambio de estado. Renderiza sub-modales de correo según estado destino |
 | `equipment/StatusBadge.tsx` | Badge de color dinámico según `status_color` de la vista |
 | `equipment/ClientSelector.tsx` | Búsqueda predictiva de clientes existentes + registro de nuevos |
@@ -171,11 +180,12 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`.
 | `parts_catalog` | `part_number` UNIQUE, `name`, `specifications` |
 | `part_compatibilities` | JOIN table parts ↔ models |
 
-### Columnas de correo en `equipment_records` (migración 013)
-| Columna | Tipo | Descripción |
-|---|---|---|
-| `email_thread_id` | `TEXT` | Message-ID devuelto por Resend al enviar el correo de ingreso. Se usa como `In-Reply-To` en todos los replies del hilo |
-| `email_cc` | `TEXT[]` | Correos CC elegidos al ingresar el equipo. Se reutilizan en todos los correos del hilo |
+### Columnas de correo y documentación en `equipment_records`
+| Columna | Tipo | Migración | Descripción |
+|---|---|---|---|
+| `email_thread_id` | `TEXT` | 013 | Message-ID devuelto por Resend al enviar el correo de ingreso. Se usa como `In-Reply-To` en todos los replies del hilo |
+| `email_cc` | `TEXT[]` | 013 | Correos CC elegidos al ingresar el equipo. Se reutilizan en todos los correos del hilo |
+| `report_url` | `TEXT` | 015 | Enlace directo al PDF del informe técnico (Google Drive u otro). Se muestra en la página pública por QR `/doc/[serial]` |
 
 ### Vista central: `equipment_with_status`
 JOIN de `equipment_records` + `workflow_states`. Agrega `status_name`, `status_color`, `is_terminal`, `days_elapsed`, `phase_1/2/3_days`, `assigned_technicians[]`, `priority_level`.
@@ -372,7 +382,7 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 
 ## 12. ESTADO ACTUAL Y PENDIENTES
 
-> Última sesión: 11/09/2026
+> Última sesión: 20/09/2026
 
 ### ✅ Implementado y funcional
 
@@ -389,12 +399,30 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 - Audit log inmutable (`status_history`)
 - Timestamps operativos por fase + edición superadmin
 - Buscador instantáneo (FR, cliente, serie)
+- **Identidad visual propia y autoría**:
+  - Logo SVG propio (`CabelabLogo.tsx`) con icono de arco eléctrico y variante compacta
+  - Autoría explícita de **Br. Gersson Ortiz** en login, navbar y metadata de aplicación
+  - Favicon dinámico generado por código (`app/icon.tsx`)
+  - Iconos Lucide profesionales en Sidebar (`Sidebar.tsx`) reemplazando emojis
+  - Pie de Sidebar con Avatar, nombre y rol de usuario activo en tiempo real
+- **Experiencia de Usuario (UX)**:
+  - Títulos dinámicos de pestañas con formato `[Vista] | CABELAB` vía hook `usePageTitle.ts`
+  - Componente reutilizable de estados vacíos `EmptyState.tsx` aplicado en tablas
+  - Página 404 personalizada (`app/not-found.tsx`) con temática oscura y estética del sistema
 - **Sistema de correos en hilo completo** (código listo, pendiente solo configuración)
+- **Sistema de Códigos QR y Documentación Técnica Pública**:
+  - Librería `qrcode.react` instalada y configurada
+  - Modal `QRPrintModal` para generar e imprimir etiquetas físicas con datos del equipo
+  - Página pública `/doc/[serial]` sin login para escanear en taller o planta
+  - Visualización del último informe técnico vigente y línea de tiempo de mantenimientos anteriores
+  - Soporte de campo `report_url` (enlace Google Drive) en creación, actualización y cambio de estado a "Pendiente de aprobación"
+  - Acceso directo a QR desde tabla de equipos y ficha detallada
 
 ### ⚠️ Listo en código pero pendiente de activar
 
 | Pendiente | Qué hacer |
 |---|---|
+| Migración report_url | Ejecutar migración `015_equipment_report_url.sql` en el panel SQL de Supabase |
 | Correos en producción | Ejecutar migración 013, configurar `RESEND_API_KEY`, verificar dominio en Resend |
 | Remitente con dominio propio | Cambiar `FROM_ADDRESS` en `mailer.ts` a `notificaciones@cabelab.com` |
 
@@ -403,7 +431,6 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 | Prioridad | Feature | Descripción |
 |---|---|---|
 | 🔜 Alta | **Generación de PDF del sistema** | Informe técnico generado automáticamente por el sistema con membrete CABELAB. Usar `@react-pdf/renderer`. Endpoint `GET /api/equipment/[id]/pdf`. Botón en `EquipmentDetail.tsx` para roles superadmin/admin/recepcion |
-| 🔜 Alta | **Códigos QR** | Etiqueta imprimible por equipo que enlaza a su ficha |
 | 🟡 Media | **Carga multimedia** | Subir fotos/videos del estado físico al ingresar (Supabase Storage) |
 | 🟡 Media | **Inventario vinculado** | Descuento automático de stock de repuestos al finalizar servicio |
 | 🟠 Baja | **Portal de cliente** | Vista restringida de solo lectura por empresa (nueva ruta pública) |
@@ -431,3 +458,70 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 | 013 | `013_email_thread.sql` | Columnas `email_thread_id TEXT` y `email_cc TEXT[]` en `equipment_records` |
 | 014 | `014_user_full_name.sql` | Columna `full_name TEXT` en `user_profiles` y actualización de trigger `handle_new_user` |
 | 015 | `015_equipment_report_url.sql` | Columna `report_url TEXT` en `equipment_records` y recrea vista `equipment_with_status` |
+
+---
+
+## 14. PLAN DE MEJORAS — CABELAB v2.5
+
+> Última actualización: 20/09/2026. Ordenado por prioridad e impacto.
+
+### 🎨 A. Identidad Visual
+
+| # | Mejora | Archivo(s) afectado(s) | Estado |
+|---|---|---|---|
+| A1 | **Logo SVG propio** — Reemplazado cuadro `CL` por `<CabelabLogo />` con arco eléctrico en neon-blue | `components/ui/CabelabLogo.tsx`, `app/(auth)/login/page.tsx`, `components/layout/Navbar.tsx` | ✅ Completado |
+| A2 | **Íconos Lucide en Sidebar** — Emojis unicode reemplazados por íconos de `lucide-react` tipados con `LucideIcon` | `components/layout/Sidebar.tsx` | ✅ Completado |
+| A3 | **Favicon personalizado** — Generado dinámicamente con `app/icon.tsx` (`next/og` ImageResponse) | `app/icon.tsx` | ✅ Completado |
+
+### 🏗️ B. UX / Experiencia de Usuario
+
+| # | Mejora | Archivo(s) afectado(s) | Estado |
+|---|---|---|---|
+| B1 | **Avatar de usuario en Sidebar** — Reemplazado widget de zona horaria por avatar, nombre y rol del usuario logueado | `components/layout/Sidebar.tsx` | ✅ Completado |
+| B2 | **Metadata y títulos dinámicos** — Template `%s \| CABELAB` y hook `usePageTitle.ts` para títulos dinámicos en cada vista | `app/layout.tsx`, `hooks/usePageTitle.ts`, todas las vistas | ✅ Completado |
+| B3 | **Empty states visuales** — Componente reutilizable `EmptyState.tsx` con icono, título, descripción y acción | `components/ui/EmptyState.tsx`, `components/equipment/EquipmentTable.tsx` | ✅ Completado |
+| B4 | **Página 404 personalizada** — `app/not-found.tsx` estilizada con estética oscura, neon-blue y links de retorno | `app/not-found.tsx` | ✅ Completado |
+| B5 | **Identidad y autoría en login** — Autoría **Br. Gersson Ortiz**, versión `v2.4` y subtítulo de Arequipa, Perú | `app/(auth)/login/page.tsx`, `components/layout/Navbar.tsx` | ✅ Completado |
+
+### ⚡ C. Mejoras Técnicas
+
+| # | Mejora | Archivo(s) afectado(s) | Esfuerzo |
+|---|---|---|---|
+| C1 | **Activar sistema de correos** — El código está 100% listo. Solo requiere: (1) ejecutar migración 013 y 015 en Supabase, (2) agregar `RESEND_API_KEY` al `.env.local`. Sin escribir código. | `.env.local`, Supabase SQL Editor | 20 min |
+| C2 | **Variables de entorno tipadas con Zod** — Completar `lib/env.ts` (actualmente vacío) con un schema Zod que valide todas las env vars al iniciar el servidor. Previene errores silenciosos en producción. | `lib/env.ts` | 30 min |
+| C3 | **Error Boundary global** — Agregar `app/(dashboard)/error.tsx` para capturar errores de componentes cliente y mostrar un fallback con estilo del sistema + botón de reintento | `app/(dashboard)/error.tsx` | 1 h |
+| C4 | **Rate limiting en API pública** — La ruta `/api/public/equipment/serial/[serial]` no tiene autenticación ni rate limit. Implementar con `@upstash/ratelimit` para evitar scraping. | `app/api/public/equipment/serial/[serial]/route.ts` | 2 h |
+
+### 📊 D. Funcionalidades Nuevas
+
+| # | Mejora | Descripción | Esfuerzo |
+|---|---|---|---|
+| D1 | **Widget "Actividad reciente"** | Mostrar los últimos 5-10 cambios de `status_history` del día en el Dashboard. La tabla ya existe, solo falta el componente. | 2 h |
+| D2 | **Notificaciones in-app** | Ícono de campana en el Navbar con badge numérico de equipos atrasados (+5 días) o pendientes de acción para el rol actual. Query a `equipment_with_status WHERE days_elapsed > 5`. | 3 h |
+| D3 | **Generación de PDF del sistema** | Informe técnico generado automáticamente con membrete CABELAB usando `@react-pdf/renderer`. Endpoint `GET /api/equipment/[id]/pdf`. Botón en `EquipmentDetail.tsx`. — *ya en roadmap sección 12* | 1-2 días |
+| D4 | **Página 404 de rutas privadas** | Si un usuario intenta acceder a `/equipos/id-inexistente`, mostrar un 404 dentro del layout del dashboard (con sidebar) en lugar del 404 global | `app/(dashboard)/[...not-found]/page.tsx` | 1 h |
+
+### 🎯 Orden de implementación sugerido
+
+```
+Sprint 1 (impacto visual inmediato, < 2h total):
+  A2 → Íconos Lucide en Sidebar
+  B4 → Página 404 personalizada
+  B1 → Avatar de usuario en Sidebar
+  B5 → Mensaje identidad en login
+
+Sprint 2 (calidad técnica, < 2h total):
+  C1 → Activar correos (0 código)
+  C2 → Variables de entorno tipadas
+  B2 → Metadata dinámica por página
+
+Sprint 3 (funcionalidades nuevas, estimado 1-2 días):
+  A1 → Logo SVG propio
+  C3 → Error Boundary global
+  D1 → Widget actividad reciente
+
+Sprint 4 (largo plazo):
+  D3 → Generación de PDF del sistema
+  D2 → Notificaciones in-app
+  C4 → Rate limiting API pública
+```

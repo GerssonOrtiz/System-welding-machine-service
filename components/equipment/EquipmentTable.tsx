@@ -7,6 +7,8 @@ import { useUser } from '@/hooks/useUser'
 import StatusBadge from './StatusBadge'
 import EquipmentDetail from './EquipmentDetail'
 import QRPrintModal from './QRPrintModal'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Package } from 'lucide-react'
 
 interface EquipmentTableProps {
   equipments: any[]
@@ -78,8 +80,13 @@ export default function EquipmentTable({
           <tbody className="divide-y divide-border-subtle/50 text-xs">
             {equipments.length === 0 ? (
               <tr>
-                <td colSpan={showTechs ? 6 : 5} className="px-5 py-8 text-center text-text-secondary">
-                  No se encontraron equipos registrados en el sistema.
+                <td colSpan={showTechs ? 6 : 5} className="px-5 py-6">
+                  <EmptyState
+                    icon={Package}
+                    title="No se encontraron equipos"
+                    description="No hay registros disponibles que coincidan con los filtros seleccionados."
+                    compact
+                  />
                 </td>
               </tr>
             ) : (

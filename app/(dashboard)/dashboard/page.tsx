@@ -1,11 +1,13 @@
-// app/(dashboard)/dashboard/page.tsx
+﻿// app/(dashboard)/dashboard/page.tsx
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useDashboardStats, useEquipmentList } from '@/hooks/useEquipmentList'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import EquipmentTable from '@/components/equipment/EquipmentTable'
 
 export default function DashboardPage() {
+  usePageTitle('Dashboard')
   const [activePage, setActivePage] = useState(0)
   const [statusFilter, setStatusFilter] = useState('')
   const [serviceFilter, setServiceFilter] = useState('')
@@ -22,7 +24,7 @@ export default function DashboardPage() {
     serviceFilter
   )
 
-  // Búsqueda con debounce de 350ms
+  // BÃºsqueda con debounce de 350ms
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current)
 
@@ -58,17 +60,17 @@ export default function DashboardPage() {
     mutateEquips()
   }
 
-  // Determina qué lista mostrar
+  // Determina quÃ© lista mostrar
   const displayEquipments = searchResults !== null ? searchResults : equipments
   const displayTotal = searchResults !== null ? searchResults.length : total
   const isInSearchMode = searchResults !== null
   const showLoader = isSearching || (loadingEquips && !isInSearchMode)
 
-  // Lista de estados para el filtro (podría venir de una tabla maestra en el futuro)
+  // Lista de estados para el filtro (podrÃ­a venir de una tabla maestra en el futuro)
   const statusOptions = [
-    'En espera de diagnóstico', 
-    'En diagnóstico', 
-    'Pendiente de aprobación', 
+    'En espera de diagnÃ³stico', 
+    'En diagnÃ³stico', 
+    'Pendiente de aprobaciÃ³n', 
     'Aprobado', 
     'En mantenimiento', 
     'En espera de repuesto', 
@@ -86,8 +88,8 @@ export default function DashboardPage() {
     <div className="space-y-6 font-sans text-text-primary p-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase">📊 Dashboard Administrativo</h1>
-        <p className="text-text-secondary text-xs mt-1">Métricas globales y registro histórico de toda la base de datos.</p>
+        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase">ðŸ“Š Dashboard Administrativo</h1>
+        <p className="text-text-secondary text-xs mt-1">MÃ©tricas globales y registro histÃ³rico de toda la base de datos.</p>
       </div>
 
       {/* Stats Grid - AT TOP */}
@@ -111,7 +113,7 @@ export default function DashboardPage() {
           </div>
           {/* Atrasados */}
           <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-[0_0_12px_rgba(239,68,68,0.03)] hover:border-red-500/20 transition-all">
-            <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Atrasados (+5 Días)</span>
+            <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Atrasados (+5 DÃ­as)</span>
             <div className="text-2xl font-bold text-red-500 mt-1 font-mono">{stats.total_delayed}</div>
           </div>
           {/* Entregados este mes */}
@@ -131,14 +133,14 @@ export default function DashboardPage() {
       <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 space-y-4 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border-subtle/30 pb-4">
           <div className="space-y-1">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-neon-blue">📋 Registro General de Equipos ({displayTotal})</h2>
-            <p className="text-[10px] text-text-muted">Filtrando en toda la base de datos. Ordenado por FR más reciente.</p>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-neon-blue">ðŸ“‹ Registro General de Equipos ({displayTotal})</h2>
+            <p className="text-[10px] text-text-muted">Filtrando en toda la base de datos. Ordenado por FR mÃ¡s reciente.</p>
           </div>
           
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             {/* Buscador */}
             <div className="relative w-full sm:w-64">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xs">🔍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xs">ðŸ”</span>
               <input
                 type="text"
                 value={searchQuery}
@@ -177,7 +179,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Indicadores de búsqueda activa */}
+        {/* Indicadores de bÃºsqueda activa */}
         {isInSearchMode && (
           <div className="px-1">
             <span className="text-[10px] text-text-secondary font-mono">

@@ -1,7 +1,8 @@
-// app/(dashboard)/pizarra/page.tsx
+﻿// app/(dashboard)/pizarra/page.tsx
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import PizarraBoard from '@/components/pizarra/PizarraBoard'
 
 function LimaClock() {
@@ -42,28 +43,29 @@ function LimaClock() {
         {timeStr}
       </div>
       <div className="text-text-secondary text-[11px] uppercase tracking-wide mt-0.5 capitalize">
-        {dateStr} · Arequipa, PE
+        {dateStr} Â· Arequipa, PE
       </div>
     </div>
   )
 }
 
 export default function PizarraPage() {
+  usePageTitle('Pizarra')
   const [isKioskMode, setIsKioskMode] = useState(false)
 
   const content = (
     <div className={`flex flex-col bg-bg-base font-sans text-text-primary ${isKioskMode ? 'fixed inset-0 z-[9999]' : 'min-h-screen'}`}>
-      {/* ─── Header Pizarra ─── */}
+      {/* â”€â”€â”€ Header Pizarra â”€â”€â”€ */}
       <header className="flex justify-between items-center px-6 py-4 bg-bg-surface border-b border-border-subtle flex-shrink-0">
-        {/* Logo + título */}
+        {/* Logo + tÃ­tulo */}
         <div className="flex items-center gap-4">
           <div className="w-2 h-10 rounded-full bg-neon-blue shadow-neon-blue" />
           <div>
             <h1 className="text-lg font-extrabold tracking-widest uppercase text-neon-blue leading-none">
-              🔧 CABELAB
+              ðŸ”§ CABELAB
             </h1>
             <p className="text-[11px] text-text-secondary uppercase tracking-widest mt-0.5">
-              Pizarra de Taller — Tiempo Real
+              Pizarra de Taller â€” Tiempo Real
             </p>
           </div>
         </div>
@@ -74,7 +76,7 @@ export default function PizarraPage() {
             onClick={() => setIsKioskMode(!isKioskMode)}
             className="px-4 py-2 bg-bg-base border border-border-subtle hover:border-neon-blue hover:text-neon-blue rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm"
           >
-            {isKioskMode ? '🚪 Salir Pantalla Completa' : '📺 Pantalla Completa'}
+            {isKioskMode ? 'ðŸšª Salir Pantalla Completa' : 'ðŸ“º Pantalla Completa'}
           </button>
           
           {/* Reloj Lima */}
@@ -82,22 +84,22 @@ export default function PizarraPage() {
         </div>
       </header>
 
-      {/* ─── Indicadores rápidos ─── */}
+      {/* â”€â”€â”€ Indicadores rÃ¡pidos â”€â”€â”€ */}
       <div className="flex items-center gap-3 px-6 py-2 bg-bg-base border-b border-border-subtle/30 text-[10px] uppercase tracking-widest text-text-muted font-mono flex-shrink-0">
         <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse shadow-neon-blue inline-block" />
-        Conexión Realtime Activa
-        <span className="ml-auto">Actualización automática • Sin recarga de página</span>
+        ConexiÃ³n Realtime Activa
+        <span className="ml-auto">ActualizaciÃ³n automÃ¡tica â€¢ Sin recarga de pÃ¡gina</span>
       </div>
 
-      {/* ─── Tablero Principal ─── */}
+      {/* â”€â”€â”€ Tablero Principal â”€â”€â”€ */}
       <main className="flex-1 overflow-hidden px-4 py-4">
         <PizarraBoard />
       </main>
 
-      {/* ─── Footer ─── */}
+      {/* â”€â”€â”€ Footer â”€â”€â”€ */}
       <footer className="flex justify-between px-6 py-3 bg-bg-surface/50 border-t border-border-subtle flex-shrink-0 text-[10px] text-text-muted uppercase tracking-wider items-center font-mono">
-        <span>Monitor de Taller Activo — Pizarra</span>
-        <span>© CABELAB</span>
+        <span>Monitor de Taller Activo â€” Pizarra</span>
+        <span>Â© CABELAB</span>
       </footer>
     </div>
   )

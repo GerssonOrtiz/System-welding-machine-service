@@ -1,11 +1,13 @@
-// app/(dashboard)/historial/page.tsx
+﻿// app/(dashboard)/historial/page.tsx
 'use client'
 
 import React, { useState } from 'react'
 import { useEquipmentList } from '@/hooks/useEquipmentList'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import EquipmentTable from '@/components/equipment/EquipmentTable'
 
 export default function HistorialPage() {
+  usePageTitle('Historial')
   const [currentPage, setCurrentPage] = useState(0)
   // Solicitar incluyendo entregados (el ordenamiento por fecha de ingreso es por defecto en la API)
   const { equipments, total, totalPages, isLoading, mutate } = useEquipmentList(currentPage, true)
@@ -14,9 +16,9 @@ export default function HistorialPage() {
     <div className="space-y-6 font-sans text-text-primary p-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase">📜 Historial General de Equipos</h1>
+        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase">ðŸ“œ Historial General de Equipos</h1>
         <p className="text-text-secondary text-xs mt-1">
-          Registro histórico de todos los equipos en el sistema, ordenados por fecha de ingreso (los más recientes primero).
+          Registro histÃ³rico de todos los equipos en el sistema, ordenados por fecha de ingreso (los mÃ¡s recientes primero).
         </p>
       </div>
 

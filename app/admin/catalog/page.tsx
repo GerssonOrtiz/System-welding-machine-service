@@ -1,10 +1,12 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import BrandModelManager from '@/components/admin/BrandModelManager'
 import PartManager from '@/components/admin/PartManager'
 
 export default function CatalogAdminPage() {
+  usePageTitle('Catálogo')
   const [activeTab, setActiveTab] = useState<'parts' | 'brands'>('parts')
 
   return (
@@ -14,9 +16,9 @@ export default function CatalogAdminPage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black tracking-tighter text-white uppercase">
-              Catálogo <span className="text-emerald-500">Técnico</span>
+              CatÃ¡logo <span className="text-emerald-500">TÃ©cnico</span>
             </h1>
-            <p className="text-slate-400 text-sm">Gestión de repuestos, marcas y compatibilidad operativa.</p>
+            <p className="text-slate-400 text-sm">GestiÃ³n de repuestos, marcas y compatibilidad operativa.</p>
           </div>
           
           <div className="flex bg-slate-800 p-1 rounded-lg">
