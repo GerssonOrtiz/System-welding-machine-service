@@ -29,8 +29,6 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
   const {
     register,
     handleSubmit,
-    reset,
-    control,
     formState: { errors },
   } = useForm<CreateEquipmentInput>({
     resolver: zodResolver(createEquipmentSchema),
@@ -43,9 +41,9 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
       serial_number: '',
       client_report: '',
       accessories: '',
-      condition_in: '',
       additional_observations: '',
-      priority_level: 0,
+      priority_level: 1,
+      cc_extra: [],
     },
   })
 
@@ -325,3 +323,4 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
     </form>
   )
 }
+register
