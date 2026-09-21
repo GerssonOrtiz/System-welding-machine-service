@@ -35,7 +35,7 @@ export const adminCreateUserSchema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, { message: 'Solo se permiten letras, números y guiones bajos' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres' }),
   role: z.enum(['admin', 'operaciones', 'recepcion', 'almacen', 'visualizador'], {
-    errorMap: () => ({ message: 'Seleccione un rol válido' }),
+    message: 'Seleccione un rol válido',
   }),
 })
 
