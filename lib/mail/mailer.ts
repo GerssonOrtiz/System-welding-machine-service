@@ -24,6 +24,19 @@ const ENTRY_TO = [
 // CC DISPONIBLES PARA SELECCIÓN EN EL FRONTEND
 // Exportado para que EquipmentForm pueda mostrar el selector.
 // ─────────────────────────────────────────
+
+export interface StatusChangeData {
+  fr_number: string
+  client_name: string
+  brand?: string | null
+  model?: string | null
+  serial_number?: string | null
+  new_status_name: string
+  previous_status_name: string
+  override_reason?: string
+  changed_by: string
+}
+
 export interface CcOption {
   email: string
   label: string
