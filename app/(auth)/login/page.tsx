@@ -102,7 +102,7 @@ function LoginContent() {
         <div className="mb-6 flex flex-col items-center">
           <div className="relative w-48 h-24 flex items-center justify-center">
             <Image
-              src="/synapse_completo.png"
+              src="/synapse_horizontal.png"
               alt="Synapse"
               width={220}
               height={100}
