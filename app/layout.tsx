@@ -17,10 +17,10 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "CABELAB — Sistema de Motosoldadoras",
-    template: "%s | CABELAB",
+    default: "SYNAPSE — Plataforma de Gestión Operativa",
+    template: "%s | SYNAPSE",
   },
-  description: "Sistema de gestión operativa para taller de mantenimiento de motosoldadoras — CABELAB, Arequipa, Perú.",
+  description: "Plataforma de gestión operativa de mantenimiento de motosoldadoras para CABELAB — Arequipa, Perú.",
   authors: [{ name: "Br. Gersson Ortiz" }],
 };
 

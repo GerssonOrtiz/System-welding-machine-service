@@ -6,7 +6,7 @@ import { useUser } from '@/hooks/useUser'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { SIDEBAR_ITEMS_BY_ROLE, ROLE_LABELS } from '@/types/user'
-import { CabelabLogo } from '@/components/ui/CabelabLogo'
+import Image from 'next/image'
 import {
   LayoutDashboard,
   Kanban,
@@ -166,12 +166,52 @@ export function Sidebar() {
 
       {/* ── Cuerpo superior: logo + navegación ───────────────────────────── */}
       <div className="flex flex-col overflow-hidden">
-        {/* Logo */}
-        <div className={`flex items-center px-4 py-4 border-b border-white/6 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}>
-          {isCollapsed
-            ? <CabelabLogo size={28} compact />
-            : <CabelabLogo size={32} />
-          }
+        {/* Logo Synapse */}
+        <div className={`flex flex-col items-center px-3 py-4 border-b border-white/6 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}>
+          {isCollapsed ? (
+            <div className="relative w-8 h-8 flex items-center justify-center">
+              <Image
+                src="/synapse_logo.png"
+                alt="Synapse"
+                width={32}
+                height={32}
+                className="object-contain max-h-8 w-auto"
+              />
+            </div>
+          ) : (
+            <div className="w-full flex flex-col gap-2.5">
+              <div className="relative w-full h-8 flex items-center">
+                <Image
+                  src="/synapse_horizontal.png"
+                  alt="Synapse"
+                  width={150}
+                  height={34}
+                  className="object-contain max-h-8 w-auto"
+                />
+              </div>
+
+              {/* Tag descriptivo de servicio para Cabelab */}
+              <div className="flex items-center gap-2 px-2 py-1 bg-white/4 border border-white/6 rounded-md">
+                <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0 bg-black/40">
+                  <Image
+                    src="/cabelab.png"
+                    alt="CABELAB"
+                    width={16}
+                    height={16}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[9px] font-bold text-text-secondary uppercase tracking-wider truncate">
+                    CABELAB
+                  </span>
+                  <span className="text-[8px] text-text-muted font-mono leading-none">
+                    Taller de Motosoldadoras
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Lista de navegación */}

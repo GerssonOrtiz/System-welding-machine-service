@@ -7,7 +7,7 @@
 
 import { useEffect } from 'react'
 
-const APP_NAME = 'CABELAB'
+const APP_NAME = 'SYNAPSE'
 
 export function usePageTitle(pageTitle: string) {
   useEffect(() => {

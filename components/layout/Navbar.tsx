@@ -6,7 +6,7 @@ import { useUser } from '@/hooks/useUser'
 import { useRouter } from 'next/navigation'
 import { ROLE_LABELS } from '@/types/user'
 import { toast } from 'sonner'
-import { CabelabLogo } from '@/components/ui/CabelabLogo'
+import Image from 'next/image'
 import { LogOut } from 'lucide-react'
 
 export function Navbar() {
@@ -32,15 +32,37 @@ export function Navbar() {
 
   return (
     <header className="h-14 bg-bg-surface border-b border-white/6 px-6 flex items-center justify-between sticky top-0 z-40 selection:bg-neon-blue selection:text-bg-base font-sans">
-      {/* Sección Izquierda: Logo y autoría */}
-      <div className="flex items-center gap-3">
-        <CabelabLogo size={28} compact />
-        <div className="flex flex-col">
-          <span className="font-bold tracking-wider text-xs text-text-primary uppercase flex items-center gap-1.5">
-            CABELAB <span className="text-neon-blue font-mono font-medium text-[10px]">SYSTEM</span>
-          </span>
-          <span className="text-[9px] text-text-muted font-mono hidden md:inline">
+      {/* Sección Izquierda: Logo Synapse y Cliente Asociado CABELAB */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2.5">
+          <div className="relative h-8 w-28 flex items-center">
+            <Image
+              src="/synapse_horizontal.png"
+              alt="SYNAPSE"
+              width={140}
+              height={40}
+              priority
+              className="object-contain max-h-8 w-auto"
+            />
+          </div>
+          <span className="text-[9px] text-text-muted font-mono hidden lg:inline border-l border-white/10 pl-2.5">
             por <strong className="text-text-secondary font-medium">Br. Gersson Ortiz</strong>
+          </span>
+        </div>
+
+        {/* Badge identificador del cliente de servicio (CABELAB) */}
+        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-white/4 border border-white/8 rounded-full">
+          <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0 bg-black/40">
+            <Image
+              src="/cabelab.png"
+              alt="Cabelab"
+              width={16}
+              height={16}
+              className="object-cover w-full h-full"
+            />
+          </div>
+          <span className="text-[10px] font-semibold tracking-wider text-text-secondary uppercase">
+            CABELAB
           </span>
         </div>
       </div>
