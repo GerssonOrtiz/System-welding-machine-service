@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { loginSchema, type LoginInput } from '@/lib/validations/user.schema'
 import { ROLE_HOME_ROUTE, type UserProfile } from '@/types/user'
-import { CabelabLogo } from '@/components/ui/CabelabLogo'
+import Image from 'next/image'
 
 function LoginContent() {
   const [loading, setLoading] = useState(false)
@@ -98,14 +98,21 @@ function LoginContent() {
         {/* Adorno neón decorativo superior */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-60" />
 
-        {/* Encabezado */}
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <CabelabLogo size={36} />
-          <div className="text-center">
-            <p className="text-text-secondary text-xs mt-1">
-              Taller de Motosoldadoras — Arequipa, Perú
-            </p>
+        {/* Encabezado con logo de Synapse */}
+        <div className="mb-6 flex flex-col items-center">
+          <div className="relative w-48 h-24 flex items-center justify-center">
+            <Image
+              src="/synapse_completo.png"
+              alt="Synapse"
+              width={220}
+              height={100}
+              priority
+              className="object-contain max-h-24 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.2)]"
+            />
           </div>
+          <p className="text-[11px] font-medium tracking-widest uppercase text-text-muted mt-1">
+            powered by <span className="text-neon-blue font-semibold">Venllas</span>
+          </p>
         </div>
 
         {/* Formulario */}
@@ -159,14 +166,14 @@ function LoginContent() {
           </button>
         </form>
 
-        {/* Footer de autoría */}
-        <div className="mt-6 pt-5 border-t border-white/6 text-center space-y-0.5">
-          <p className="text-[10px] text-text-muted font-mono">
+        {/* Footer de autoría y versión */}
+        <div className="mt-6 pt-5 border-t border-white/6 text-center space-y-1">
+          <p className="text-[11px] text-text-muted font-mono">
             Desarrollado por{' '}
             <span className="text-text-secondary font-semibold">Br. Gersson Ortiz</span>
           </p>
-          <p className="text-[10px] text-text-muted font-mono">
-            CABELAB v2.4 · Arequipa, Perú · {new Date().getFullYear()}
+          <p className="text-[10px] text-text-muted/70 font-mono tracking-wider">
+            v2.4
           </p>
         </div>
 
