@@ -100,17 +100,17 @@ function LoginContent() {
 
         {/* Encabezado con logo de Synapse */}
         <div className="mb-6 flex flex-col items-center">
-          <div className="relative w-48 h-24 flex items-center justify-center">
+          <div className="relative w-60 h-20 flex items-center justify-center">
             <Image
               src="/synapse_horizontal.png"
               alt="Synapse"
-              width={220}
+              width={260}
               height={100}
               priority
-              className="object-contain max-h-24 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.2)]"
+              className="object-contain max-h-20 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.2)]"
             />
           </div>
-          <p className="text-[11px] font-medium tracking-widest uppercase text-text-muted mt-1">
+          <p className="text-[11px] font-medium tracking-widest uppercase text-text-muted mt-2">
             powered by <span className="text-neon-blue font-semibold">Venllas</span>
           </p>
         </div>
