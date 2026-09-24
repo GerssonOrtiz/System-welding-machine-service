@@ -2,11 +2,10 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import BrandModelManager from '@/components/admin/BrandModelManager'
 import PartManager from '@/components/admin/PartManager'
-import { Wrench, Layers, ArrowLeft, BookOpen } from 'lucide-react'
+import { Wrench, Layers, BookOpen } from 'lucide-react'
 
 export default function CatalogAdminPage() {
   usePageTitle('Catálogo')
