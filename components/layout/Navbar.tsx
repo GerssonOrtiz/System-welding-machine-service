@@ -50,20 +50,17 @@ export function Navbar() {
           </span>
         </div>
 
-        {/* Badge identificador del cliente de servicio (CABELAB) */}
-        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-white/4 border border-white/8 rounded-full">
-          <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0 bg-black/40">
+        {/* Logo identificador del cliente de servicio (CABELAB) */}
+        <div className="hidden sm:flex items-center px-2 py-1 bg-white/4 border border-white/8 rounded-md">
+          <div className="relative h-6 w-20 flex items-center">
             <Image
               src="/cabelab.png"
-              alt="Cabelab"
-              width={16}
-              height={16}
-              className="object-cover w-full h-full"
+              alt="CABELAB"
+              width={80}
+              height={24}
+              className="object-contain max-h-6 w-auto"
             />
           </div>
-          <span className="text-[10px] font-semibold tracking-wider text-text-secondary uppercase">
-            CABELAB
-          </span>
         </div>
       </div>
 

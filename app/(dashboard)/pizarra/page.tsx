@@ -1,7 +1,8 @@
-﻿// app/(dashboard)/pizarra/page.tsx
+// app/(dashboard)/pizarra/page.tsx
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import PizarraBoard from '@/components/pizarra/PizarraBoard'
 
@@ -58,17 +59,23 @@ export default function PizarraPage() {
       {/*  Header Pizarra  */}
       <header className="flex justify-between items-center px-6 py-4 bg-bg-surface border-b border-border-subtle flex-shrink-0">
         {/* Logo + tì­tulo */}
-        <div className="flex items-center gap-4">
-          <div className="w-2 h-10 rounded-full bg-neon-blue shadow-neon-blue" />
-          <div>
-            <h1 className="text-lg font-extrabold tracking-widest uppercase text-neon-blue leading-none">
-              CABELAB
-            </h1>
-            <p className="text-[11px] text-text-secondary uppercase tracking-widest mt-0.5">
-              Tablero de Control Operativo
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="relative h-9 w-32 flex items-center">
+              <Image
+                src="/cabelab.png"
+                alt="CABELAB"
+                width={130}
+                height={36}
+                priority
+                className="object-contain max-h-9 w-auto"
+              />
+            </div>
+            <div className="border-l border-border-subtle pl-3">
+              <p className="text-[11px] text-text-secondary uppercase tracking-widest">
+                Tablero de Control Operativo
+              </p>
+            </div>
           </div>
-        </div>
 
         {/* Acciones de Pizarra */}
         <div className="flex items-center gap-6">

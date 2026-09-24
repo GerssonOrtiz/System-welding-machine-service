@@ -1,3 +1,4 @@
+// components/admin/PartManager.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -6,6 +7,17 @@ import type { CatalogBrand, CatalogModel, Part } from '@/types/catalog'
 import { toast } from 'sonner'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
+import { 
+  Wrench, 
+  Plus, 
+  Trash2, 
+  Search, 
+  Layers, 
+  CheckCircle2, 
+  Tag,
+  Hash,
+  AlertCircle
+} from 'lucide-react'
 
 export default function PartManager() {
   const supabase: SupabaseClient<Database> = createClient()
@@ -13,6 +25,8 @@ export default function PartManager() {
   const [brands, setBrands] = useState<CatalogBrand[]>([])
   const [models, setModels] = useState<CatalogModel[]>([])
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const [newPart, setNewPart] = useState({
     part_number: '',
@@ -37,165 +51,300 @@ export default function PartManager() {
     setLoading(false)
   }
 
-  async function handleAddPart() {
-    if (!newPart.part_number || !newPart.name) {
+  async function handleAddPart(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newPart.part_number.trim() || !newPart.name.trim()) {
       toast.error('Número de parte y nombre son obligatorios')
       return
     }
 
-    // 1. Insertar la pieza
-    const { data: insertedPart, error: partError } = await supabase
-      .from('parts_catalog')
-      .insert([{
-        part_number: newPart.part_number.toUpperCase(),
-        name: newPart.name.toUpperCase(),
-        specifications: newPart.specifications
-      }])
-      .select()
-      .single()
+    setSubmitting(true)
+    try {
+      // 1. Insertar la pieza
+      const { data: insertedPart, error: partError } = await supabase
+        .from('parts_catalog')
+        .insert([{
+          part_number: newPart.part_number.trim().toUpperCase(),
+          name: newPart.name.trim().toUpperCase(),
+          specifications: newPart.specifications.trim() || null
+        }])
+        .select()
+        .single()
 
-    if (partError) {
-      toast.error('Error al añadir pieza: ' + partError.message)
-      return
-    }
-
-    // 2. Insertar compatibilidades si hay modelos seleccionados
-    if (newPart.compatible_models.length > 0) {
-      const compatibilities = newPart.compatible_models.map(modelId => ({
-        part_id: insertedPart.id,
-        model_id: modelId
-      }))
-
-      const { error: compError } = await supabase
-        .from('part_compatibilities')
-        .insert(compatibilities)
-
-      if (compError) {
-        toast.error('Pieza añadida pero error en compatibilidades: ' + compError.message)
+      if (partError) {
+        toast.error('Error al registrar repuesto: ' + partError.message)
+        return
       }
+
+      // 2. Insertar compatibilidades si hay modelos seleccionados
+      if (newPart.compatible_models.length > 0 && insertedPart) {
+        const compatibilities = newPart.compatible_models.map(modelId => ({
+          part_id: insertedPart.id,
+          model_id: modelId
+        }))
+
+        const { error: compError } = await supabase
+          .from('part_compatibilities')
+          .insert(compatibilities)
+
+        if (compError) {
+          toast.error('Repuesto creado pero hubo un error con las compatibilidades: ' + compError.message)
+        }
+      }
+
+      toast.success('Repuesto registrado con éxito en el catálogo')
+      setNewPart({ part_number: '', name: '', specifications: '', compatible_models: [] })
+      fetchData()
+    } catch {
+      toast.error('Error inesperado al registrar repuesto')
+    } finally {
+      setSubmitting(false)
     }
-
-    toast.success('Repuesto registrado con éxito')
-    setNewPart({ part_number: '', name: '', specifications: '', compatible_models: [] })
-    fetchData()
   }
 
-  async function handleDeletePart(id: string) {
-    if (!confirm('¿Eliminar este repuesto del catálogo?')) return
+  async function handleDeletePart(id: string, partName: string) {
+    if (!confirm(`¿Eliminar el repuesto "${partName}" del catálogo?`)) return
     const { error } = await supabase.from('parts_catalog').delete().eq('id', id)
-    if (error) toast.error(error.message)
-    else fetchData()
+    if (error) {
+      toast.error('Error al eliminar: ' + error.message)
+    } else {
+      toast.success('Repuesto eliminado del catálogo')
+      fetchData()
+    }
   }
+
+  const filteredParts = parts.filter(p => 
+    p.part_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.specifications && p.specifications.toLowerCase().includes(searchTerm.toLowerCase()))
+  )
 
   return (
-    <div className="space-y-8 p-4">
-      {/* FORMULARIO DE ALTA */}
-      <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
-        <h3 className="text-xl font-bold text-emerald-400 mb-6">Registrar Nuevo Repuesto</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
+    <div className="space-y-6">
+      {/* FORMULARIO DE ALTA CON ESTILO DEL SISTEMA */}
+      <form onSubmit={handleAddPart} className="bg-bg-surface border border-border-subtle rounded-xl p-5 md:p-6 shadow-sm">
+        <div className="flex items-center gap-2.5 pb-4 mb-5 border-b border-border-subtle">
+          <div className="w-8 h-8 rounded-lg bg-electric/10 border border-electric/30 flex items-center justify-center text-electric">
+            <Plus size={16} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-text-primary">
+              Registrar Nuevo Repuesto
+            </h3>
+            <p className="text-[11px] text-text-secondary">
+              Ingresa los datos técnicos y define la compatibilidad con modelos de motosoldadoras
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* CAMPOS PRINCIPALES */}
+          <div className="lg:col-span-6 space-y-4">
             <div>
-              <label className="block text-sm text-slate-400 mb-1">Código de Parte / Nro Parte</label>
+              <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Hash size={12} className="text-neon-blue" />
+                Código de Parte / N° Parte *
+              </label>
               <input
                 type="text"
-                className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                required
+                className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue focus:ring-1 focus:ring-neon-blue rounded-lg px-3.5 py-2.5 text-xs text-text-primary font-mono placeholder:text-text-muted transition-all outline-none"
                 value={newPart.part_number}
                 onChange={(e) => setNewPart({ ...newPart, part_number: e.target.value })}
-                placeholder="Ej: LINC-001"
+                placeholder="Ej: LINC-001 / ESAB-2300"
               />
             </div>
+
             <div>
-              <label className="block text-sm text-slate-400 mb-1">Nombre del Repuesto</label>
+              <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Tag size={12} className="text-neon-blue" />
+                Nombre del Repuesto *
+              </label>
               <input
                 type="text"
-                className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                required
+                className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue focus:ring-1 focus:ring-neon-blue rounded-lg px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted transition-all outline-none"
                 value={newPart.name}
                 onChange={(e) => setNewPart({ ...newPart, name: e.target.value })}
-                placeholder="Ej: TARJETA DE CONTROL"
+                placeholder="Ej: TARJETA DE CONTROL PRINCIPAL"
               />
             </div>
+
             <div>
-              <label className="block text-sm text-slate-400 mb-1">Especificaciones (Opcional)</label>
+              <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5">
+                Especificaciones Técnicas (Opcional)
+              </label>
               <textarea
-                className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-emerald-500 h-24"
+                className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue focus:ring-1 focus:ring-neon-blue rounded-lg px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted transition-all outline-none h-24 resize-none"
                 value={newPart.specifications}
                 onChange={(e) => setNewPart({ ...newPart, specifications: e.target.value })}
-                placeholder="Ej: 24V DC, 4 Pines..."
+                placeholder="Ej: 24V DC, 4 Pines, compatible con módulo de encendido electrónico..."
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">Modelos Compatibles (Selección múltiple)</label>
-            <div className="bg-slate-800 border border-slate-700 rounded p-3 h-[210px] overflow-y-auto space-y-1">
-              {brands.map(brand => (
-                <div key={brand.id}>
-                  <div className="text-xs font-bold text-slate-500 uppercase mt-2 mb-1 px-1">{brand.name}</div>
-                  {models.filter(m => m.brand_id === brand.id).map(model => (
-                    <label key={model.id} className="flex items-center gap-2 hover:bg-slate-700/50 p-1 rounded cursor-pointer transition-colors">
-                      <input
-                        type="checkbox"
-                        className="rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500"
-                        checked={newPart.compatible_models.includes(model.id)}
-                        onChange={(e) => {
-                          const updated = e.target.checked
-                            ? [...newPart.compatible_models, model.id]
-                            : newPart.compatible_models.filter(mid => mid !== model.id)
-                          setNewPart({ ...newPart, compatible_models: updated })
-                        }}
-                      />
-                      <span className="text-sm">{model.name}</span>
-                    </label>
-                  ))}
+          {/* COMPATIBILIDAD CON MODELOS */}
+          <div className="lg:col-span-6 flex flex-col">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+                <Layers size={12} className="text-neon-purple" />
+                Modelos Compatibles
+              </label>
+              <span className="text-[10px] font-mono text-neon-blue bg-neon-blue/10 px-2 py-0.5 rounded-full border border-neon-blue/20">
+                {newPart.compatible_models.length} seleccionados
+              </span>
+            </div>
+
+            <div className="bg-bg-elevated border border-border-subtle rounded-lg p-3 flex-1 max-h-[220px] overflow-y-auto space-y-3">
+              {brands.length === 0 ? (
+                <div className="text-center py-8 text-xs text-text-muted">
+                  No hay marcas ni modelos registrados aún.
                 </div>
-              ))}
+              ) : (
+                brands.map(brand => {
+                  const brandModels = models.filter(m => m.brand_id === brand.id)
+                  if (brandModels.length === 0) return null
+                  return (
+                    <div key={brand.id} className="space-y-1">
+                      <div className="text-[10px] font-bold text-neon-blue uppercase tracking-wider px-1">
+                        {brand.name}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {brandModels.map(model => {
+                          const isChecked = newPart.compatible_models.includes(model.id)
+                          return (
+                            <label
+                              key={model.id}
+                              className={`flex items-center gap-2 p-1.5 rounded-md cursor-pointer border text-xs transition-all select-none ${
+                                isChecked
+                                  ? 'bg-electric/15 border-electric/40 text-text-primary font-medium'
+                                  : 'bg-bg-surface/60 border-border-subtle/50 text-text-secondary hover:text-text-primary hover:bg-white/5'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className="rounded border-border-subtle bg-bg-base text-electric focus:ring-0 w-3.5 h-3.5 accent-electric"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const updated = e.target.checked
+                                    ? [...newPart.compatible_models, model.id]
+                                    : newPart.compatible_models.filter(mid => mid !== model.id)
+                                  setNewPart({ ...newPart, compatible_models: updated })
+                                }}
+                              />
+                              <span className="truncate">{model.name}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
             </div>
           </div>
         </div>
-        
-        <div className="mt-6 flex justify-end">
+
+        {/* BOTÓN SUBMIT */}
+        <div className="mt-5 pt-4 border-t border-border-subtle flex justify-end">
           <button
-            onClick={handleAddPart}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-2 rounded-lg font-bold transition-all shadow-lg shadow-emerald-900/20"
+            type="submit"
+            disabled={submitting}
+            className="bg-electric hover:brightness-110 active:scale-[0.98] text-white px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)] flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Guardar Repuesto en Catálogo
+            {submitting ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <CheckCircle2 size={15} />
+            )}
+            <span>Guardar Repuesto en Catálogo</span>
           </button>
         </div>
-      </div>
+      </form>
 
-      {/* LISTADO DE REPUESTOS */}
-      <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
-        <h3 className="text-xl font-bold text-slate-300 mb-4">Catálogo de Repuestos Registrados</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+      {/* LISTADO DE REPUESTOS REGISTRADOS */}
+      <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 md:p-6 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-neon-blue/10 border border-neon-blue/30 flex items-center justify-center text-neon-blue">
+              <Wrench size={16} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-text-primary">
+                Repuestos Registrados
+              </h3>
+              <p className="text-[11px] text-text-secondary">
+                {parts.length} repuestos en inventario de catálogo
+              </p>
+            </div>
+          </div>
+
+          {/* BUSCADOR */}
+          <div className="relative w-full sm:w-64">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <input
+              type="text"
+              placeholder="Buscar por código o nombre..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue rounded-lg pl-9 pr-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted transition-all outline-none"
+            />
+          </div>
+        </div>
+
+        {/* TABLA DE REPUESTOS */}
+        <div className="overflow-x-auto border border-border-subtle rounded-lg">
+          <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 text-sm">
-                <th className="pb-3 pl-2">Código</th>
-                <th className="pb-3">Nombre</th>
-                <th className="pb-3">Especificaciones</th>
-                <th className="pb-3">Acciones</th>
+              <tr className="bg-bg-elevated border-b border-border-subtle text-text-secondary uppercase font-semibold text-[10px] tracking-wider">
+                <th className="py-3 px-4">Código</th>
+                <th className="py-3 px-4">Nombre del Repuesto</th>
+                <th className="py-3 px-4">Especificaciones</th>
+                <th className="py-3 px-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/50">
-              {parts.map(part => (
-                <tr key={part.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3 pl-2 font-mono text-emerald-400">{part.part_number}</td>
-                  <td className="py-3 font-medium">{part.name}</td>
-                  <td className="py-3 text-slate-400 text-sm max-w-xs truncate">{part.specifications || '-'}</td>
-                  <td className="py-3">
-                    <button 
-                      onClick={() => handleDeletePart(part.id)}
-                      className="text-red-400 hover:text-red-300 text-sm"
-                    >
-                      Eliminar
-                    </button>
+            <tbody className="divide-y divide-border-subtle/50">
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-text-muted">
+                    <div className="inline-flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-neon-blue/30 border-t-neon-blue rounded-full animate-spin" />
+                      <span>Cargando catálogo de repuestos...</span>
+                    </div>
                   </td>
                 </tr>
-              ))}
-              {parts.length === 0 && (
+              ) : filteredParts.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-500">No hay repuestos registrados</td>
+                  <td colSpan={4} className="py-8 text-center text-text-muted">
+                    <div className="flex flex-col items-center gap-2">
+                      <AlertCircle size={20} className="text-text-muted" />
+                      <span>No se encontraron repuestos registrados.</span>
+                    </div>
+                  </td>
                 </tr>
+              ) : (
+                filteredParts.map(part => (
+                  <tr key={part.id} className="hover:bg-white/4 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-neon-blue">
+                      {part.part_number}
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-text-primary">
+                      {part.name}
+                    </td>
+                    <td className="py-3 px-4 text-text-secondary text-[11px] max-w-sm truncate">
+                      {part.specifications || <span className="text-text-muted italic">Sin especificaciones</span>}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => handleDeletePart(part.id, part.name)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 text-[10px] font-bold uppercase tracking-wider transition-all"
+                      >
+                        <Trash2 size={12} />
+                        <span>Eliminar</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
