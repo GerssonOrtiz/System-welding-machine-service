@@ -16,9 +16,9 @@ export default function HistorialPage() {
     <div className="space-y-6 font-sans text-text-primary p-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase">ðŸ“œ Historial General de Equipos</h1>
+        <h1 className="text-2xl font-bold text-neon-blue tracking-wider uppercase"> Historial General de Equipos</h1>
         <p className="text-text-secondary text-xs mt-1">
-          Registro histÃ³rico de todos los equipos en el sistema, ordenados por fecha de ingreso (los mÃ¡s recientes primero).
+          Registro histórico de todos los equipos en el sistema, ordenados por fecha de ingreso (los más recientes primero).
         </p>
       </div>
 

@@ -136,7 +136,7 @@ export default function AdminWorkflowPage() {
 
       const data = await res.json()
       if (data.success) {
-        toast.success(editingState ? 'Estado actualizado' : 'Estado creado con Ã©xito')
+        toast.success(editingState ? 'Estado actualizado' : 'Estado creado con éxito')
         setIsStateModalOpen(false)
         fetchData()
       } else {
@@ -148,7 +148,7 @@ export default function AdminWorkflowPage() {
   }
 
   const handleDeleteState = async (stateId: number) => {
-    if (!confirm('Â¿EstÃ¡s seguro de que deseas eliminar este estado? Solo se eliminarÃ¡ si no tiene equipos vinculados.')) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este estado? Solo se eliminará si no tiene equipos vinculados.')) {
       return
     }
 

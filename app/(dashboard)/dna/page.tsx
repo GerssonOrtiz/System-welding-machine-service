@@ -30,7 +30,7 @@ function DNAContent() {
   const [selectedEqId, setSelectedEqId] = useState<string | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
-  // Efecto para buscar automÃ¡ticamente si viene en la URL
+  // Efecto para buscar automáticamente si viene en la URL
   useEffect(() => {
     const s = searchParams.get('s')
     if (s) {
@@ -83,7 +83,7 @@ function DNAContent() {
             🧬 DNA del Equipo <span className="text-[10px] bg-neon-purple/20 border border-neon-purple/40 px-2 py-0.5 rounded text-neon-purple font-mono">LIFECYCLE TRACKER</span>
           </h1>
           <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">
-            Historial clí­nico completo por número de serie.
+            Historial clínico completo por número de serie.
           </p>
         </div>
 
@@ -147,9 +147,9 @@ function DNAContent() {
 
                <div className="flex flex-col justify-center items-end border-l border-border-subtle/50 pl-8">
                   <div className="text-right">
-                    <div className="text-[10px] text-text-muted font-bold uppercase">Estado Actual / Ãšltimo</div>
+                    <div className="text-[10px] text-text-muted font-bold uppercase">Estado Actual / Último</div>
                     <StatusBadge status={data.interventions[0].status_name} color={data.interventions[0].status_color} />
-                    <div className="text-[10px] text-text-muted mt-2 uppercase">Ãšltimo Ingreso: {formatDate(data.machineInfo!.last_service)}</div>
+                    <div className="text-[10px] text-text-muted mt-2 uppercase">Último Ingreso: {formatDate(data.machineInfo!.last_service)}</div>
                   </div>
                </div>
              </div>
@@ -157,7 +157,7 @@ function DNAContent() {
 
           {/* Timeline of interventions */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest ml-1">LÃ­nea de Tiempo de Intervenciones</h3>
+            <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest ml-1">Línea de Tiempo de Intervenciones</h3>
             
             <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-neon-purple/50 before:via-border-subtle before:to-transparent">
               {data.interventions.map((item, idx) => (
@@ -176,7 +176,7 @@ function DNAContent() {
                     <div className="text-xs font-medium text-text-primary mb-2 uppercase">{item.client_name}</div>
                     <div className="flex flex-wrap gap-2 items-center justify-between">
                       <StatusBadge status={item.status_name} color={item.status_color} />
-                      <span className="text-[10px] text-text-muted font-bold uppercase">Ver Ficha âž”</span>
+                      <span className="text-[10px] text-text-muted font-bold uppercase">Ver Ficha →</span>
                     </div>
                     {item.additional_observations && (
                       <div className="mt-3 pt-3 border-t border-border-subtle/30 text-[10px] text-text-secondary italic line-clamp-2">

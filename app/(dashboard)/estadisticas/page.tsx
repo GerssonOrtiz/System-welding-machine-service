@@ -42,7 +42,7 @@ export default function EstadisticasPage() {
       if (data.success) {
         setStats(data.data)
       } else {
-        toast.error(data.error || 'Error al cargar estadí­sticas')
+        toast.error(data.error || 'Error al cargar estadísticas')
       }
     } catch {
       toast.error('Error de red al cargar estadísticas')
@@ -81,9 +81,9 @@ export default function EstadisticasPage() {
   const serviceTypeLabels: Record<string, string> = {
     REVISION_GENERAL: 'Revisión General',
     MANTENIMIENTO_PREVENTIVO: 'Mant. Preventivo',
-    GARANTIA_CABELAB: 'Garantí­a Cabelab',
+    GARANTIA_CABELAB: 'Garantía Cabelab',
     REPARACION_MAYOR: 'Reparación Mayor',
-    GARANTIA_ESAB: 'GarantÃía ESAB'
+    GARANTIA_ESAB: 'Garantía ESAB'
   }
 
   return (
@@ -94,7 +94,7 @@ export default function EstadisticasPage() {
           Reportes y Analíticas Globales
         </h1>
         <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">
-          Anílisis completo de toda la base de datos (Activos + Entregados).
+          Análisis completo de toda la base de datos (Activos + Entregados).
         </p>
       </div>
 
@@ -127,7 +127,7 @@ export default function EstadisticasPage() {
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
             )}
           </div>
-          <div className="text-[10px] text-text-muted mt-1 uppercase">Con más de 5 dí­as</div>
+          <div className="text-[10px] text-text-muted mt-1 uppercase">Con más de 5 días</div>
         </div>
 
         {/* Entregas del mes */}
@@ -139,13 +139,13 @@ export default function EstadisticasPage() {
           <div className="text-[10px] text-text-muted mt-1 uppercase">Culminados este mes</div>
         </div>
 
-        {/* Promedio de dÃ­as */}
+        {/* Promedio de días */}
         <div className="bg-bg-surface/50 border border-border-subtle rounded-xl p-5 hover:border-purple-500/20 transition-all">
           <span className="text-[10px] text-text-secondary uppercase tracking-widest font-mono">Promedio de Entrega</span>
           <div className="text-3xl font-extrabold text-purple-400 mt-2 font-mono">
             {stats.avg_days_to_delivery} <span className="text-sm font-normal">d</span>
           </div>
-          <div className="text-[10px] text-text-muted mt-1 uppercase">Últimos 30 dí­as</div>
+          <div className="text-[10px] text-text-muted mt-1 uppercase">Últimos 30 días</div>
         </div>
       </div>
 
@@ -248,7 +248,7 @@ export default function EstadisticasPage() {
             </div>
             <div className="pt-4 grid grid-cols-2 gap-4 w-full">
               <div className="bg-bg-surface p-3 rounded-lg border border-border-subtle text-center">
-                <div className="text-[10px] text-text-muted uppercase">Lí­der</div>
+                <div className="text-[10px] text-text-muted uppercase">Líder</div>
                 <div className="text-xs font-bold text-neon-blue truncate">{stats.by_brand[0]?.brand || '-'}</div>
               </div>
               <div className="bg-bg-surface p-3 rounded-lg border border-border-subtle text-center">
@@ -310,12 +310,12 @@ export default function EstadisticasPage() {
             </div>
           </div>
 
-          {/* Detalle EstadÃístico */}
+          {/* Detalle Estadístico */}
           <div className="md:col-span-2 bg-bg-base rounded-xl border border-dashed border-border-subtle/40 p-6 flex flex-col justify-center min-h-[400px]">
             {!selectedCompany ? (
               <div className="text-center space-y-4 py-12">
                 <div className="text-4xl opacity-20"></div>
-                <p className="text-xs text-text-muted uppercase tracking-widest">Selecciona una empresa para ver su desglose estadí­stico</p>
+                <p className="text-xs text-text-muted uppercase tracking-widest">Selecciona una empresa para ver su desglose estadístico</p>
               </div>
             ) : (() => {
               const company = stats.by_company.find(c => c.name === selectedCompany)
@@ -402,12 +402,12 @@ export default function EstadisticasPage() {
                           ))}
                         </div>
                         {company.top_models.length === 0 && (
-                          <p className="text-[10px] text-text-muted italic px-1">Sin modelos especí­ficos registrados</p>
+                          <p className="text-[10px] text-text-muted italic px-1">Sin modelos específicos registrados</p>
                         )}
                       </div>
                     </div>
 
-                    {/* Ãšltimos Equipos que Ingresaron */}
+                    {/* Últimos Equipos que Ingresaron */}
                     <div className="space-y-3">
                       <h5 className="text-[10px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
                         Últimas Entradas (Marca / Modelo)

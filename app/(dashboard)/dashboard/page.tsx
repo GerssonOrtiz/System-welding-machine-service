@@ -25,7 +25,7 @@ export default function DashboardPage() {
     serviceFilter
   )
 
-  // BÃºsqueda con debounce de 350ms
+  // Búsqueda con debounce de 350ms
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current)
 
@@ -61,13 +61,13 @@ export default function DashboardPage() {
     mutateEquips()
   }
 
-  // Determina quÃ© lista mostrar
+  // Determina qué lista mostrar
   const displayEquipments = searchResults !== null ? searchResults : equipments
   const displayTotal = searchResults !== null ? searchResults.length : total
   const isInSearchMode = searchResults !== null
   const showLoader = isSearching || (loadingEquips && !isInSearchMode)
 
-  // Lista de estados para el filtro (podrÃ­a venir de una tabla maestra en el futuro)
+  // Lista de estados para el filtro (podría venir de una tabla maestra en el futuro)
   const statusOptions = [
     'En espera de diagnóstico', 
     'En diagnóstico', 
@@ -219,7 +219,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Indicadores de bÃºsqueda activa */}
+        {/* Indicadores de búsqueda activa */}
         {isInSearchMode && (
           <div className="px-1">
             <span className="text-[10px] text-text-secondary font-mono">

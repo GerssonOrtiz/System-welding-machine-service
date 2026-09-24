@@ -150,26 +150,41 @@ export default function QRPrintModal({
         </Dialog.Content>
       </Dialog.Portal>
 
-      {/* Estilos dedicados para la impresión limpia de la etiqueta física */}
+      {/* Estilos dedicados para la impresión limpia de la etiqueta física sin hojas extras */}
       <style jsx global>{`
         @media print {
+          @page {
+            size: auto;
+            margin: 0;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           #cabelab-qr-label, #cabelab-qr-label * {
-            visibility: visible;
+            visibility: visible !important;
           }
           #cabelab-qr-label {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            position: absolute !important;
+            left: 50% !important;
+            top: 40px !important;
+            transform: translateX(-50%) !important;
             width: 320px !important;
+            max-width: 320px !important;
             margin: 0 !important;
             border: 2px solid #000 !important;
             box-shadow: none !important;
             background: #fff !important;
             color: #000 !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
         }
       `}</style>

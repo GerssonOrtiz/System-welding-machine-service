@@ -1,702 +1,702 @@
-﻿// app/(dashboard)/admin/usuarios/page.tsx
-'use client'
-
-import React, { useState, useEffect } from 'react'
-import { useUser } from '@/hooks/useUser'
-import { usePageTitle } from '@/hooks/usePageTitle'
-import { toast } from 'sonner'
-import TechnicianManager from '@/components/admin/TechnicianManager'
-
-export default function AdminUsuariosPage() {
-  usePageTitle('Usuarios')
-  const { role, loading: userLoading } = useUser()
-  const [users, setUsers] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
-  const [importing, setImporting] = useState(false)
-  const [importResults, setImportResults] = useState<any | null>(null)
-
-  // Estados para nuevo usuario
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [creatingUser, setCreatingUser] = useState(false)
-  const [newUserData, setNewUserData] = useState({
-    username: '',
-    fullName: '',
-    password: '',
-    role: 'recepcion',
-  })
-
-  // Estados para restablecer contraseÃ±a
-  const [resetPasswordTarget, setResetPasswordTarget] = useState<{ id: string; username: string } | null>(null)
-  const [resettingPassword, setResettingPassword] = useState(false)
-  const [newPasswordValue, setNewPasswordValue] = useState('')
-
-  // Roles vÃ¡lidos para asignar (excluyendo superadmin)
-  const validRoles = ['admin', 'operaciones', 'recepcion', 'almacen', 'visualizador']
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true)
-      const res = await fetch('/api/users/list')
-      const data = await res.json()
-      if (data.success) {
-        setUsers(data.data)
-      } else {
-        toast.error(data.error || 'Error al cargar usuarios')
-      }
-    } catch (err) {
-      toast.error('Error de red al cargar usuarios')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (role === 'superadmin') {
-      fetchUsers()
-    }
-  }, [role])
-
-  if (userLoading) {
-    return (
-      <div className="text-center py-12 text-sm text-neon-blue font-mono tracking-widest animate-pulse">
-        CONECTANDO CON SERVIDOR DE CREDENCIALES...
-      </div>
-    )
-  }
-
-  if (role !== 'superadmin') {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-2 p-6">
-        <h2 className="text-xl font-extrabold uppercase text-red-500 tracking-wider">Acceso Restringido</h2>
-        <p className="text-text-secondary text-sm max-w-md text-center">
-          Esta sección está disponible exclusivamente para el rol de Superadministrador.
-        </p>
-      </div>
-    )
-  }
-
-  // Filtrados por estado
-  const activeUsers = users.filter((u) => u.is_active && !u.is_superadmin)
-
-  const handleBlock = async (userId: string) => {
-    try {
-      const res = await fetch(`/api/users/${userId}/block`, {
-        method: 'POST',
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success('Usuario bloqueado con éxito')
-        fetchUsers()
-      } else {
-        toast.error(data.error || 'Error al bloquear usuario')
-      }
-    } catch {
-      toast.error('Error de red al bloquear usuario')
-    }
-  }
-
-  const handleReactivate = async (userId: string, userRole: string) => {
-    try {
-      // Para reactivar, usamos el endpoint de aprobaciÃ³n pasÃ¡ndole su rol actual
-      const res = await fetch(`/api/users/${userId}/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: userRole }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success('Usuario reactivado con éxito')
-        fetchUsers()
-      } else {
-        toast.error(data.error || 'Error al reactivar usuario')
-      }
-    } catch {
-      toast.error('Error de red al reactivar usuario')
-    }
-  }
-
-  const handleRoleUpdate = async (userId: string, newRole: string) => {
-    try {
-      const res = await fetch(`/api/users/${userId}/update-role`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success('Rol actualizado con éxito')
-        fetchUsers()
-      } else {
-        toast.error(data.error || 'Error al cambiar rol')
-      }
-    } catch {
-      toast.error('Error de red al actualizar rol')
-    }
-  }
-
-  const handleDelete = async (userId: string) => {
-    try {
-      const res = await fetch(`/api/users/${userId}/delete`, {
-        method: 'DELETE',
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success('Usuario eliminado permanentemente')
-        setDeletingUserId(null)
-        fetchUsers()
-      } else {
-        toast.error(data.error || 'Error al eliminar usuario')
-      }
-    } catch {
-      toast.error('Error de red al eliminar usuario')
-    }
-  }
-
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newUserData.username.trim()) {
-      toast.error('Ingrese el nombre de usuario')
-      return
-    }
-    if (!newUserData.fullName.trim()) {
-      toast.error('Ingrese el nombre completo')
-      return
-    }
-    if (newUserData.password.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres')
-      return
-    }
-
-    try {
-      setCreatingUser(true)
-      const res = await fetch('/api/users/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUserData),
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success(`Usuario ${newUserData.username} creado con éxito`)
-        setIsCreateModalOpen(false)
-        setNewUserData({ username: '', fullName: '', password: '', role: 'recepcion' })
-        fetchUsers()
-      } else {
-        toast.error(data.error || 'Error al crear usuario')
-      }
-    } catch {
-      toast.error('Error de red al crear usuario')
-    } finally {
-      setCreatingUser(false)
-    }
-  }
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!resetPasswordTarget) return
-    if (newPasswordValue.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres')
-      return
-    }
-
-    try {
-      setResettingPassword(true)
-      const res = await fetch(`/api/users/${resetPasswordTarget.id}/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: newPasswordValue }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success(data.message || 'Contraseña actualizada con éxito')
-        setResetPasswordTarget(null)
-        setNewPasswordValue('')
-      } else {
-        toast.error(data.error || 'Error al restablecer contraseña')
-      }
-    } catch {
-      toast.error('Error de red al restablecer contraseña')
-    } finally {
-      setResettingPassword(false)
-    }
-  }
-
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const formData = new FormData()
-    formData.append('file', file)
-
-    try {
-      setImporting(true)
-      setImportResults(null)
-      const res = await fetch('/api/equipment/import', {
-        method: 'POST',
-        body: formData,
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success('Importación finalizada')
-        setImportResults(data.data)
-      } else {
-        toast.error(data.error || 'Error al importar datos')
-      }
-    } catch {
-      toast.error('Error de red al importar archivo')
-    } finally {
-      setImporting(false)
-      // Reset input value to allow uploading same file again
-      e.target.value = ''
-    }
-  }
-
-  return (
-    <div className="space-y-8 font-sans text-text-primary p-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold uppercase tracking-widest text-neon-blue">
-             Control de Acceso y Usuarios
-          </h1>
-          <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">
-            Panel exclusivo para el Superadministrador. Gestiona solicitudes, roles, accesos e importaciones.
-          </p>
-        </div>
-
-        {/* Botones de Acción */}
-        <div className="flex flex-wrap gap-2.5">
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-electric hover:brightness-110 active:scale-[0.98] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)] flex items-center gap-1.5"
-          >
-            <span></span> Crear Usuario
-          </button>
-
-          <label className="cursor-pointer bg-bg-surface hover:bg-bg-surface/80 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2 rounded transition-all select-none">
-            {importing ? 'Importando...' : ' Importar Equipos (Excel)'}
-            <input
-              type="file"
-              accept=".xlsx"
-              disabled={importing}
-              onChange={handleImportFile}
-              className="hidden"
-            />
-          </label>
-
-          <a
-            href="/api/equipment/export?format=xlsx"
-            download
-            className="bg-bg-surface hover:bg-bg-surface/80 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2 rounded transition-all inline-block select-none"
-          >
-             Exportar Excel
-          </a>
-        </div>
-      </div>
-
-      {/* Resumen de Importación */}
-      {importResults && (
-        <div className="bg-bg-surface border border-neon-blue/30 rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-neon-blue">
-              Resumen del Proceso de Importación
-            </h3>
-            <button
-              onClick={() => setImportResults(null)}
-              className="text-[10px] font-bold uppercase text-text-muted hover:text-text-primary"
-            >
-              Cerrar Resumen
-            </button>
-          </div>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="bg-bg-base border border-border-subtle p-3 rounded-lg">
-              <div className="text-lg font-bold font-mono text-emerald-400">
-                {importResults.imported}
-              </div>
-              <div className="text-[9px] uppercase tracking-wider text-text-muted mt-1">Importados</div>
-            </div>
-            <div className="bg-bg-base border border-border-subtle p-3 rounded-lg">
-              <div className="text-lg font-bold font-mono text-amber-400">
-                {importResults.skipped}
-              </div>
-              <div className="text-[9px] uppercase tracking-wider text-text-muted mt-1">Omitidos (Existentes)</div>
-            </div>
-            <div className="bg-bg-base border border-border-subtle p-3 rounded-lg">
-              <div className="text-lg font-bold font-mono text-red-400">
-                {importResults.errors.length}
-              </div>
-              <div className="text-[9px] uppercase tracking-wider text-text-muted mt-1">Errores encontrados</div>
-            </div>
-          </div>
-
-          {importResults.errors.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-red-400">Detalles de Errores:</h4>
-              <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin text-[11px] font-mono">
-                {importResults.errors.map((err: any, idx: number) => (
-                  <div key={idx} className="bg-red-500/5 border border-red-500/10 rounded px-3 py-1.5 text-red-300">
-                    Fila {err.row} {err.fr ? `(FR: ${err.fr})` : ''}  {err.reason}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ðŸ‘¤ GESTIÃ“N DE PERSONAL TÃ‰CNICO */}
-      <TechnicianManager />
-
-      {loading ? (
-        <div className="text-center py-12 text-sm text-neon-blue font-mono tracking-widest animate-pulse">
-          CONECTANDO CON SERVIDOR DE CREDENCIALES...
-        </div>
-      ) : (
-        <>
-          {/* ðŸ‘¥ USUARIOS DEL SISTEMA (ACTIVOS Y BLOQUEADOS) */}
-          <section className="bg-bg-surface border border-border-subtle rounded-xl p-6">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-neon-blue border-b border-border-subtle pb-3 mb-4">
-              Usuarios del Sistema
-            </h2>
-
-            {activeUsers.length === 0 ? (
-              <p className="text-[11px] text-text-muted uppercase italic">
-                NingÃºn usuario registrado en la base de datos.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-border-subtle text-[10px] uppercase tracking-widest text-text-muted">
-                      <th className="py-2.5">Nombre Completo</th>
-                      <th className="py-2.5">Username</th>
-                      <th className="py-2.5">Email</th>
-                      <th className="py-2.5">Rol</th>
-                      <th className="py-2.5">Estado</th>
-                      <th className="py-2.5 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-subtle/30 text-xs">
-                    {activeUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-bg-base/40">
-                        <td className="py-3 font-semibold text-text-primary">
-                          {user.full_name || <span className="text-text-muted italic font-normal text-[11px]">No asignado</span>}
-                        </td>
-                        <td className="py-3 font-mono font-semibold tracking-wider text-neon-blue">
-                          {user.username}
-                        </td>
-                        <td className="py-3 font-mono text-text-secondary select-all">{user.email}</td>
-                        <td className="py-3">
-                          <select
-                            value={user.role}
-                            onChange={(e) => handleRoleUpdate(user.id, e.target.value)}
-                            className="bg-bg-elevated border border-border-subtle text-[10px] uppercase tracking-wider text-text-primary rounded px-2 py-0.5 focus:outline-none focus:border-neon-blue"
-                          >
-                            {validRoles.map((r) => (
-                              <option key={r} value={r}>
-                                {r}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="py-3">
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-                            Activo
-                          </span>
-                        </td>
-                        <td className="py-3 text-right">
-                          <div className="inline-flex gap-2">
-                            <button
-                              onClick={() => {
-                                setResetPasswordTarget({ id: user.id, username: user.username })
-                                setNewPasswordValue('')
-                              }}
-                              className="border border-neon-blue/30 hover:bg-neon-blue/10 text-neon-blue text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
-                              title="Cambiar contraseÃ±a de este usuario"
-                            >
-                              ðŸ”‘ Clave
-                            </button>
-                            <button
-                              onClick={() => handleBlock(user.id)}
-                              className="border border-amber-500/30 hover:bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
-                            >
-                              Bloquear
-                            </button>
-                            <button
-                              onClick={() => setDeletingUserId(user.id)}
-                              className="border border-red-500/30 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-
-          {/* ðŸš« USUARIOS BLOQUEADOS */}
-          {users.some((u) => !u.is_active && u.role !== 'pendiente' && !u.is_superadmin) && (
-            <section className="bg-bg-surface border border-border-subtle rounded-xl p-6">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-red-400 border-b border-border-subtle pb-3 mb-4">
-                Usuarios Bloqueados / Inactivos
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-border-subtle text-[10px] uppercase tracking-widest text-text-muted">
-                      <th className="py-2.5">Nombre Completo</th>
-                      <th className="py-2.5">Username</th>
-                      <th className="py-2.5">Email</th>
-                      <th className="py-2.5">Rol Guardado</th>
-                      <th className="py-2.5 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-subtle/30 text-xs">
-                    {users
-                      .filter((u) => !u.is_active && u.role !== 'pendiente' && !u.is_superadmin)
-                      .map((user) => (
-                        <tr key={user.id} className="hover:bg-bg-base/40 opacity-70">
-                          <td className="py-3 font-semibold text-text-primary">
-                            {user.full_name || <span className="text-text-muted italic font-normal text-[11px]">No asignado</span>}
-                          </td>
-                          <td className="py-3 font-mono tracking-wider text-text-primary">
-                            {user.username}
-                          </td>
-                          <td className="py-3 font-mono text-text-secondary select-all">{user.email}</td>
-                          <td className="py-3 uppercase text-[10px] text-text-secondary">{user.role}</td>
-                          <td className="py-3 text-right">
-                            <div className="inline-flex gap-2">
-                              <button
-                                onClick={() => {
-                                  setResetPasswordTarget({ id: user.id, username: user.username })
-                                  setNewPasswordValue('')
-                                }}
-                                className="border border-neon-blue/30 hover:bg-neon-blue/10 text-neon-blue text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
-                                title="Cambiar contraseÃ±a de este usuario"
-                              >
-                                ðŸ”‘ Clave
-                              </button>
-                              <button
-                                onClick={() => handleReactivate(user.id, user.role)}
-                                className="border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
-                              >
-                                Reactivar
-                              </button>
-                              <button
-                                onClick={() => setDeletingUserId(user.id)}
-                                className="border border-red-500/30 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-        </>
-      )}
-
-      {/* âž• MODAL CREAR USUARIO */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-bg-surface border border-neon-blue/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
-            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-              <h3 className="text-base font-extrabold uppercase text-neon-blue tracking-wider">
-                âž• Registrar Nuevo Usuario
-              </h3>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-text-muted hover:text-white text-sm font-bold"
-              >
-                âœ•
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div className="space-y-1">
-                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                  Nombre Completo
-                </label>
-                <input
-                  type="text"
-                  required
-                  disabled={creatingUser}
-                  placeholder="ej. Mauricio BeltrÃ¡n"
-                  value={newUserData.fullName}
-                  onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })}
-                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-sans"
-                />
-                <p className="text-[10px] text-text-muted">
-                  Este es el nombre visible asignado a este inicio de sesiÃ³n.
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                  Nombre de Usuario (Login)
-                </label>
-                <input
-                  type="text"
-                  required
-                  disabled={creatingUser}
-                  placeholder="ej. mbeltran"
-                  value={newUserData.username}
-                  onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
-                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
-                />
-                <p className="text-[10px] text-text-muted">
-                  Se le asignarÃ¡ automÃ¡ticamente el correo <span className="font-mono text-neon-blue">{newUserData.username.toLowerCase() || 'usuario'}@cabelab.local</span>
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                  ContraseÃ±a Inicial
-                </label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  disabled={creatingUser}
-                  placeholder="MÃ­nimo 6 caracteres"
-                  value={newUserData.password}
-                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
-                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                  Rol Asignado
-                </label>
-                <select
-                  value={newUserData.role}
-                  disabled={creatingUser}
-                  onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
-                  className="w-full bg-bg-elevated border border-border-subtle rounded px-3 py-2 text-xs uppercase tracking-wider text-text-primary focus:outline-none focus:border-neon-blue"
-                >
-                  {validRoles.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex gap-3 justify-end pt-3 border-t border-border-subtle/50">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="bg-bg-base border border-border-subtle hover:border-text-secondary text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={creatingUser}
-                  className="bg-electric hover:brightness-110 disabled:opacity-50 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)]"
-                >
-                  {creatingUser ? 'Creando...' : 'Crear Usuario'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ðŸ”‘ MODAL RESTABLECER CONTRASEÃ‘A */}
-      {resetPasswordTarget && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-bg-surface border border-neon-blue/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
-            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-              <h3 className="text-base font-extrabold uppercase text-neon-blue tracking-wider">
-                ðŸ”‘ Cambiar ContraseÃ±a de Usuario
-              </h3>
-              <button
-                onClick={() => setResetPasswordTarget(null)}
-                className="text-text-muted hover:text-white text-sm font-bold"
-              >
-                âœ•
-              </button>
-            </div>
-
-            <p className="text-xs text-text-secondary">
-              Establecer una nueva contraseÃ±a para el usuario <strong className="text-neon-blue font-mono">{resetPasswordTarget.username}</strong>.
-            </p>
-
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div className="space-y-1">
-                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                  Nueva ContraseÃ±a
-                </label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  disabled={resettingPassword}
-                  placeholder="MÃ­nimo 6 caracteres"
-                  value={newPasswordValue}
-                  onChange={(e) => setNewPasswordValue(e.target.value)}
-                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end pt-3 border-t border-border-subtle/50">
-                <button
-                  type="button"
-                  onClick={() => setResetPasswordTarget(null)}
-                  className="bg-bg-base border border-border-subtle hover:border-text-secondary text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={resettingPassword}
-                  className="bg-electric hover:brightness-110 disabled:opacity-50 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)]"
-                >
-                  {resettingPassword ? 'Guardando...' : 'Actualizar ContraseÃ±a'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* âš ï¸ MODAL DE CONFIRMACIÃ“N DE ELIMINACIÃ“N */}
-      {deletingUserId && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-bg-surface border border-red-500/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <h3 className="text-base font-extrabold uppercase text-red-400 tracking-wider">
-              Â¿Eliminar Usuario Permanentemente?
-            </h3>
-            <p className="text-xs text-text-secondary">
-              Esta acciÃ³n no se puede deshacer. Se removerÃ¡n los perfiles del usuario en el sistema de autenticaciÃ³n de Supabase y en la base de datos de manera definitiva.
-            </p>
-            <div className="flex gap-3 justify-end pt-2 border-t border-border-subtle/50">
-              <button
-                onClick={() => setDeletingUserId(null)}
-                className="bg-bg-base border border-border-subtle hover:border-text-secondary text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleDelete(deletingUserId)}
-                className="bg-red-500 hover:bg-red-600 text-black text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
-              >
-                Confirmar EliminaciÃ³n
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+﻿// app/(dashboard)/admin/usuarios/page.tsx
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { useUser } from '@/hooks/useUser'
+import { usePageTitle } from '@/hooks/usePageTitle'
+import { toast } from 'sonner'
+import TechnicianManager from '@/components/admin/TechnicianManager'
+
+export default function AdminUsuariosPage() {
+  usePageTitle('Usuarios')
+  const { role, loading: userLoading } = useUser()
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResults, setImportResults] = useState<any | null>(null)
+
+  // Estados para nuevo usuario
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [creatingUser, setCreatingUser] = useState(false)
+  const [newUserData, setNewUserData] = useState({
+    username: '',
+    fullName: '',
+    password: '',
+    role: 'recepcion',
+  })
+
+  // Estados para restablecer contraseña
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<{ id: string; username: string } | null>(null)
+  const [resettingPassword, setResettingPassword] = useState(false)
+  const [newPasswordValue, setNewPasswordValue] = useState('')
+
+  // Roles válidos para asignar (excluyendo superadmin)
+  const validRoles = ['admin', 'operaciones', 'recepcion', 'almacen', 'visualizador']
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/users/list')
+      const data = await res.json()
+      if (data.success) {
+        setUsers(data.data)
+      } else {
+        toast.error(data.error || 'Error al cargar usuarios')
+      }
+    } catch (err) {
+      toast.error('Error de red al cargar usuarios')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (role === 'superadmin') {
+      fetchUsers()
+    }
+  }, [role])
+
+  if (userLoading) {
+    return (
+      <div className="text-center py-12 text-sm text-neon-blue font-mono tracking-widest animate-pulse">
+        CONECTANDO CON SERVIDOR DE CREDENCIALES...
+      </div>
+    )
+  }
+
+  if (role !== 'superadmin') {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-2 p-6">
+        <h2 className="text-xl font-extrabold uppercase text-red-500 tracking-wider">Acceso Restringido</h2>
+        <p className="text-text-secondary text-sm max-w-md text-center">
+          Esta sección está disponible exclusivamente para el rol de Superadministrador.
+        </p>
+      </div>
+    )
+  }
+
+  // Filtrados por estado
+  const activeUsers = users.filter((u) => u.is_active && !u.is_superadmin)
+
+  const handleBlock = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}/block`, {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Usuario bloqueado con éxito')
+        fetchUsers()
+      } else {
+        toast.error(data.error || 'Error al bloquear usuario')
+      }
+    } catch {
+      toast.error('Error de red al bloquear usuario')
+    }
+  }
+
+  const handleReactivate = async (userId: string, userRole: string) => {
+    try {
+      // Para reactivar, usamos el endpoint de aprobación pasándole su rol actual
+      const res = await fetch(`/api/users/${userId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: userRole }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Usuario reactivado con éxito')
+        fetchUsers()
+      } else {
+        toast.error(data.error || 'Error al reactivar usuario')
+      }
+    } catch {
+      toast.error('Error de red al reactivar usuario')
+    }
+  }
+
+  const handleRoleUpdate = async (userId: string, newRole: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}/update-role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Rol actualizado con éxito')
+        fetchUsers()
+      } else {
+        toast.error(data.error || 'Error al cambiar rol')
+      }
+    } catch {
+      toast.error('Error de red al actualizar rol')
+    }
+  }
+
+  const handleDelete = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}/delete`, {
+        method: 'DELETE',
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Usuario eliminado permanentemente')
+        setDeletingUserId(null)
+        fetchUsers()
+      } else {
+        toast.error(data.error || 'Error al eliminar usuario')
+      }
+    } catch {
+      toast.error('Error de red al eliminar usuario')
+    }
+  }
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newUserData.username.trim()) {
+      toast.error('Ingrese el nombre de usuario')
+      return
+    }
+    if (!newUserData.fullName.trim()) {
+      toast.error('Ingrese el nombre completo')
+      return
+    }
+    if (newUserData.password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
+    try {
+      setCreatingUser(true)
+      const res = await fetch('/api/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUserData),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`Usuario ${newUserData.username} creado con éxito`)
+        setIsCreateModalOpen(false)
+        setNewUserData({ username: '', fullName: '', password: '', role: 'recepcion' })
+        fetchUsers()
+      } else {
+        toast.error(data.error || 'Error al crear usuario')
+      }
+    } catch {
+      toast.error('Error de red al crear usuario')
+    } finally {
+      setCreatingUser(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!resetPasswordTarget) return
+    if (newPasswordValue.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
+    try {
+      setResettingPassword(true)
+      const res = await fetch(`/api/users/${resetPasswordTarget.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: newPasswordValue }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(data.message || 'Contraseña actualizada con éxito')
+        setResetPasswordTarget(null)
+        setNewPasswordValue('')
+      } else {
+        toast.error(data.error || 'Error al restablecer contraseña')
+      }
+    } catch {
+      toast.error('Error de red al restablecer contraseña')
+    } finally {
+      setResettingPassword(false)
+    }
+  }
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      setImporting(true)
+      setImportResults(null)
+      const res = await fetch('/api/equipment/import', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Importación finalizada')
+        setImportResults(data.data)
+      } else {
+        toast.error(data.error || 'Error al importar datos')
+      }
+    } catch {
+      toast.error('Error de red al importar archivo')
+    } finally {
+      setImporting(false)
+      // Reset input value to allow uploading same file again
+      e.target.value = ''
+    }
+  }
+
+  return (
+    <div className="space-y-8 font-sans text-text-primary p-6 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold uppercase tracking-widest text-neon-blue">
+             Control de Acceso y Usuarios
+          </h1>
+          <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">
+            Panel exclusivo para el Superadministrador. Gestiona solicitudes, roles, accesos e importaciones.
+          </p>
+        </div>
+
+        {/* Botones de Acción */}
+        <div className="flex flex-wrap gap-2.5">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-electric hover:brightness-110 active:scale-[0.98] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)] flex items-center gap-1.5"
+          >
+            <span></span> Crear Usuario
+          </button>
+
+          <label className="cursor-pointer bg-bg-surface hover:bg-bg-surface/80 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2 rounded transition-all select-none">
+            {importing ? 'Importando...' : ' Importar Equipos (Excel)'}
+            <input
+              type="file"
+              accept=".xlsx"
+              disabled={importing}
+              onChange={handleImportFile}
+              className="hidden"
+            />
+          </label>
+
+          <a
+            href="/api/equipment/export?format=xlsx"
+            download
+            className="bg-bg-surface hover:bg-bg-surface/80 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2 rounded transition-all inline-block select-none"
+          >
+             Exportar Excel
+          </a>
+        </div>
+      </div>
+
+      {/* Resumen de Importación */}
+      {importResults && (
+        <div className="bg-bg-surface border border-neon-blue/30 rounded-xl p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-neon-blue">
+              Resumen del Proceso de Importación
+            </h3>
+            <button
+              onClick={() => setImportResults(null)}
+              className="text-[10px] font-bold uppercase text-text-muted hover:text-text-primary"
+            >
+              Cerrar Resumen
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="bg-bg-base border border-border-subtle p-3 rounded-lg">
+              <div className="text-lg font-bold font-mono text-emerald-400">
+                {importResults.imported}
+              </div>
+              <div className="text-[9px] uppercase tracking-wider text-text-muted mt-1">Importados</div>
+            </div>
+            <div className="bg-bg-base border border-border-subtle p-3 rounded-lg">
+              <div className="text-lg font-bold font-mono text-amber-400">
+                {importResults.skipped}
+              </div>
+              <div className="text-[9px] uppercase tracking-wider text-text-muted mt-1">Omitidos (Existentes)</div>
+            </div>
+            <div className="bg-bg-base border border-border-subtle p-3 rounded-lg">
+              <div className="text-lg font-bold font-mono text-red-400">
+                {importResults.errors.length}
+              </div>
+              <div className="text-[9px] uppercase tracking-wider text-text-muted mt-1">Errores encontrados</div>
+            </div>
+          </div>
+
+          {importResults.errors.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-red-400">Detalles de Errores:</h4>
+              <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin text-[11px] font-mono">
+                {importResults.errors.map((err: any, idx: number) => (
+                  <div key={idx} className="bg-red-500/5 border border-red-500/10 rounded px-3 py-1.5 text-red-300">
+                    Fila {err.row} {err.fr ? `(FR: ${err.fr})` : ''}  {err.reason}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/*  GESTIÓN DE PERSONAL TÉCNICO */}
+      <TechnicianManager />
+
+      {loading ? (
+        <div className="text-center py-12 text-sm text-neon-blue font-mono tracking-widest animate-pulse">
+          CONECTANDO CON SERVIDOR DE CREDENCIALES...
+        </div>
+      ) : (
+        <>
+          {/* ðŸ‘¥ USUARIOS DEL SISTEMA (ACTIVOS Y BLOQUEADOS) */}
+          <section className="bg-bg-surface border border-border-subtle rounded-xl p-6">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-neon-blue border-b border-border-subtle pb-3 mb-4">
+              Usuarios del Sistema
+            </h2>
+
+            {activeUsers.length === 0 ? (
+              <p className="text-[11px] text-text-muted uppercase italic">
+                Ningún usuario registrado en la base de datos.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border-subtle text-[10px] uppercase tracking-widest text-text-muted">
+                      <th className="py-2.5">Nombre Completo</th>
+                      <th className="py-2.5">Username</th>
+                      <th className="py-2.5">Email</th>
+                      <th className="py-2.5">Rol</th>
+                      <th className="py-2.5">Estado</th>
+                      <th className="py-2.5 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-subtle/30 text-xs">
+                    {activeUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-bg-base/40">
+                        <td className="py-3 font-semibold text-text-primary">
+                          {user.full_name || <span className="text-text-muted italic font-normal text-[11px]">No asignado</span>}
+                        </td>
+                        <td className="py-3 font-mono font-semibold tracking-wider text-neon-blue">
+                          {user.username}
+                        </td>
+                        <td className="py-3 font-mono text-text-secondary select-all">{user.email}</td>
+                        <td className="py-3">
+                          <select
+                            value={user.role}
+                            onChange={(e) => handleRoleUpdate(user.id, e.target.value)}
+                            className="bg-bg-elevated border border-border-subtle text-[10px] uppercase tracking-wider text-text-primary rounded px-2 py-0.5 focus:outline-none focus:border-neon-blue"
+                          >
+                            {validRoles.map((r) => (
+                              <option key={r} value={r}>
+                                {r}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-3">
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                            Activo
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">
+                          <div className="inline-flex gap-2">
+                            <button
+                              onClick={() => {
+                                setResetPasswordTarget({ id: user.id, username: user.username })
+                                setNewPasswordValue('')
+                              }}
+                              className="border border-neon-blue/30 hover:bg-neon-blue/10 text-neon-blue text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
+                              title="Cambiar contraseña de este usuario"
+                            >
+                               Clave
+                            </button>
+                            <button
+                              onClick={() => handleBlock(user.id)}
+                              className="border border-amber-500/30 hover:bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
+                            >
+                              Bloquear
+                            </button>
+                            <button
+                              onClick={() => setDeletingUserId(user.id)}
+                              className="border border-red-500/30 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {/* ðŸš« USUARIOS BLOQUEADOS */}
+          {users.some((u) => !u.is_active && u.role !== 'pendiente' && !u.is_superadmin) && (
+            <section className="bg-bg-surface border border-border-subtle rounded-xl p-6">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-red-400 border-b border-border-subtle pb-3 mb-4">
+                Usuarios Bloqueados / Inactivos
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border-subtle text-[10px] uppercase tracking-widest text-text-muted">
+                      <th className="py-2.5">Nombre Completo</th>
+                      <th className="py-2.5">Username</th>
+                      <th className="py-2.5">Email</th>
+                      <th className="py-2.5">Rol Guardado</th>
+                      <th className="py-2.5 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-subtle/30 text-xs">
+                    {users
+                      .filter((u) => !u.is_active && u.role !== 'pendiente' && !u.is_superadmin)
+                      .map((user) => (
+                        <tr key={user.id} className="hover:bg-bg-base/40 opacity-70">
+                          <td className="py-3 font-semibold text-text-primary">
+                            {user.full_name || <span className="text-text-muted italic font-normal text-[11px]">No asignado</span>}
+                          </td>
+                          <td className="py-3 font-mono tracking-wider text-text-primary">
+                            {user.username}
+                          </td>
+                          <td className="py-3 font-mono text-text-secondary select-all">{user.email}</td>
+                          <td className="py-3 uppercase text-[10px] text-text-secondary">{user.role}</td>
+                          <td className="py-3 text-right">
+                            <div className="inline-flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setResetPasswordTarget({ id: user.id, username: user.username })
+                                  setNewPasswordValue('')
+                                }}
+                                className="border border-neon-blue/30 hover:bg-neon-blue/10 text-neon-blue text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
+                                title="Cambiar contraseña de este usuario"
+                              >
+                                 Clave
+                              </button>
+                              <button
+                                onClick={() => handleReactivate(user.id, user.role)}
+                                className="border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
+                              >
+                                Reactivar
+                              </button>
+                              <button
+                                onClick={() => setDeletingUserId(user.id)}
+                                className="border border-red-500/30 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {/* + MODAL CREAR USUARIO */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-bg-surface border border-neon-blue/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+              <h3 className="text-base font-extrabold uppercase text-neon-blue tracking-wider">
+                + Registrar Nuevo Usuario
+              </h3>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-text-muted hover:text-white text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Nombre Completo
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={creatingUser}
+                  placeholder="ej. Mauricio Beltrán"
+                  value={newUserData.fullName}
+                  onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })}
+                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-sans"
+                />
+                <p className="text-[10px] text-text-muted">
+                  Este es el nombre visible asignado a este inicio de sesión.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Nombre de Usuario (Login)
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={creatingUser}
+                  placeholder="ej. mbeltran"
+                  value={newUserData.username}
+                  onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
+                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
+                />
+                <p className="text-[10px] text-text-muted">
+                  Se le asignará automáticamente el correo <span className="font-mono text-neon-blue">{newUserData.username.toLowerCase() || 'usuario'}@cabelab.local</span>
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Contraseña Inicial
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  disabled={creatingUser}
+                  placeholder="Mínimo 6 caracteres"
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Rol Asignado
+                </label>
+                <select
+                  value={newUserData.role}
+                  disabled={creatingUser}
+                  onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+                  className="w-full bg-bg-elevated border border-border-subtle rounded px-3 py-2 text-xs uppercase tracking-wider text-text-primary focus:outline-none focus:border-neon-blue"
+                >
+                  {validRoles.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-3 justify-end pt-3 border-t border-border-subtle/50">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="bg-bg-base border border-border-subtle hover:border-text-secondary text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingUser}
+                  className="bg-electric hover:brightness-110 disabled:opacity-50 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)]"
+                >
+                  {creatingUser ? 'Creando...' : 'Crear Usuario'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/*  MODAL RESTABLECER CONTRASEÑA */}
+      {resetPasswordTarget && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-bg-surface border border-neon-blue/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+              <h3 className="text-base font-extrabold uppercase text-neon-blue tracking-wider">
+                 Cambiar Contraseña de Usuario
+              </h3>
+              <button
+                onClick={() => setResetPasswordTarget(null)}
+                className="text-text-muted hover:text-white text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-text-secondary">
+              Establecer una nueva contraseña para el usuario <strong className="text-neon-blue font-mono">{resetPasswordTarget.username}</strong>.
+            </p>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                  Nueva Contraseña
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  disabled={resettingPassword}
+                  placeholder="Mínimo 6 caracteres"
+                  value={newPasswordValue}
+                  onChange={(e) => setNewPasswordValue(e.target.value)}
+                  className="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-neon-blue font-mono"
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-3 border-t border-border-subtle/50">
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordTarget(null)}
+                  className="bg-bg-base border border-border-subtle hover:border-text-secondary text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={resettingPassword}
+                  className="bg-electric hover:brightness-110 disabled:opacity-50 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)]"
+                >
+                  {resettingPassword ? 'Guardando...' : 'Actualizar Contraseña'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ⚠️  MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+      {deletingUserId && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-bg-surface border border-red-500/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="text-base font-extrabold uppercase text-red-400 tracking-wider">
+              ¿Eliminar Usuario Permanentemente?
+            </h3>
+            <p className="text-xs text-text-secondary">
+              Esta acción no se puede deshacer. Se removerán los perfiles del usuario en el sistema de autenticación de Supabase y en la base de datos de manera definitiva.
+            </p>
+            <div className="flex gap-3 justify-end pt-2 border-t border-border-subtle/50">
+              <button
+                onClick={() => setDeletingUserId(null)}
+                className="bg-bg-base border border-border-subtle hover:border-text-secondary text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDelete(deletingUserId)}
+                className="bg-red-500 hover:bg-red-600 text-black text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
+              >
+                Confirmar Eliminación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

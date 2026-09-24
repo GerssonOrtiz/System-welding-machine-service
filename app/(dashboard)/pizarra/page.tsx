@@ -58,7 +58,7 @@ export default function PizarraPage() {
     <div className={`flex flex-col bg-bg-base font-sans text-text-primary ${isKioskMode ? 'fixed inset-0 z-[9999]' : 'min-h-screen'}`}>
       {/*  Header Pizarra  */}
       <header className="flex justify-between items-center px-6 py-4 bg-bg-surface border-b border-border-subtle flex-shrink-0">
-        {/* Logo + tì­tulo */}
+        {/* Logo + título */}
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center p-1 shadow-inner">
               <Image
@@ -98,7 +98,7 @@ export default function PizarraPage() {
       <div className="flex items-center gap-3 px-6 py-2 bg-bg-base border-b border-border-subtle/30 text-[10px] uppercase tracking-widest text-text-muted font-mono flex-shrink-0">
         <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse shadow-neon-blue inline-block" />
         Conexión Realtime Activa
-        <span className="ml-auto">Actualizaciòn automática</span>
+        <span className="ml-auto">Actualización automática</span>
       </div>
 
       {/*  Tablero Principal  */}

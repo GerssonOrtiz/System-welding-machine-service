@@ -30,7 +30,7 @@ export default function EquiposPage() {
 
   const canRegister = ['superadmin', 'admin', 'recepcion'].includes(role || '')
 
-  // BÃºsqueda con debounce de 350ms
+  // Búsqueda con debounce de 350ms
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current)
 
@@ -106,7 +106,7 @@ export default function EquiposPage() {
     return 'Seguimiento completo de todos los equipos en proceso activo.'
   }
 
-  // Determina quÃ© lista mostrar en la tabla
+  // Determina qué lista mostrar en la tabla
   const displayEquipments = searchResults !== null ? searchResults : equipments
   const displayTotal = searchResults !== null ? searchResults.length : total
   const isInSearchMode = searchResults !== null
