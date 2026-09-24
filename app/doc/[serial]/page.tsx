@@ -107,17 +107,20 @@ export default function PublicEquipmentDocPage() {
       <header className="relative border-b border-[#1E293B]/70 bg-[#0F172A]/80 backdrop-blur-md sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative h-8 w-28 flex items-center">
+            <div className="relative w-9 h-9 rounded-xl bg-black/40 border border-slate-700/60 overflow-hidden flex items-center justify-center p-1 shadow-md">
               <Image
                 src="/cabelab.png"
                 alt="CABELAB"
-                width={120}
+                width={32}
                 height={32}
                 priority
-                className="object-contain max-h-8 w-auto"
+                className="object-contain w-full h-full"
               />
             </div>
-            <div className="border-l border-slate-700/60 pl-3 hidden sm:block">
+            <div>
+              <span className="font-black text-sm tracking-wider uppercase font-mono text-white block">
+                CABELAB
+              </span>
               <span className="block text-[10px] text-slate-400 font-mono tracking-widest uppercase">
                 Centro de Servicios Técnicos
               </span>
@@ -352,16 +355,21 @@ export default function PublicEquipmentDocPage() {
 
       {/* Footer */}
       <footer className="relative border-t border-[#1E293B]/70 py-8 mt-12 bg-[#0A0D14]/90 flex flex-col items-center justify-center text-xs text-slate-500 space-y-2">
-        <div className="relative h-6 w-24 flex items-center justify-center">
-          <Image
-            src="/cabelab.png"
-            alt="CABELAB"
-            width={96}
-            height={24}
-            className="object-contain max-h-6 w-auto opacity-80"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative w-6 h-6 shrink-0">
+            <Image
+              src="/cabelab.png"
+              alt="CABELAB"
+              width={24}
+              height={24}
+              className="object-contain w-full h-full opacity-80"
+            />
+          </div>
+          <span className="font-bold text-xs uppercase font-mono text-slate-300">
+            CABELAB
+          </span>
         </div>
-        <p className="font-semibold text-slate-400">
+        <p className="font-medium text-slate-400">
           Taller de Mantenimiento y Diagnóstico de Motosoldadoras
         </p>
         <p className="text-[11px] text-slate-600">

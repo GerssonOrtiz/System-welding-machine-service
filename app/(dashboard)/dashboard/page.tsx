@@ -1,10 +1,11 @@
-﻿// app/(dashboard)/dashboard/page.tsx
+// app/(dashboard)/dashboard/page.tsx
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useDashboardStats, useEquipmentList } from '@/hooks/useEquipmentList'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import EquipmentTable from '@/components/equipment/EquipmentTable'
+import { Database, Activity, AlertTriangle, CheckCircle, Clock, Search, X } from 'lucide-react'
 
 export default function DashboardPage() {
   usePageTitle('Dashboard')
@@ -94,37 +95,76 @@ export default function DashboardPage() {
 
       {/* Stats Grid - AT TOP */}
       {loadingStats ? (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="bg-bg-surface border border-border-subtle rounded-xl p-5 h-24 animate-pulse" />
+            <div key={i} className="bg-bg-surface border border-border-subtle rounded-xl p-4 h-24 animate-pulse" />
           ))}
         </div>
       ) : stats ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Total Registrados */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-[0_0_12px_rgba(255,255,255,0.02)] hover:border-text-primary/20 transition-all">
-            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Total en Base de Datos</span>
-            <div className="text-2xl font-bold text-text-primary mt-1 font-mono">{stats.total_registered}</div>
+          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-white/20 transition-all flex flex-col justify-between group shadow-sm">
+            <div className="flex items-center justify-between text-text-secondary">
+              <span className="text-[10px] font-bold uppercase tracking-wider">Total Base Datos</span>
+              <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-text-secondary group-hover:text-text-primary transition-colors">
+                <Database size={14} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-text-primary font-mono mt-2 tracking-tight">
+              {stats.total_registered}
+            </div>
           </div>
+
           {/* Activos */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-[0_0_12px_rgba(0,229,255,0.03)] hover:border-neon-blue/20 transition-all">
-            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Equipos Activos</span>
-            <div className="text-2xl font-bold text-neon-blue mt-1 font-mono">{stats.total_active}</div>
+          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-neon-blue/40 transition-all flex flex-col justify-between group shadow-sm">
+            <div className="flex items-center justify-between text-text-secondary">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neon-blue">Equipos Activos</span>
+              <div className="w-7 h-7 rounded-lg bg-neon-blue/10 flex items-center justify-center text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]">
+                <Activity size={14} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-neon-blue font-mono mt-2 tracking-tight">
+              {stats.total_active}
+            </div>
           </div>
+
           {/* Atrasados */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-[0_0_12px_rgba(239,68,68,0.03)] hover:border-red-500/20 transition-all">
-            <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Atrasados (+5 Días)</span>
-            <div className="text-2xl font-bold text-red-500 mt-1 font-mono">{stats.total_delayed}</div>
+          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-red-500/40 transition-all flex flex-col justify-between group shadow-sm">
+            <div className="flex items-center justify-between text-text-secondary">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">Atrasados (+5 Días)</span>
+              <div className="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+                <AlertTriangle size={14} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-red-400 font-mono mt-2 tracking-tight">
+              {stats.total_delayed}
+            </div>
           </div>
+
           {/* Entregados este mes */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-[0_0_12px_rgba(16,185,129,0.03)] hover:border-emerald-500/20 transition-all">
-            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Entregados este Mes</span>
-            <div className="text-2xl font-bold text-emerald-400 mt-1 font-mono">{stats.delivered_this_month}</div>
+          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-emerald-500/40 transition-all flex flex-col justify-between group shadow-sm">
+            <div className="flex items-center justify-between text-text-secondary">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Entregados este Mes</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                <CheckCircle size={14} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-emerald-400 font-mono mt-2 tracking-tight">
+              {stats.delivered_this_month}
+            </div>
           </div>
+
           {/* Tiempo promedio */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-[0_0_12px_rgba(157,78,221,0.03)] hover:border-neon-purple/20 transition-all">
-            <span className="text-[10px] font-bold text-neon-purple uppercase tracking-wider">Promedio Entrega</span>
-            <div className="text-2xl font-bold text-neon-purple mt-1 font-mono">{stats.avg_days_to_delivery}d</div>
+          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-neon-purple/40 transition-all flex flex-col justify-between group shadow-sm">
+            <div className="flex items-center justify-between text-text-secondary">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neon-purple">Promedio Entrega</span>
+              <div className="w-7 h-7 rounded-lg bg-neon-purple/10 flex items-center justify-center text-neon-purple shadow-[0_0_10px_rgba(157,78,221,0.2)]">
+                <Clock size={14} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-neon-purple font-mono mt-2 tracking-tight">
+              {stats.avg_days_to_delivery}d
+            </div>
           </div>
         </div>
       ) : null}

@@ -98,19 +98,35 @@ function LoginContent() {
         {/* Adorno neón decorativo superior */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-60" />
 
-        {/* Encabezado con logo de Synapse */}
+        {/* Encabezado con logo de Synapse y badge de CABELAB */}
         <div className="mb-6 flex flex-col items-center">
-          <div className="relative w-60 h-20 flex items-center justify-center">
+          <div className="relative w-56 h-16 flex items-center justify-center">
             <Image
               src="/synapse_horizontal.png"
               alt="Synapse"
-              width={260}
-              height={100}
+              width={240}
+              height={80}
               priority
-              className="object-contain max-h-20 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.2)]"
+              className="object-contain max-h-16 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.2)]"
             />
           </div>
-          <p className="text-[11px] font-medium tracking-widest uppercase text-text-muted mt-2">
+
+          <div className="mt-2 flex items-center gap-2 px-3 py-1 bg-white/4 border border-white/8 rounded-full shadow-inner">
+            <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0">
+              <Image
+                src="/cabelab.png"
+                alt="CABELAB"
+                width={16}
+                height={16}
+                className="object-contain w-full h-full"
+              />
+            </div>
+            <span className="text-[10px] font-bold text-text-secondary tracking-widest uppercase font-mono">
+              CABELAB • Mantenimiento
+            </span>
+          </div>
+
+          <p className="text-[10px] font-medium tracking-widest uppercase text-text-muted mt-2">
             powered by <span className="text-neon-blue font-semibold">Venllas</span>
           </p>
         </div>

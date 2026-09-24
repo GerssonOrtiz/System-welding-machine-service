@@ -51,16 +51,19 @@ export function Navbar() {
         </div>
 
         {/* Logo identificador del cliente de servicio (CABELAB) */}
-        <div className="hidden sm:flex items-center px-2 py-1 bg-white/4 border border-white/8 rounded-md">
-          <div className="relative h-6 w-20 flex items-center">
+        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-white/4 border border-white/8 hover:border-neon-blue/30 rounded-lg transition-colors">
+          <div className="relative w-6 h-6 rounded-md overflow-hidden shrink-0 flex items-center justify-center bg-black/50">
             <Image
               src="/cabelab.png"
               alt="CABELAB"
-              width={80}
+              width={24}
               height={24}
-              className="object-contain max-h-6 w-auto"
+              className="object-contain w-full h-full"
             />
           </div>
+          <span className="text-[11px] font-black tracking-wider text-text-primary uppercase font-mono">
+            CABELAB
+          </span>
         </div>
       </div>
 

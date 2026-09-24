@@ -60,18 +60,21 @@ export default function PizarraPage() {
       <header className="flex justify-between items-center px-6 py-4 bg-bg-surface border-b border-border-subtle flex-shrink-0">
         {/* Logo + tì­tulo */}
           <div className="flex items-center gap-3">
-            <div className="relative h-9 w-32 flex items-center">
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center p-1 shadow-inner">
               <Image
                 src="/cabelab.png"
                 alt="CABELAB"
-                width={130}
+                width={36}
                 height={36}
                 priority
-                className="object-contain max-h-9 w-auto"
+                className="object-contain w-full h-full"
               />
             </div>
-            <div className="border-l border-border-subtle pl-3">
-              <p className="text-[11px] text-text-secondary uppercase tracking-widest">
+            <div>
+              <h1 className="text-base font-black tracking-wider uppercase text-neon-blue font-mono leading-none">
+                CABELAB
+              </h1>
+              <p className="text-[10px] text-text-secondary uppercase tracking-widest mt-1">
                 Tablero de Control Operativo
               </p>
             </div>

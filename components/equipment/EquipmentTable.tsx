@@ -8,7 +8,7 @@ import StatusBadge from './StatusBadge'
 import EquipmentDetail from './EquipmentDetail'
 import QRPrintModal from './QRPrintModal'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Package } from 'lucide-react'
+import { Package, QrCode, Eye, Trash2 } from 'lucide-react'
 
 interface EquipmentTableProps {
   equipments: any[]
@@ -143,30 +143,33 @@ export default function EquipmentTable({
                         {eq.maintenance_tech_username || eq.diagnosis_tech_username || '-'}
                       </td>
                     )}
-                    <td className="px-5 py-4 text-right space-x-2 whitespace-nowrap">
+                    <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
                       {eq.serial_number &&
                         !['N/S', 'S/N', 'N/A', 'SIN SERIE', 'SIN N/S', '-', '.'].includes(eq.serial_number.trim().toUpperCase()) && (
                           <button
                             onClick={() => setQrModalEq(eq)}
-                            title="Generar e imprimir código QR"
-                            className="px-2.5 py-1 rounded border border-border-subtle hover:border-[#00E5FF] text-slate-300 hover:text-[#00E5FF] transition-all font-semibold uppercase text-[10px]"
+                            title="Generar e imprimir etiqueta con código QR"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border-subtle hover:border-neon-blue text-text-secondary hover:text-neon-blue bg-bg-elevated/40 hover:bg-neon-blue/5 transition-all font-semibold uppercase text-[10px]"
                           >
-                            QR 📱
+                            <QrCode size={12} />
+                            <span>QR</span>
                           </button>
                       )}
                       <button
                         onClick={() => handleOpenDetail(eq.id)}
-                        className="px-3 py-1 rounded border border-neon-blue text-neon-blue hover:bg-neon-blue/10 transition-all font-semibold uppercase text-[10px]"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-neon-blue/40 text-neon-blue bg-neon-blue/5 hover:bg-neon-blue/15 hover:border-neon-blue transition-all font-bold uppercase text-[10px] shadow-[0_0_10px_rgba(0,229,255,0.1)]"
                       >
-                        Detalle
+                        <Eye size={12} />
+                        <span>Detalle</span>
                       </button>
                       {isEditable && (
                         <button
                           onClick={() => handleDelete(eq.id, eq.fr_number)}
                           disabled={deletingId === eq.id}
-                          className="px-3 py-1 rounded border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-all font-semibold uppercase text-[10px] disabled:opacity-40"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/60 transition-all font-semibold uppercase text-[10px] disabled:opacity-40"
                         >
-                          {deletingId === eq.id ? 'Borrando...' : 'Eliminar'}
+                          <Trash2 size={12} />
+                          <span>{deletingId === eq.id ? 'Borrando...' : 'Eliminar'}</span>
                         </button>
                       )}
                     </td>

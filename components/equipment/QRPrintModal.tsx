@@ -63,14 +63,19 @@ export default function QRPrintModal({
             >
               {/* Header de la etiqueta */}
               <div className="border-b-2 border-slate-900 pb-1.5 w-full flex items-center justify-between">
-                <div className="relative h-6 w-20 flex items-center">
-                  <Image
-                    src="/cabelab.png"
-                    alt="CABELAB"
-                    width={80}
-                    height={24}
-                    className="object-contain max-h-6 w-auto"
-                  />
+                <div className="flex items-center gap-1.5">
+                  <div className="relative w-6 h-6 shrink-0">
+                    <Image
+                      src="/cabelab.png"
+                      alt="CABELAB"
+                      width={24}
+                      height={24}
+                      className="object-contain w-full h-full"
+                    />
+                  </div>
+                  <span className="font-black text-xs tracking-wider uppercase font-mono text-slate-950">
+                    CABELAB
+                  </span>
                 </div>
                 <span className="text-[9px] font-bold text-slate-700 uppercase">TALLER DE MOTOSOLDADORAS</span>
               </div>

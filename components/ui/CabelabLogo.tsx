@@ -11,35 +11,18 @@ interface CabelabLogoProps {
   className?: string
 }
 
-export function CabelabLogo({ size = 48, compact = false, className = '' }: CabelabLogoProps) {
-  if (compact) {
-    return (
-      <div
-        className={`relative inline-flex items-center justify-center shrink-0 ${className}`}
-        style={{ width: size, height: size }}
-      >
-        <Image
-          src="/cabelab.png"
-          alt="CABELAB"
-          width={size}
-          height={size}
-          className="object-contain w-full h-full"
-        />
-      </div>
-    )
-  }
-
+export function CabelabLogo({ size = 40, compact = false, className = '' }: CabelabLogoProps) {
   return (
     <div
-      className={`relative inline-flex items-center justify-center shrink-0 ${className}`}
-      style={{ height: size, width: 'auto' }}
+      className={`relative inline-flex items-center justify-center shrink-0 overflow-hidden ${className}`}
+      style={{ width: size, height: size }}
     >
       <Image
         src="/cabelab.png"
         alt="CABELAB"
-        width={size * 3}
+        width={size}
         height={size}
-        className="object-contain h-full w-auto"
+        className="object-contain w-full h-full"
         priority
       />
     </div>
