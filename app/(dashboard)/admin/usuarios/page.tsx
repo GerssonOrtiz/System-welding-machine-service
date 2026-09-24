@@ -70,7 +70,7 @@ export default function AdminUsuariosPage() {
       <div className="flex flex-col items-center justify-center h-[60vh] gap-2 p-6">
         <h2 className="text-xl font-extrabold uppercase text-red-500 tracking-wider">Acceso Restringido</h2>
         <p className="text-text-secondary text-sm max-w-md text-center">
-          Esta secciÃ³n estÃ¡ disponible exclusivamente para el rol de Superadministrador.
+          Esta sección está disponible exclusivamente para el rol de Superadministrador.
         </p>
       </div>
     )
@@ -86,7 +86,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Usuario bloqueado con Ã©xito')
+        toast.success('Usuario bloqueado con éxito')
         fetchUsers()
       } else {
         toast.error(data.error || 'Error al bloquear usuario')
@@ -106,7 +106,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Usuario reactivado con Ã©xito')
+        toast.success('Usuario reactivado con éxito')
         fetchUsers()
       } else {
         toast.error(data.error || 'Error al reactivar usuario')
@@ -125,7 +125,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Rol actualizado con Ã©xito')
+        toast.success('Rol actualizado con éxito')
         fetchUsers()
       } else {
         toast.error(data.error || 'Error al cambiar rol')
@@ -164,7 +164,7 @@ export default function AdminUsuariosPage() {
       return
     }
     if (newUserData.password.length < 6) {
-      toast.error('La contraseÃ±a debe tener al menos 6 caracteres')
+      toast.error('La contraseña debe tener al menos 6 caracteres')
       return
     }
 
@@ -177,7 +177,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success(`Usuario ${newUserData.username} creado con Ã©xito`)
+        toast.success(`Usuario ${newUserData.username} creado con éxito`)
         setIsCreateModalOpen(false)
         setNewUserData({ username: '', fullName: '', password: '', role: 'recepcion' })
         fetchUsers()
@@ -195,7 +195,7 @@ export default function AdminUsuariosPage() {
     e.preventDefault()
     if (!resetPasswordTarget) return
     if (newPasswordValue.length < 6) {
-      toast.error('La contraseÃ±a debe tener al menos 6 caracteres')
+      toast.error('La contraseña debe tener al menos 6 caracteres')
       return
     }
 
@@ -208,14 +208,14 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success(data.message || 'ContraseÃ±a actualizada con Ã©xito')
+        toast.success(data.message || 'Contraseña actualizada con éxito')
         setResetPasswordTarget(null)
         setNewPasswordValue('')
       } else {
-        toast.error(data.error || 'Error al restablecer contraseÃ±a')
+        toast.error(data.error || 'Error al restablecer contraseña')
       }
     } catch {
-      toast.error('Error de red al restablecer contraseÃ±a')
+      toast.error('Error de red al restablecer contraseña')
     } finally {
       setResettingPassword(false)
     }
@@ -237,7 +237,7 @@ export default function AdminUsuariosPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('ImportaciÃ³n finalizada')
+        toast.success('Importación finalizada')
         setImportResults(data.data)
       } else {
         toast.error(data.error || 'Error al importar datos')
@@ -257,24 +257,24 @@ export default function AdminUsuariosPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-extrabold uppercase tracking-widest text-neon-blue">
-            ðŸ›¡ï¸ Control de Acceso y Usuarios
+             Control de Acceso y Usuarios
           </h1>
           <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">
             Panel exclusivo para el Superadministrador. Gestiona solicitudes, roles, accesos e importaciones.
           </p>
         </div>
 
-        {/* Botones de AcciÃ³n */}
+        {/* Botones de Acción */}
         <div className="flex flex-wrap gap-2.5">
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="bg-electric hover:brightness-110 active:scale-[0.98] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all shadow-[0_0_12px_rgba(0,82,255,0.4)] flex items-center gap-1.5"
           >
-            <span>âž•</span> Crear Usuario
+            <span></span> Crear Usuario
           </button>
 
           <label className="cursor-pointer bg-bg-surface hover:bg-bg-surface/80 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2 rounded transition-all select-none">
-            {importing ? 'Importando...' : 'ðŸ“¥ Importar Equipos (Excel)'}
+            {importing ? 'Importando...' : ' Importar Equipos (Excel)'}
             <input
               type="file"
               accept=".xlsx"
@@ -289,17 +289,17 @@ export default function AdminUsuariosPage() {
             download
             className="bg-bg-surface hover:bg-bg-surface/80 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2 rounded transition-all inline-block select-none"
           >
-            ðŸ“¤ Exportar Excel
+             Exportar Excel
           </a>
         </div>
       </div>
 
-      {/* Resumen de ImportaciÃ³n */}
+      {/* Resumen de Importación */}
       {importResults && (
         <div className="bg-bg-surface border border-neon-blue/30 rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-border-subtle pb-3">
             <h3 className="text-xs font-bold uppercase tracking-widest text-neon-blue">
-              Resumen del Proceso de ImportaciÃ³n
+              Resumen del Proceso de Importación
             </h3>
             <button
               onClick={() => setImportResults(null)}
@@ -335,7 +335,7 @@ export default function AdminUsuariosPage() {
               <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin text-[11px] font-mono">
                 {importResults.errors.map((err: any, idx: number) => (
                   <div key={idx} className="bg-red-500/5 border border-red-500/10 rounded px-3 py-1.5 text-red-300">
-                    Fila {err.row} {err.fr ? `(FR: ${err.fr})` : ''} â€” {err.reason}
+                    Fila {err.row} {err.fr ? `(FR: ${err.fr})` : ''}  {err.reason}
                   </div>
                 ))}
               </div>

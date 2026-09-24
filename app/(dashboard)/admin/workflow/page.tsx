@@ -91,7 +91,7 @@ export default function AdminWorkflowPage() {
       <div className="flex flex-col items-center justify-center h-[60vh] gap-2 p-6">
         <h2 className="text-xl font-extrabold uppercase text-red-500 tracking-wider">Acceso Restringido</h2>
         <p className="text-text-secondary text-sm max-w-md text-center">
-          Esta secciÃ³n estÃ¡ disponible exclusivamente para el rol de Superadministrador.
+          Esta sección está disponible exclusivamente para el rol de Superadministrador.
         </p>
       </div>
     )
@@ -209,19 +209,19 @@ export default function AdminWorkflowPage() {
 
       const data = await res.json()
       if (data.success) {
-        toast.success('TransiciÃ³n creada con Ã©xito')
+        toast.success('Transición creada con éxito')
         setIsTransitionModalOpen(false)
         fetchData()
       } else {
-        toast.error(data.error || 'Error al crear la transiciÃ³n')
+        toast.error(data.error || 'Error al crear la transición')
       }
     } catch {
-      toast.error('Error de red al crear la transiciÃ³n')
+      toast.error('Error de red al crear la transición')
     }
   }
 
   const handleDeleteTransition = async (transitionId: number) => {
-    if (!confirm('Â¿EstÃ¡s seguro de que deseas eliminar esta regla de transiciÃ³n?')) {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta regla de transición?')) {
       return
     }
 
@@ -231,13 +231,13 @@ export default function AdminWorkflowPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('TransiciÃ³n eliminada')
+        toast.success('Transición eliminada')
         fetchData()
       } else {
-        toast.error(data.error || 'Error al eliminar la transiciÃ³n')
+        toast.error(data.error || 'Error al eliminar la transición')
       }
     } catch {
-      toast.error('Error de red al eliminar la transiciÃ³n')
+      toast.error('Error de red al eliminar la transición')
     }
   }
 
@@ -247,10 +247,10 @@ export default function AdminWorkflowPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold uppercase tracking-widest text-neon-blue">
-            âš™ï¸ Editor del Workflow (Flujos y Estados)
+            Editor del Workflow (Flujos y Estados)
           </h1>
           <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">
-            Modifica la mÃ¡quina de estados, el orden visual del taller y las reglas de transiciones permitidas por rol.
+            Modifica la máquina de estados, el orden visual del taller y las reglas de transiciones permitidas por rol.
           </p>
         </div>
       </div>
@@ -261,7 +261,7 @@ export default function AdminWorkflowPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* ðŸ“Š SECCIÃ“N ESTADOS (Columnas taller/pizarra) */}
+          {/*  SECCIÓN ESTADOS (Columnas taller/pizarra) */}
           <div className="lg:col-span-7 space-y-4">
             <div className="flex justify-between items-center border-b border-border-subtle pb-3">
               <h2 className="text-sm font-bold uppercase tracking-widest text-neon-blue">
@@ -327,11 +327,11 @@ export default function AdminWorkflowPage() {
             </div>
           </div>
 
-          {/* ðŸ”— SECCIÃ“N TRANSICIONES (Reglas de cambio de estado) */}
+          {/* — SECCIÓN TRANSICIONES (Reglas de cambio de estado) */}
           <div className="lg:col-span-5 space-y-4">
             <div className="flex justify-between items-center border-b border-border-subtle pb-3">
               <h2 className="text-sm font-bold uppercase tracking-widest text-neon-blue">
-                Reglas de TransiciÃ³n
+                Reglas de Transición
               </h2>
               <button
                 onClick={handleOpenTransitionCreate}
@@ -344,7 +344,7 @@ export default function AdminWorkflowPage() {
             <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin">
               {transitions.length === 0 ? (
                 <p className="text-[11px] text-text-muted italic uppercase py-8 text-center border border-dashed border-border-subtle rounded-lg">
-                  No hay transiciones definidas. Los equipos no podrÃ¡n cambiar de estado.
+                  No hay transiciones definidas. Los equipos no podrán cambiar de estado.
                 </p>
               ) : (
                 transitions.map((t) => (
@@ -355,7 +355,7 @@ export default function AdminWorkflowPage() {
                     <div className="flex items-center justify-between text-xs font-mono font-bold tracking-wider">
                       <div className="flex items-center gap-1">
                         <span className="text-text-primary uppercase">{t.from_state_name}</span>
-                        <span className="text-neon-blue">âž”</span>
+                        <span className="text-neon-blue"></span>
                         <span className="text-text-primary uppercase">{t.to_state_name}</span>
                       </div>
                       <button
@@ -390,7 +390,7 @@ export default function AdminWorkflowPage() {
         </div>
       )}
 
-      {/* ðŸ“ MODAL EDITAR/CREAR ESTADO */}
+      {/*  MODAL EDITAR/CREAR ESTADO */}
       {isStateModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -412,7 +412,7 @@ export default function AdminWorkflowPage() {
                   disabled={editingState?.name === 'Entregado'}
                   value={stateForm.name}
                   onChange={(e) => setStateForm((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Ej. EN DIAGNÃ“STICO"
+                  placeholder="Ej. EN DIAGNÓSTICO"
                   className="w-full bg-bg-elevated border border-border-subtle rounded p-2 text-xs text-text-primary uppercase tracking-wide focus:outline-none focus:border-neon-blue"
                 />
               </div>
@@ -420,7 +420,7 @@ export default function AdminWorkflowPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest text-text-secondary mb-1">
-                    Ãndice de Orden
+                    Índice de Orden
                   </label>
                   <input
                     type="number"
@@ -495,7 +495,7 @@ export default function AdminWorkflowPage() {
         </div>
       )}
 
-      {/* ðŸ“ MODAL CREAR TRANSICIÃ“N */}
+      {/*  MODAL CREAR TRANSICIÓN */}
       {isTransitionModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -503,7 +503,7 @@ export default function AdminWorkflowPage() {
             className="bg-bg-surface border border-border-subtle rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4"
           >
             <h3 className="text-base font-extrabold uppercase text-neon-blue tracking-wider">
-              Registrar Regla de TransiciÃ³n
+              Registrar Regla de Transición
             </h3>
 
             <div className="space-y-4">
@@ -581,7 +581,7 @@ export default function AdminWorkflowPage() {
                 type="submit"
                 className="bg-neon-blue hover:bg-neon-blue/80 text-black text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded transition-all"
               >
-                Habilitar TransiciÃ³n
+                Habilitar Transición
               </button>
             </div>
           </form>

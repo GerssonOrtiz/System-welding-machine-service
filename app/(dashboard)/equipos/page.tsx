@@ -63,12 +63,12 @@ export default function EquiposPage() {
 
   const handleDeleteAll = async () => {
     const confirmText = window.prompt(
-      'Â¿EstÃ¡ seguro de que desea eliminar permanentemente TODOS los equipos de la base de datos?\nEsta acciÃ³n es irreversible y borrarÃ¡ el historial de estados de todos los equipos.\n\nPara confirmar, escriba "ELIMINAR" en la casilla de abajo:'
+      '¿Está seguro de que desea eliminar permanentemente TODOS los equipos de la base de datos?\nEsta acción es irreversible y borrará el historial de estados de todos los equipos.\n\nPara confirmar, escriba "ELIMINAR" en la casilla de abajo:'
     )
 
     if (confirmText !== 'ELIMINAR') {
       if (confirmText !== null) {
-        toast.error('ConfirmaciÃ³n incorrecta. No se eliminaron los equipos.')
+        toast.error('Confirmación incorrecta. No se eliminaron los equipos.')
       }
       return
     }
@@ -78,9 +78,9 @@ export default function EquiposPage() {
       const res = await fetch('/api/equipment', { method: 'DELETE' })
       const resData = await res.json()
       if (!res.ok || !resData.success) {
-        throw new Error(resData.error || 'OcurriÃ³ un error al eliminar los equipos')
+        throw new Error(resData.error || 'Ocurrió un error al eliminar los equipos')
       }
-      toast.success('Se han eliminado todos los equipos con Ã©xito')
+      toast.success('Se han eliminado todos los equipos con éxito')
       setSearchQuery('')
       setSearchResults(null)
       mutate()
@@ -93,16 +93,16 @@ export default function EquiposPage() {
   }
 
   const getPageTitle = () => {
-    if (role === 'recepcion') return 'ðŸ“¥ MÃ³dulo de RecepciÃ³n â€” Equipos Relevantes'
-    if (role === 'almacen') return 'ðŸ“¦ MÃ³dulo de AlmacÃ©n â€” Equipos en Espera de Repuestos'
-    if (role === 'visualizador') return 'ðŸ“‹ Consulta General de Equipos'
-    return 'ðŸ“‹ Lista de Equipos Activos'
+    if (role === 'recepcion') return 'Módulo de Recepción - Equipos Relevantes'
+    if (role === 'almacen') return 'Módulo de Almacén - Equipos en Espera de Repuestos'
+    if (role === 'visualizador') return 'Consulta General de Equipos'
+    return 'Lista de Equipos Activos'
   }
 
   const getPageDescription = () => {
     if (role === 'recepcion') return 'Registro de nuevos ingresos y entrega de motosoldadoras culminadas.'
-    if (role === 'almacen') return 'Bandeja de equipos pendientes de entrega de repuestos tÃ©cnicos.'
-    if (role === 'visualizador') return 'BÃºsqueda e historial completo de todos los equipos del sistema.'
+    if (role === 'almacen') return 'Bandeja de equipos pendientes de entrega de repuestos técnicos.'
+    if (role === 'visualizador') return 'Búsqueda e historial completo de todos los equipos del sistema.'
     return 'Seguimiento completo de todos los equipos en proceso activo.'
   }
 
@@ -128,7 +128,7 @@ export default function EquiposPage() {
               disabled={isDeletingAll}
               className="px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[10px] font-extrabold uppercase tracking-wider transition-all disabled:opacity-40 select-none shadow-[0_0_15px_rgba(220,38,38,0.2)] hover:shadow-[0_0_20px_rgba(220,38,38,0.4)]"
             >
-              {isDeletingAll ? 'ðŸ”´ Eliminando...' : 'ðŸ”´ Eliminar Todo'}
+              {isDeletingAll ? 'Eliminando...' : 'Eliminar Todo'}
             </button>
           )}
           {['superadmin', 'admin'].includes(role || '') && (
@@ -138,14 +138,14 @@ export default function EquiposPage() {
                 download
                 className="bg-bg-surface hover:bg-bg-surface/85 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2.5 rounded-lg transition-all inline-block select-none"
               >
-                ðŸ“¤ Exportar Excel
+                Exportar Excel
               </a>
               <a
                 href="/api/equipment/export?format=csv"
                 download
                 className="bg-bg-surface hover:bg-bg-surface/85 border border-border-subtle hover:border-neon-blue text-text-primary text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-2.5 rounded-lg transition-all inline-block select-none"
               >
-                ðŸ“„ CSV
+                CSV
               </a>
             </div>
           )}
@@ -154,14 +154,14 @@ export default function EquiposPage() {
             <Dialog.Root open={isFormOpen} onOpenChange={setIsFormOpen}>
               <Dialog.Trigger asChild>
                 <button className="px-5 py-2.5 rounded-lg bg-electric text-white text-xs font-bold uppercase hover:shadow-neon-blue hover:brightness-110 transition-all select-none">
-                  âž• Registrar nuevo equipo
+                  Registrar nuevo equipo
                 </button>
               </Dialog.Trigger>
               <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-bg-base/85 backdrop-blur-sm z-50 transition-opacity" />
                 <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[750px] max-h-[90vh] overflow-y-auto bg-bg-surface border border-neon-blue/30 rounded-xl shadow-neon-blue p-6 md:p-8 z-50 text-text-primary animate-in fade-in zoom-in-95 duration-150 scrollbar-thin">
                   <Dialog.Title className="text-lg font-bold text-neon-blue mb-6 border-b border-border-subtle pb-2 uppercase tracking-wider">
-                    ðŸ“¥ Registrar Nuevo Ingreso de Equipo
+                    Registrar Nuevo Ingreso de Equipo
                   </Dialog.Title>
                   <EquipmentForm
                     onSuccess={() => {
@@ -177,12 +177,12 @@ export default function EquiposPage() {
         </div>
       </div>
 
-      {/* â”€â”€â”€ Barra de bÃºsqueda y filtros â”€â”€â”€ */}
+      {/*  Barra de búsqueda y filtro */}
       <div className="bg-bg-surface border border-border-subtle rounded-xl p-3 shadow-sm space-y-3">
         <div className="flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm select-none pointer-events-none">
-              ðŸ”
+              
             </span>
             <input
               type="text"
@@ -212,16 +212,16 @@ export default function EquiposPage() {
               className="flex-1 md:w-48 bg-bg-elevated border border-border-subtle focus:border-neon-blue rounded-lg px-3 py-2.5 text-xs text-text-primary focus:outline-none transition-all"
             >
               <option value="">TODOS LOS ESTADOS</option>
-              <option value="En espera de diagnÃ³stico">ESPERA DIAGNÃ“STICO</option>
-              <option value="En diagnÃ³stico">EN DIAGNÃ“STICO</option>
-              <option value="Pendiente de aprobaciÃ³n">PENDIENTE APROBACIÃ“N</option>
+              <option value="En espera de diagnóstico">ESPERA DIAGNÓSTICO</option>
+              <option value="En diagnóstico">EN DIAGNÓSTICO</option>
+              <option value="Pendiente de aprobación">PENDIENTE APROBACIÓN</option>
               <option value="Aprobado">APROBADO</option>
               <option value="En espera de repuesto">ESPERA REPUESTO</option>
               <option value="En mantenimiento">EN MANTENIMIENTO</option>
               <option value="Listo para control de calidad">LISTO QC</option>
               <option value="Entregado">ENTREGADO</option>
-              <option value="REVISION">REVISIÃ“N (ADMIN)</option>
-              <option value="PRESTAMO">PRÃ‰STAMO (ADMIN)</option>
+              <option value="REVISION">REVISIÓN (ADMIN)</option>
+              <option value="PRESTAMO">PRÉSTAMO (ADMIN)</option>
             </select>
 
             <select
@@ -233,9 +233,9 @@ export default function EquiposPage() {
               className="flex-1 md:w-48 bg-bg-elevated border border-border-subtle focus:border-neon-blue rounded-lg px-3 py-2.5 text-xs text-text-primary focus:outline-none transition-all"
             >
               <option value="">TODOS LOS SERVICIOS</option>
-              <option value="GARANTIA_CABELAB">GARANTÃA CABELAB</option>
-              <option value="GARANTIA_ESAB">GARANTÃA ESAB</option>
-              <option value="REVISION_GENERAL">REVISIÃ“N GENERAL</option>
+              <option value="GARANTIA_CABELAB">GARANTÍA CABELAB</option>
+              <option value="GARANTIA_ESAB">GARANTÍA ESAB</option>
+              <option value="REVISION_GENERAL">REVISIÓN GENERAL</option>
             </select>
 
             {(searchQuery || statusFilter || serviceFilter) && (
@@ -248,13 +248,13 @@ export default function EquiposPage() {
                 }}
                 className="px-3 py-2.5 text-[10px] font-bold uppercase text-text-secondary border border-border-subtle rounded-lg hover:border-neon-blue hover:text-neon-blue transition-all select-none whitespace-nowrap"
               >
-                âœ• Limpiar
+                Limpiar
               </button>
             )}
           </div>
         </div>
 
-        {/* Indicadores de bÃºsqueda activa */}
+        {/* Indicadores de búsqueda activa */}
         {isInSearchMode && (
           <div className="flex items-center gap-2 mt-2 px-1">
             <span className="text-[10px] text-text-secondary font-mono">
@@ -263,7 +263,7 @@ export default function EquiposPage() {
                 : `${displayTotal} resultado${displayTotal !== 1 ? 's' : ''} para `}
               <span className="text-neon-blue font-bold">"{searchQuery}"</span>
             </span>
-            <span className="text-[10px] text-text-muted">â€” buscando en FR, cliente, marca, modelo, estado</span>
+            <span className="text-[10px] text-text-muted"> buscando en FR, cliente, marca, modelo, estado</span>
           </div>
         )}
       </div>
@@ -285,7 +285,7 @@ export default function EquiposPage() {
             onUpdateSuccess={() => {
               mutate()
               if (searchQuery.trim().length >= 2) {
-                // Refresca el resultado de bÃºsqueda tambiÃ©n
+                // Refresca el resultado de búsqueda también
                 fetch(`/api/equipment/search?q=${encodeURIComponent(searchQuery.trim())}&include_delivered=${includeDelivered}`)
                   .then(r => r.json())
                   .then(d => { if (d.success) setSearchResults(d.data.results || []) })

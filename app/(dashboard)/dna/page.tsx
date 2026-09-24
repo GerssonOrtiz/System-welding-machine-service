@@ -49,13 +49,13 @@ function DNAContent() {
       if (resData.success) {
         setData(resData.data)
         if (!resData.data.found) {
-          toast.info('No se encontraron registros previos para este NÂ° de Serie')
+          toast.info('No se encontraron registros previos para este N° de Serie')
         }
       } else {
         toast.error(resData.error || 'Error al buscar DNA del equipo')
       }
     } catch {
-      toast.error('Error de conexiÃ³n')
+      toast.error('Error de conexión')
     } finally {
       setLoading(false)
     }
@@ -80,10 +80,10 @@ function DNAContent() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-black uppercase tracking-tighter text-neon-purple flex items-center gap-2">
-            ðŸ§¬ DNA del Equipo <span className="text-[10px] bg-neon-purple/20 border border-neon-purple/40 px-2 py-0.5 rounded text-neon-purple font-mono">LIFECYCLE TRACKER</span>
+            🧬 DNA del Equipo <span className="text-[10px] bg-neon-purple/20 border border-neon-purple/40 px-2 py-0.5 rounded text-neon-purple font-mono">LIFECYCLE TRACKER</span>
           </h1>
           <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">
-            Historial clÃ­nico completo por nÃºmero de serie.
+            Historial clí­nico completo por número de serie.
           </p>
         </div>
 
@@ -92,7 +92,7 @@ function DNAContent() {
             type="text"
             value={serialSearch}
             onChange={(e) => setSerialSearch(e.target.value.toUpperCase())}
-            placeholder="INGRESE NÂ° SERIE..."
+            placeholder="INGRESE N° SERIE..."
             className="flex-1 md:w-64 bg-bg-surface border border-border-subtle focus:border-neon-purple rounded-lg px-4 py-2.5 text-xs text-text-primary focus:outline-none transition-all font-mono"
             required
           />
@@ -101,19 +101,19 @@ function DNAContent() {
             disabled={loading}
             className="px-6 py-2.5 bg-neon-purple text-white text-xs font-bold uppercase rounded-lg hover:shadow-neon-purple transition-all disabled:opacity-50"
           >
-            {loading ? 'ðŸ”' : 'Buscar'}
+            {loading ? '🔍' : 'Buscar'}
           </button>
         </form>
       </div>
 
       {!data ? (
         <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-border-subtle/30 rounded-3xl opacity-40">
-          <div className="text-6xl mb-4">ðŸ§¬</div>
-          <p className="text-sm font-bold uppercase tracking-widest text-text-muted">Esperando NÃºmero de Serie para Secuenciar...</p>
+          <div className="text-6xl mb-4">🧬</div>
+          <p className="text-sm font-bold uppercase tracking-widest text-text-muted">Esperando Número de Serie para Secuenciar...</p>
         </div>
       ) : !data.found ? (
         <div className="text-center py-20 bg-bg-surface/30 rounded-2xl border border-border-subtle italic text-text-muted">
-          No se encontrÃ³ historial para el NÂ° de Serie: <span className="text-text-primary font-mono">{data.serial}</span>
+          No se encontró historial para el N° de Serie: <span className="text-text-primary font-mono">{data.serial}</span>
         </div>
       ) : (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
@@ -125,21 +125,21 @@ function DNAContent() {
                <div className="space-y-1">
                  <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">Identidad del Equipo</span>
                  <h2 className="text-2xl font-black text-text-primary font-mono tracking-tighter">{data.machineInfo?.serial_number}</h2>
-                 <p className="text-neon-purple font-bold text-sm">{data.machineInfo?.brand} â€” {data.machineInfo?.model}</p>
+                 <p className="text-neon-purple font-bold text-sm">{data.machineInfo?.brand}  {data.machineInfo?.model}</p>
                </div>
 
                <div className="space-y-4 border-l border-border-subtle/50 pl-8">
                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-bg-base border border-border-subtle flex items-center justify-center text-xl">ðŸ› ï¸</div>
+                    <div className="w-10 h-10 rounded-xl bg-bg-base border border-border-subtle flex items-center justify-center text-xl"></div>
                     <div>
                       <div className="text-[10px] text-text-muted font-bold uppercase">Intervenciones</div>
                       <div className="text-lg font-bold text-text-primary">{data.machineInfo?.total_interventions} Registros</div>
                     </div>
                  </div>
                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-bg-base border border-border-subtle flex items-center justify-center text-xl">ðŸ¢</div>
+                    <div className="w-10 h-10 rounded-xl bg-bg-base border border-border-subtle flex items-center justify-center text-xl"></div>
                     <div>
-                      <div className="text-[10px] text-text-muted font-bold uppercase">Clientes HistÃ³ricos</div>
+                      <div className="text-[10px] text-text-muted font-bold uppercase">Clientes Históricos</div>
                       <div className="text-xs font-bold text-text-primary truncate max-w-[200px]">{data.machineInfo?.clients.join(', ')}</div>
                     </div>
                  </div>

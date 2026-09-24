@@ -43,7 +43,7 @@ function LimaClock() {
         {timeStr}
       </div>
       <div className="text-text-secondary text-[11px] uppercase tracking-wide mt-0.5 capitalize">
-        {dateStr} Â· Arequipa, PE
+        {dateStr} 
       </div>
     </div>
   )
@@ -55,17 +55,17 @@ export default function PizarraPage() {
 
   const content = (
     <div className={`flex flex-col bg-bg-base font-sans text-text-primary ${isKioskMode ? 'fixed inset-0 z-[9999]' : 'min-h-screen'}`}>
-      {/* â”€â”€â”€ Header Pizarra â”€â”€â”€ */}
+      {/*  Header Pizarra  */}
       <header className="flex justify-between items-center px-6 py-4 bg-bg-surface border-b border-border-subtle flex-shrink-0">
         {/* Logo + tÃ­tulo */}
         <div className="flex items-center gap-4">
           <div className="w-2 h-10 rounded-full bg-neon-blue shadow-neon-blue" />
           <div>
             <h1 className="text-lg font-extrabold tracking-widest uppercase text-neon-blue leading-none">
-              ðŸ”§ CABELAB
+              CABELAB
             </h1>
             <p className="text-[11px] text-text-secondary uppercase tracking-widest mt-0.5">
-              Pizarra de Taller â€” Tiempo Real
+              Tablero de Control Operativo
             </p>
           </div>
         </div>
@@ -76,7 +76,7 @@ export default function PizarraPage() {
             onClick={() => setIsKioskMode(!isKioskMode)}
             className="px-4 py-2 bg-bg-base border border-border-subtle hover:border-neon-blue hover:text-neon-blue rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm"
           >
-            {isKioskMode ? 'ðŸšª Salir Pantalla Completa' : 'ðŸ“º Pantalla Completa'}
+            {isKioskMode ? 'Salir Pantalla Completa' : 'Pantalla Completa'}
           </button>
           
           {/* Reloj Lima */}
@@ -98,8 +98,8 @@ export default function PizarraPage() {
 
       {/* â”€â”€â”€ Footer â”€â”€â”€ */}
       <footer className="flex justify-between px-6 py-3 bg-bg-surface/50 border-t border-border-subtle flex-shrink-0 text-[10px] text-text-muted uppercase tracking-wider items-center font-mono">
-        <span>Monitor de Taller Activo â€” Pizarra</span>
-        <span>Â© CABELAB</span>
+        <span>Elaborado por <strong class="text-text-secondary font-medium">Br. Gersson Ortiz</strong> </span>
+        <span>Powered by Venllas</span>
       </footer>
     </div>
   )
