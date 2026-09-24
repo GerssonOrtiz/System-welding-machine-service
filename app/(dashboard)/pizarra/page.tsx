@@ -57,7 +57,7 @@ export default function PizarraPage() {
     <div className={`flex flex-col bg-bg-base font-sans text-text-primary ${isKioskMode ? 'fixed inset-0 z-[9999]' : 'min-h-screen'}`}>
       {/*  Header Pizarra  */}
       <header className="flex justify-between items-center px-6 py-4 bg-bg-surface border-b border-border-subtle flex-shrink-0">
-        {/* Logo + tÃ­tulo */}
+        {/* Logo + tì­tulo */}
         <div className="flex items-center gap-4">
           <div className="w-2 h-10 rounded-full bg-neon-blue shadow-neon-blue" />
           <div>
@@ -84,21 +84,21 @@ export default function PizarraPage() {
         </div>
       </header>
 
-      {/* â”€â”€â”€ Indicadores rÃ¡pidos â”€â”€â”€ */}
+      {/*  Indicadores rápidos  */}
       <div className="flex items-center gap-3 px-6 py-2 bg-bg-base border-b border-border-subtle/30 text-[10px] uppercase tracking-widest text-text-muted font-mono flex-shrink-0">
         <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse shadow-neon-blue inline-block" />
-        ConexiÃ³n Realtime Activa
-        <span className="ml-auto">ActualizaciÃ³n automÃ¡tica â€¢ Sin recarga de pÃ¡gina</span>
+        Conexión Realtime Activa
+        <span className="ml-auto">Actualizaciòn automática</span>
       </div>
 
-      {/* â”€â”€â”€ Tablero Principal â”€â”€â”€ */}
+      {/*  Tablero Principal  */}
       <main className="flex-1 overflow-hidden px-4 py-4">
         <PizarraBoard />
       </main>
 
-      {/* â”€â”€â”€ Footer â”€â”€â”€ */}
+      {/*  Footer  */}
       <footer className="flex justify-between px-6 py-3 bg-bg-surface/50 border-t border-border-subtle flex-shrink-0 text-[10px] text-text-muted uppercase tracking-wider items-center font-mono">
-        <span>Elaborado por <strong class="text-text-secondary font-medium">Br. Gersson Ortiz</strong> </span>
+        <span>Elaborado por Br. Gersson Ortiz </span>
         <span>Powered by Venllas</span>
       </footer>
     </div>
