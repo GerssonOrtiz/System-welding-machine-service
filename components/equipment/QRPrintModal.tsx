@@ -257,7 +257,6 @@ export default function QRPrintModal({
                     className="object-contain w-full h-full"
                   />
                 </div>
-                <span>CABELAB</span>
               </div>
 
               {/* Datos clave del equipo */}

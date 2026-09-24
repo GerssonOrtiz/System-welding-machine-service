@@ -179,8 +179,8 @@ export function Sidebar() {
               />
             </div>
           ) : (
-            <div className="w-full flex flex-col gap-2.5">
-              <div className="relative w-full h-8 flex items-center">
+            <div className="w-full flex items-center justify-center">
+              <div className="relative w-full h-8 flex items-center justify-center">
                 <Image
                   src="/synapse_horizontal.png"
                   alt="Synapse"
@@ -188,27 +188,6 @@ export function Sidebar() {
                   height={34}
                   className="object-contain max-h-8 w-auto"
                 />
-              </div>
-
-              {/* Tag descriptivo de servicio para Cabelab */}
-              <div className="flex items-center gap-2.5 px-2.5 py-1.5 bg-white/4 border border-white/6 rounded-lg hover:border-white/10 transition-colors">
-                <div className="relative w-7 h-7 rounded-md overflow-hidden shrink-0 flex items-center justify-center bg-black/40 border border-white/5">
-                  <Image
-                    src="/cabelab.png"
-                    alt="CABELAB"
-                    width={28}
-                    height={28}
-                    className="object-contain w-full h-full"
-                  />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] font-black text-text-primary uppercase tracking-wider truncate font-mono">
-                    CABELAB
-                  </span>
-                  <span className="text-[8px] text-text-muted font-mono leading-none truncate">
-                    Taller Motosoldadoras
-                  </span>
-                </div>
               </div>
             </div>
           )}

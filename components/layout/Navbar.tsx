@@ -32,7 +32,7 @@ export function Navbar() {
 
   return (
     <header className="h-14 bg-bg-surface border-b border-white/6 px-6 flex items-center justify-between sticky top-0 z-40 selection:bg-neon-blue selection:text-bg-base font-sans">
-      {/* Sección Izquierda: Logo Synapse y Cliente Asociado CABELAB */}
+      {/* Sección Izquierda: Logo Synapse y autoría */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2.5">
           <div className="relative h-8 w-28 flex items-center">
@@ -47,22 +47,6 @@ export function Navbar() {
           </div>
           <span className="text-[9px] text-text-muted font-mono hidden lg:inline border-l border-white/10 pl-2.5">
             por <strong className="text-text-secondary font-medium">Br. Gersson Ortiz</strong>
-          </span>
-        </div>
-
-        {/* Logo identificador del cliente de servicio (CABELAB) */}
-        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-white/4 border border-white/8 hover:border-neon-blue/30 rounded-lg transition-colors">
-          <div className="relative w-6 h-6 rounded-md overflow-hidden shrink-0 flex items-center justify-center bg-black/50">
-            <Image
-              src="/cabelab.png"
-              alt="CABELAB"
-              width={24}
-              height={24}
-              className="object-contain w-full h-full"
-            />
-          </div>
-          <span className="text-[11px] font-black tracking-wider text-text-primary uppercase font-mono">
-            CABELAB
           </span>
         </div>
       </div>

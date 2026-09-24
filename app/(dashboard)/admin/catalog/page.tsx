@@ -17,15 +17,6 @@ export default function CatalogAdminPage() {
       {/* HEADER DE SECCIÓN */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border-subtle/50 pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-xs text-text-muted hover:text-neon-blue transition-colors font-mono uppercase tracking-wider"
-            >
-              <ArrowLeft size={13} />
-              <span>Volver al Dashboard</span>
-            </Link>
-          </div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.15)]">
               <BookOpen size={20} />
