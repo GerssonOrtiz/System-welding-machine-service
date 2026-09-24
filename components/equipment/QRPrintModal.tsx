@@ -68,7 +68,7 @@ export default function QRPrintModal({
                     <Image
                       src="/cabelab.png"
                       alt="CABELAB"
-                      width={24}
+                      width={48}
                       height={24}
                       className="object-contain w-full h-full"
                     />
@@ -77,7 +77,7 @@ export default function QRPrintModal({
                     CABELAB
                   </span>
                 </div>
-                <span className="text-[9px] font-bold text-slate-700 uppercase">TALLER DE MOTOSOLDADORAS</span>
+                
               </div>
 
               {/* Datos clave del equipo */}
