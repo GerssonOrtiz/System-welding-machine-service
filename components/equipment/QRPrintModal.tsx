@@ -252,11 +252,12 @@ export default function QRPrintModal({
                   <Image
                     src="/cabelab.png"
                     alt="CABELAB Logo"
-                    width={40}
-                    height={40}
+                    width={24}
+                    height={24}
                     className="object-contain w-full h-full"
                   />
                 </div>
+                <span>CABELAB</span>
               </div>
 
               {/* Datos clave del equipo */}
