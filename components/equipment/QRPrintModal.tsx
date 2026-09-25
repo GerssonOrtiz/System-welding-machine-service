@@ -28,9 +28,18 @@ export default function QRPrintModal({
 }: QRPrintModalProps) {
   const printAreaRef = useRef<HTMLDivElement>(null)
 
-  // URL del QR pública
+  // URL del QR pública.
+  // Si el equipo tiene número de serie válido → /doc/[serial] (historial completo del equipo).
+  // Si no tiene serie → /doc/fr/[fr] (ficha de este ingreso únicamente).
+  const GENERIC_SERIALS = ['N/S', 'S/N', 'N/A', 'SIN SERIE', 'SIN N/S', '-', '.']
+  const hasValidSerial =
+    Boolean(serialNumber?.trim()) &&
+    !GENERIC_SERIALS.includes(serialNumber.trim().toUpperCase())
+
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://cabelab.local'
-  const qrUrl = `${origin}/doc/${encodeURIComponent(serialNumber.trim())}`
+  const qrUrl = hasValidSerial
+    ? `${origin}/doc/${encodeURIComponent(serialNumber.trim())}`
+    : `${origin}/doc/fr/${encodeURIComponent(frNumber.trim())}`
 
   const handlePrint = () => {
     if (!printAreaRef.current) {

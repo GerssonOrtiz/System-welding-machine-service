@@ -227,17 +227,14 @@ export default function EquipmentDetail({
 
                   {/* Acciones de cambio de estado / edición */}
                   <div className="flex flex-wrap gap-2 items-center">
-                    {equipment.serial_number && 
-                     !['N/S', 'S/N', 'N/A', 'SIN SERIE', 'SIN N/S', '-', '.'].includes(equipment.serial_number.trim().toUpperCase()) && (
-                      <button
-                        type="button"
-                        onClick={() => setIsQrModalOpen(true)}
-                        className="px-3.5 py-2.5 rounded-lg border border-neon-blue/60 text-neon-blue hover:bg-neon-blue/10 text-xs font-bold uppercase transition-all flex items-center gap-1.5"
-                        title="Ver e imprimir etiqueta física con código QR"
-                      >
-                        <span>📱 Etiqueta QR</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsQrModalOpen(true)}
+                      className="px-3.5 py-2.5 rounded-lg border border-neon-blue/60 text-neon-blue hover:bg-neon-blue/10 text-xs font-bold uppercase transition-all flex items-center gap-1.5"
+                      title="Ver e imprimir etiqueta física con código QR"
+                    >
+                      <span>📱 Etiqueta QR</span>
+                    </button>
 
                     {isSuperadmin && (
                       <button

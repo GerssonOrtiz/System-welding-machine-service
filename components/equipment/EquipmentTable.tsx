@@ -144,17 +144,14 @@ export default function EquipmentTable({
                       </td>
                     )}
                     <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
-                      {eq.serial_number &&
-                        !['N/S', 'S/N', 'N/A', 'SIN SERIE', 'SIN N/S', '-', '.'].includes(eq.serial_number.trim().toUpperCase()) && (
-                          <button
-                            onClick={() => setQrModalEq(eq)}
-                            title="Generar e imprimir etiqueta con código QR"
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border-subtle hover:border-neon-blue text-text-secondary hover:text-neon-blue bg-bg-elevated/40 hover:bg-neon-blue/5 transition-all font-semibold uppercase text-[10px]"
-                          >
-                            <QrCode size={12} />
-                            <span>QR</span>
-                          </button>
-                      )}
+                      <button
+                        onClick={() => setQrModalEq(eq)}
+                        title="Generar e imprimir etiqueta con código QR"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border-subtle hover:border-neon-blue text-text-secondary hover:text-neon-blue bg-bg-elevated/40 hover:bg-neon-blue/5 transition-all font-semibold uppercase text-[10px]"
+                      >
+                        <QrCode size={12} />
+                        <span>QR</span>
+                      </button>
                       <button
                         onClick={() => handleOpenDetail(eq.id)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-neon-blue/40 text-neon-blue bg-neon-blue/5 hover:bg-neon-blue/15 hover:border-neon-blue transition-all font-bold uppercase text-[10px] shadow-[0_0_10px_rgba(0,229,255,0.1)]"
