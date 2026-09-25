@@ -4,8 +4,8 @@
 import { Navbar } from '@/components/layout/Navbar'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { useUser } from '@/hooks/useUser'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function DashboardLayout({
   children,
@@ -14,6 +14,13 @@ export default function DashboardLayout({
 }) {
   const { user, profile, loading } = useUser()
   const router = useRouter()
+  const pathname = usePathname()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  // Cerrar menú móvil automáticamente si cambia la ruta
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     // Si ya terminó de cargar el usuario y no hay sesión activa, redirigir a Login
@@ -36,15 +43,21 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen flex flex-col bg-bg-base text-text-primary font-sans antialiased">
       {/* Navbar superior */}
-      <Navbar />
+      <Navbar
+        onMenuToggle={() => setIsMobileMenuOpen((prev) => !prev)}
+        isMobileMenuOpen={isMobileMenuOpen}
+      />
 
       {/* Contenedor principal con Sidebar y Contenido de Rutas */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar lateral de navegación */}
-        <Sidebar />
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Sidebar lateral de navegación (oculto en móvil salvo que se despliegue) */}
+        <Sidebar
+          isMobileOpen={isMobileMenuOpen}
+          onMobileClose={() => setIsMobileMenuOpen(false)}
+        />
 
-        {/* Contenedor del contenido principal */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-bg-base">
+        {/* Contenedor del contenido principal - padding optimizado para móvil */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-bg-base">
           {children}
         </main>
       </div>

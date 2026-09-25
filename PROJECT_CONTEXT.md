@@ -1,4 +1,4 @@
-# PROJECT_CONTEXT.md — CABELAB v2.4
+# PROJECT_CONTEXT.md — CABELAB v2.5
 > Documento de contexto técnico optimizado para lectura por IA. Contiene arquitectura, estructura, flujos y convenciones. Leer antes de tocar cualquier archivo.
 
 ---
@@ -37,7 +37,9 @@ Next.js App Router
 ├── app/                   → Páginas y API Routes (server-side por defecto)
 │   ├── (auth)/            → Rutas públicas: /login, /register
 │   ├── (dashboard)/       → Rutas protegidas con layout compartido
-│   ├── doc/               → Ruta pública para escaneo QR de motosoldadoras (/doc/[serial])
+│   ├── doc/               → Rutas públicas para escaneo QR de motosoldadoras
+│   │   ├── [serial]/      → /doc/[serial]  — historial completo por número de serie
+│   │   └── fr/[fr]/       → /doc/fr/[fr]   — ficha de ingreso único por FR (equipos sin serie)
 │   ├── admin/             → Páginas de administración (fuera del layout dashboard)
 │   └── api/               → API Routes (REST, server-side)
 │       └── public/        → API Routes públicas sin autenticación (/api/public/equipment/...)
@@ -59,7 +61,8 @@ Next.js App Router
 - `login/page.tsx` — Formulario de login. Autenticación por nombre de usuario → email virtual `usuario@cabelab.local`. Registro público deshabilitado (solo superadmin crea cuentas).
 
 ### `/app/doc/`
-- `[serial]/page.tsx` — **Página pública de documentación técnica y trazabilidad por QR**. Responsiva para móviles, exenta de autenticación en `middleware.ts`. Muestra datos del equipo, botón destacado para ver/descargar el último informe en Google Drive, y línea cronológica de todos los servicios anteriores.
+- `[serial]/page.tsx` — **Página pública de documentación técnica y trazabilidad por QR** para equipos **con número de serie**. Responsiva para móviles, exenta de autenticación en `middleware.ts`. Muestra datos del equipo, botón destacado para ver/descargar el último informe en Google Drive, y línea cronológica de todos los servicios anteriores.
+- `fr/[fr]/page.tsx` — **Página pública para equipos sin número de serie**. Accesible por QR via FR number (`/doc/fr/FR-2024-001`). Muestra los datos del ingreso específico (marca, modelo, cliente, estado, tipo de servicio, informe si existe). Incluye aviso de que el QR identifica únicamente ese ingreso. Sin historial cruzado de intervenciones.
 
 ### `/app/(dashboard)/`
 Layout en `layout.tsx` incluye `Sidebar` y `Navbar`. Rutas hijas:
@@ -91,7 +94,8 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `/api/equipment/[id]` | DELETE | Eliminar (solo superadmin/admin) |
 | `/api/equipment/search` | GET | Búsqueda por FR, cliente, serie |
 | `/api/equipment/serial/[serial]` | GET | DNA: historial completo por número de serie (autenticado) |
-| `/api/public/equipment/serial/[serial]` | GET | **Público**: consulta de ficha técnica, último informe PDF e intervenciones por QR |
+| `/api/public/equipment/serial/[serial]` | GET | **Público**: consulta de ficha técnica, último informe PDF e intervenciones por QR (historial completo) |
+| `/api/public/equipment/fr/[fr]` | GET | **Público**: consulta de un único ingreso por FR number. Usado por el QR de equipos sin número de serie |
 | `/api/equipment/export` | GET | Exportar a Excel (.xlsx) |
 | `/api/equipment/import` | POST | Importar desde Excel |
 | `/api/equipment/create` | POST | Creación de equipo. Guarda `email_thread_id`, `email_cc` y `report_url` |
@@ -382,7 +386,7 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 
 ## 12. ESTADO ACTUAL Y PENDIENTES
 
-> Última sesión: 20/09/2026
+> Última sesión: 24/09/2026
 
 ### ✅ Implementado y funcional
 
@@ -410,13 +414,20 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
   - Componente reutilizable de estados vacíos `EmptyState.tsx` aplicado en tablas
   - Página 404 personalizada (`app/not-found.tsx`) con temática oscura y estética del sistema
 - **Sistema de correos en hilo completo** (código listo, pendiente solo configuración)
-- **Sistema de Códigos QR y Documentación Técnica Pública**:
+- **Sistema de Códigos QR y Documentación Técnica Pública — v2.5**:
   - Librería `qrcode.react` instalada y configurada
   - Modal `QRPrintModal` para generar e imprimir etiquetas físicas con datos del equipo
-  - Página pública `/doc/[serial]` sin login para escanear en taller o planta
-  - Visualización del último informe técnico vigente y línea de tiempo de mantenimientos anteriores
-  - Soporte de campo `report_url` (enlace Google Drive) en creación, actualización y cambio de estado a "Pendiente de aprobación"
-  - Acceso directo a QR desde tabla de equipos y ficha detallada
+  - Encabezado de etiqueta con logo `cabelab_negro.png` en tamaño horizontal real (160×36px)
+  - Logo CABELAB embebido en el centro del QR (con excavación, nivel de corrección H)
+  - QR ampliado a 170px para mejor legibilidad en planta
+  - **QR universal**: todos los equipos tienen botón QR, sin excepción
+  - Equipos **con serie válida** → QR apunta a `/doc/[serial]` (historial completo)
+  - Equipos **sin serie** (o N/S, S/N, N/A, etc.) → QR apunta a `/doc/fr/[fr]` (ficha de ese ingreso)
+  - Página pública `/doc/[serial]` sin login — historial completo de intervenciones
+  - Página pública `/doc/fr/[fr]` sin login — datos del ingreso único con aviso explicativo
+  - API pública `/api/public/equipment/serial/[serial]` para consulta por serie
+  - API pública `/api/public/equipment/fr/[fr]` para consulta por FR number
+  - Soporte de campo `report_url` (enlace Google Drive) visible en ambas páginas públicas
 
 ### ⚠️ Listo en código pero pendiente de activar
 
@@ -525,3 +536,203 @@ Sprint 4 (largo plazo):
   D2 → Notificaciones in-app
   C4 → Rate limiting API pública
 ```
+
+---
+
+## 15. SISTEMA DE CÓDIGOS QR — INSTRUCTIVO COMPLETO
+
+> Última actualización: 24/09/2026. Guía para modificar cualquier aspecto del sistema QR, tanto en la plataforma como en la impresión física de etiquetas.
+
+### 15.1 Mapa de archivos del sistema QR
+
+```
+Sistema QR CABELAB
+│
+├── ETIQUETA IMPRIMIBLE (modal en plataforma)
+│   └── components/equipment/QRPrintModal.tsx
+│       ├── Lógica de URL del QR (con serie / sin serie)
+│       ├── Previsualización en pantalla (JSX)
+│       └── HTML del iframe de impresión (string dentro de handlePrint)
+│
+├── BOTÓN QR EN TABLA DE EQUIPOS
+│   └── components/equipment/EquipmentTable.tsx (línea ~147)
+│
+├── BOTÓN QR EN FICHA DETALLADA
+│   └── components/equipment/EquipmentDetail.tsx (línea ~230)
+│
+├── PÁGINAS PÚBLICAS (destino del QR al escanearlo)
+│   ├── app/doc/[serial]/page.tsx       → Historial completo por número de serie
+│   └── app/doc/fr/[fr]/page.tsx        → Ficha de ingreso único por FR number
+│
+├── APIs PÚBLICAS (datos que consumen las páginas)
+│   ├── app/api/public/equipment/serial/[serial]/route.ts  → Busca por serie
+│   └── app/api/public/equipment/fr/[fr]/route.ts          → Busca por FR
+│
+├── AUTENTICACIÓN / ACCESO
+│   └── middleware.ts (línea 18)
+│       → if (pathname.startsWith('/doc') || pathname.startsWith('/api/public'))
+│       → Estas rutas son públicas. No requieren sesión. NO MODIFICAR sin revisar implicaciones.
+│
+└── ASSETS (imágenes en /public/)
+    ├── cabelab_negro.png   → Logo negro con fondo transparente. Usado en etiqueta impresa y QR embebido.
+    └── cabelab.png         → Logo blanco. Usado en páginas públicas (fondo oscuro).
+```
+
+---
+
+### 15.2 Cómo funciona la URL del QR
+
+La lógica de decisión de URL está centralizada en `QRPrintModal.tsx`:
+
+```typescript
+// Valores de serie que se consideran "sin serie"
+const GENERIC_SERIALS = ['N/S', 'S/N', 'N/A', 'SIN SERIE', 'SIN N/S', '-', '.']
+
+const hasValidSerial =
+  Boolean(serialNumber?.trim()) &&
+  !GENERIC_SERIALS.includes(serialNumber.trim().toUpperCase())
+
+// Resultado:
+const qrUrl = hasValidSerial
+  ? `${origin}/doc/${encodeURIComponent(serialNumber.trim())}`   // historial completo
+  : `${origin}/doc/fr/${encodeURIComponent(frNumber.trim())}`    // solo este ingreso
+```
+
+**Para agregar más valores a la lista negra de series:** editar el array `GENERIC_SERIALS` en `QRPrintModal.tsx`.
+
+---
+
+### 15.3 Modificar la etiqueta impresa (tamaño, diseño, datos)
+
+**Archivo:** `components/equipment/QRPrintModal.tsx`
+
+El archivo tiene **dos secciones de diseño independientes** que deben mantenerse sincronizadas:
+
+#### A) Previsualización en pantalla (JSX — línea ~250)
+Es el JSX dentro de `<div ref={printAreaRef}>`. Lo que renderiza Next.js con clases Tailwind.
+- **Cambiar logo:** modificar `src`, `width`, `height` del `<Image>` dentro del header.
+- **Cambiar tamaño del QR en pantalla:** modificar el prop `size` del `<QRCodeSVG>`.
+- **Logo embebido en el QR:** modificar el objeto `imageSettings` del `<QRCodeSVG>`:
+  ```tsx
+  imageSettings={{
+    src: '/cabelab_negro.png',  // ruta en /public/
+    width: 36,                   // ancho en px dentro del QR
+    height: 36,                  // alto en px dentro del QR
+    excavate: true,              // excava módulos para no tapar el QR
+  }}
+  ```
+  > ⚠️ El nivel de corrección `level="H"` es obligatorio para usar logo embebido. No bajarlo a "M" o "L".
+- **Añadir/quitar campos de datos:** editar el bloque `.info-box` dentro del JSX.
+
+#### B) HTML del iframe de impresión (string dentro de `handlePrint` — línea ~67)
+Es el `doc.write(...)` que genera el documento que va a la impresora. Usa CSS inline, no Tailwind.
+- **Cambiar logo impreso:** modificar `src` del `<img class="logo-img">`.
+- **Cambiar tamaño del logo impreso:** modificar `.logo-img { width: ...; height: ...; }` en el CSS interno.
+- **Cambiar tamaño de la tarjeta impresa:** modificar `.label-card { width: ...; }`.
+- **Cambiar el QR en impresión:** el QR se inyecta como SVG inline:
+  ```javascript
+  ${printAreaRef.current.querySelector('.qr-box-inner')?.innerHTML || ''}
+  ```
+  El QR impreso hereda el tamaño del QR en pantalla (el del prop `size` de `<QRCodeSVG>`). Para cambiarlo, modificar el `size` en la sección A.
+
+---
+
+### 15.4 Modificar las páginas públicas (destino del QR)
+
+#### Página para equipos CON número de serie
+**Archivo:** `app/doc/[serial]/page.tsx`
+
+| Sección | Qué modifica |
+|---|---|
+| Interface `MachineData` | Campos que se esperan de la API |
+| `useEffect` / `fetchDoc` | Llama a `/api/public/equipment/serial/${serial}` |
+| Tarjeta de identidad (JSX ~línea 170) | Datos del equipo: marca, modelo, serie, cliente |
+| Sección de informe (JSX ~línea 231) | Bloque con botón PDF |
+| Historial de intervenciones (JSX ~línea 277) | Lista de todos los servicios anteriores |
+| Header y Footer | Logo, nombre, badge "Trazabilidad Verificada" |
+
+#### Página para equipos SIN número de serie
+**Archivo:** `app/doc/fr/[fr]/page.tsx`
+
+| Sección | Qué modifica |
+|---|---|
+| Interface `EntryData` | Campos que se esperan de la API |
+| `useEffect` / `fetchDoc` | Llama a `/api/public/equipment/fr/${fr}` |
+| Aviso amarillo | Texto explicativo de que el QR identifica solo ese ingreso |
+| Tarjeta de identidad (JSX) | Datos: FR, marca, modelo, cliente, estado actual |
+| Sección de informe (JSX) | Botón PDF si existe `report_url` |
+
+---
+
+### 15.5 Modificar las APIs públicas (datos devueltos)
+
+#### API por número de serie
+**Archivo:** `app/api/public/equipment/serial/[serial]/route.ts`
+
+- Modifica los campos del `SELECT` de Supabase para añadir/quitar datos.
+- La lista `genericValues` define qué series se consideran inválidas → devuelve `found: false`.
+- Devuelve `machineInfo` (resumen del equipo) + `interventions[]` (historial).
+
+#### API por FR number
+**Archivo:** `app/api/public/equipment/fr/[fr]/route.ts`
+
+- Busca con `.ilike('fr_number', cleanFr)` → búsqueda case-insensitive.
+- Devuelve `entry` (objeto con todos los datos del ingreso) o `found: false`.
+- Modifica el `SELECT` para añadir más campos si la página pública los necesita.
+
+---
+
+### 15.6 Agregar el botón QR en otros lugares
+
+El botón QR puede colocarse en cualquier componente que tenga acceso al objeto `equipment` (de tipo `EquipmentWithStatus`). Patrón estándar:
+
+```tsx
+// 1. Importar el modal
+import QRPrintModal from '@/components/equipment/QRPrintModal'
+
+// 2. State para controlar apertura
+const [isQrOpen, setIsQrOpen] = useState(false)
+
+// 3. Botón
+<button onClick={() => setIsQrOpen(true)}>
+  Etiqueta QR
+</button>
+
+// 4. Modal (fuera del return principal, al final del JSX)
+<QRPrintModal
+  isOpen={isQrOpen}
+  onClose={() => setIsQrOpen(false)}
+  serialNumber={equipment.serial_number || ''}
+  frNumber={equipment.fr_number || ''}
+  brand={equipment.brand || ''}
+  model={equipment.model || ''}
+  clientName={equipment.client_name || ''}
+/>
+```
+
+> El modal maneja internamente la lógica de URL (serie vs FR). No hay que pasar la URL manualmente.
+
+---
+
+### 15.7 Configuración del middleware para rutas públicas
+
+**Archivo:** `middleware.ts` — línea 18:
+
+```typescript
+if (pathname.startsWith('/doc') || pathname.startsWith('/api/public')) {
+  return supabaseResponse  // ← pasa sin verificar sesión
+}
+```
+
+Si se crean nuevas rutas públicas relacionadas al QR (ej. `/doc/id/[id]`), deben seguir el patrón `/doc/...` para ser automáticamente permitidas. Las nuevas APIs públicas deben estar bajo `/api/public/...`.
+
+---
+
+### 15.8 Assets de imagen usados en el QR
+
+| Archivo | Uso | Fondo | Cuándo usar |
+|---|---|---|---|
+| `public/cabelab_negro.png` | Etiqueta impresa, logo embebido en QR | Transparente (negro) | Sobre fondos **blancos** (etiqueta impresa) |
+| `public/cabelab.png` | Header y footer de páginas públicas | Transparente (blanco) | Sobre fondos **oscuros** (UI del sistema) |
+
+> ⚠️ No intercambiar los logos. `cabelab.png` (blanco) es invisible en la etiqueta impresa. `cabelab_negro.png` (negro) es invisible en la UI oscura del sistema.

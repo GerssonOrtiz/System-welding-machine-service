@@ -7,9 +7,14 @@ import { useRouter } from 'next/navigation'
 import { ROLE_LABELS } from '@/types/user'
 import { toast } from 'sonner'
 import Image from 'next/image'
-import { LogOut } from 'lucide-react'
+import { LogOut, Menu, X } from 'lucide-react'
 
-export function Navbar() {
+interface NavbarProps {
+  onMenuToggle?: () => void
+  isMobileMenuOpen?: boolean
+}
+
+export function Navbar({ onMenuToggle, isMobileMenuOpen }: NavbarProps) {
   const { user, profile, role, isSuperadmin } = useUser()
   const router = useRouter()
   const supabase = createClient()
@@ -31,11 +36,20 @@ export function Navbar() {
   }
 
   return (
-    <header className="h-14 bg-bg-surface border-b border-white/6 px-6 flex items-center justify-between sticky top-0 z-40 selection:bg-neon-blue selection:text-bg-base font-sans">
-      {/* Sección Izquierda: Logo Synapse y autoría */}
-      <div className="flex items-center gap-4">
+    <header className="h-14 bg-bg-surface border-b border-white/6 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 selection:bg-neon-blue selection:text-bg-base font-sans">
+      {/* Sección Izquierda: Botón hamburguesa móvil + Logo Synapse y autoría */}
+      <div className="flex items-center gap-3 md:gap-4">
+        {/* Botón toggle para celulares */}
+        <button
+          onClick={onMenuToggle}
+          aria-label={isMobileMenuOpen ? 'Cerrar navegación' : 'Abrir navegación'}
+          className="md:hidden p-2 -ml-1 text-text-secondary hover:text-neon-blue hover:bg-white/5 rounded-lg border border-white/10 transition-colors flex items-center justify-center"
+        >
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+
         <div className="flex items-center gap-2.5">
-          <div className="relative h-8 w-28 flex items-center">
+          <div className="relative h-8 w-24 md:w-28 flex items-center">
             <Image
               src="/synapse_horizontal.png"
               alt="SYNAPSE"

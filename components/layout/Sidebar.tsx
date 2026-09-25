@@ -115,7 +115,12 @@ const ALL_SIDEBAR_ITEMS: Record<string, SidebarItem> = {
 // Componente
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function Sidebar() {
+interface SidebarProps {
+  isMobileOpen?: boolean
+  onMobileClose?: () => void
+}
+
+export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   const { profile, role, loading } = useUser()
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -147,22 +152,36 @@ export function Sidebar() {
   const initial = displayName.charAt(0).toUpperCase()
 
   return (
-    <aside
-      className={`bg-bg-surface border-r border-white/6 flex flex-col justify-between font-sans selection:bg-neon-blue selection:text-bg-base select-none shrink-0 transition-all duration-300 relative ${
-        isCollapsed ? 'w-[70px]' : 'w-[220px]'
-      }`}
-    >
-      {/* ── Botón para colapsar ───────────────────────────────────────────── */}
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-        className="absolute -right-3 top-10 w-6 h-6 bg-bg-surface border border-white/10 rounded-full flex items-center justify-center text-text-secondary hover:text-neon-blue hover:border-neon-blue transition-all z-10 shadow-lg"
+    <>
+      {/* Overlay oscuro de fondo para celular cuando la navegación esté abierta */}
+      {isMobileOpen && (
+        <div
+          onClick={onMobileClose}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`bg-bg-surface border-r border-white/6 flex flex-col justify-between font-sans selection:bg-neon-blue selection:text-bg-base select-none shrink-0 transition-all duration-300
+          /* En móvil: posición fija deslizable tipo drawer */
+          fixed inset-y-0 left-0 z-50 md:static md:translate-x-0
+          ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
+          /* En móvil siempre ancho completo (240px), en escritorio según isCollapsed */
+          w-[240px] ${isCollapsed ? 'md:w-[70px]' : 'md:w-[220px]'}
+        `}
       >
-        {isCollapsed
-          ? <ChevronRight size={12} />
-          : <ChevronLeft size={12} />
-        }
-      </button>
+        {/* ── Botón para colapsar en escritorio (oculto en móvil) ─────────────── */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+          className="hidden md:flex absolute -right-3 top-10 w-6 h-6 bg-bg-surface border border-white/10 rounded-full items-center justify-center text-text-secondary hover:text-neon-blue hover:border-neon-blue transition-all z-10 shadow-lg"
+        >
+          {isCollapsed
+            ? <ChevronRight size={12} />
+            : <ChevronLeft size={12} />
+          }
+        </button>
 
       {/* ── Cuerpo superior: logo + navegación ───────────────────────────── */}
       <div className="flex flex-col overflow-hidden">
@@ -210,6 +229,7 @@ export function Sidebar() {
               <Link
                 key={item.key}
                 href={item.href}
+                onClick={onMobileClose}
                 title={isCollapsed ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-standard ${
                   isActive
@@ -265,5 +285,6 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+    </>
   )
 }
