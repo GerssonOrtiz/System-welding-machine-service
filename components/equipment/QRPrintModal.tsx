@@ -105,16 +105,18 @@ export default function QRPrintModal({
               background: #fff;
             }
             .label-header {
-              border-bottom: 2px solid #000;
-              padding-bottom: 8px;
+              border-bottom: 3px solid #000;
+              padding-bottom: 10px;
               margin-bottom: 8px;
               display: flex;
+              flex-direction: column;
               justify-content: center;
               align-items: center;
+              gap: 2px;
             }
             .logo-img {
-              width: 38px;
-              height: 38px;
+              width: 160px;
+              height: 36px;
               object-fit: contain;
             }
             .info-box {
@@ -188,7 +190,7 @@ export default function QRPrintModal({
           <div class="print-wrapper">
             <div class="label-card">
               <div class="label-header">
-                <img src="/cabelab.png" alt="Logo" class="logo-img" />
+                <img src="/cabelab_negro.png" alt="Logo" class="logo-img" />
               </div>
               <div class="info-box">
                 <div class="info-brand">${brand} ${model}</div>
@@ -246,14 +248,14 @@ export default function QRPrintModal({
               ref={printAreaRef}
               className="bg-white text-slate-950 p-4 rounded-xl shadow-md border-2 border-slate-300 w-full max-w-[320px] flex flex-col items-center text-center space-y-2.5 font-sans"
             >
-              {/* Header de la etiqueta: Solo el logo centrado sin texto */}
-              <div className="border-b-2 border-slate-900 pb-2 w-full flex items-center justify-center">
-                <div className="relative w-10 h-10 shrink-0 flex items-center justify-center">
+              {/* Header de la etiqueta: Logo horizontal negro centrado */}
+              <div className="border-b-[3px] border-slate-900 pb-3 w-full flex flex-col items-center justify-center gap-0.5">
+                <div className="relative w-[160px] h-[36px] shrink-0 flex items-center justify-center">
                   <Image
-                    src="/cabelab.png"
+                    src="/cabelab_negro.png"
                     alt="CABELAB Logo"
-                    width={24}
-                    height={24}
+                    width={160}
+                    height={36}
                     className="object-contain w-full h-full"
                   />
                 </div>
@@ -273,13 +275,19 @@ export default function QRPrintModal({
                 </div>
               </div>
 
-              {/* Código QR */}
+              {/* Código QR con logo embebido */}
               <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm my-1 qr-box-inner flex items-center justify-center">
                 <QRCodeSVG
                   value={qrUrl}
-                  size={150}
+                  size={170}
                   level="H"
                   includeMargin={false}
+                  imageSettings={{
+                    src: '/cabelab_negro.png',
+                    width: 36,
+                    height: 36,
+                    excavate: true,
+                  }}
                 />
               </div>
 
