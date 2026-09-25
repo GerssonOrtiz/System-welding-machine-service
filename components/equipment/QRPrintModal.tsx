@@ -263,8 +263,8 @@ export default function QRPrintModal({
                   <Image
                     src="/cabelab_negro.png"
                     alt="CABELAB Logo"
-                    width={160}
-                    height={36}
+                    width={295}
+                    height={113}
                     className="object-contain w-full h-full"
                   />
                 </div>
@@ -293,7 +293,7 @@ export default function QRPrintModal({
                   includeMargin={false}
                   imageSettings={{
                     src: '/cabelab_negro.png',
-                    width: 36,
+                    width: 72,
                     height: 36,
                     excavate: true,
                   }}

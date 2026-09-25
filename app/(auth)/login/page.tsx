@@ -111,22 +111,7 @@ function LoginContent() {
             />
           </div>
 
-          <div className="mt-2 flex items-center gap-2 px-3 py-1 bg-white/4 border border-white/8 rounded-full shadow-inner">
-            <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0">
-              <Image
-                src="/cabelab.png"
-                alt="CABELAB"
-                width={16}
-                height={16}
-                className="object-contain w-full h-full"
-              />
-            </div>
-            <span className="text-[10px] font-bold text-text-secondary tracking-widest uppercase font-mono">
-              CABELAB • Mantenimiento
-            </span>
-          </div>
-
-          <p className="text-[10px] font-medium tracking-widest uppercase text-text-muted mt-2">
+          <p className="text-[8px] font-medium tracking-widest uppercase text-text-muted mt-2">
             powered by <span className="text-neon-blue font-semibold">Venllas</span>
           </p>
         </div>
@@ -187,9 +172,6 @@ function LoginContent() {
           <p className="text-[11px] text-text-muted font-mono">
             Desarrollado por{' '}
             <span className="text-text-secondary font-semibold">Br. Gersson Ortiz</span>
-          </p>
-          <p className="text-[10px] text-text-muted/70 font-mono tracking-wider">
-            v2.4
           </p>
         </div>
 
