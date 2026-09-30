@@ -59,6 +59,13 @@ export async function POST(
       })
       // Parsear campos JSON que vienen como string en FormData
       if (typeof rawBody.new_status_id === 'string') rawBody.new_status_id = parseInt(rawBody.new_status_id, 10)
+      if (typeof rawBody.assigned_technician_ids === 'string') {
+        try {
+          rawBody.assigned_technician_ids = JSON.parse(rawBody.assigned_technician_ids)
+        } catch {
+          rawBody.assigned_technician_ids = []
+        }
+      }
       const pdfFile = formData.get('pdf') as File | null
       if (pdfFile) {
         pdfBuffer = Buffer.from(await pdfFile.arrayBuffer())
@@ -189,7 +196,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Error al actualizar el estado' }, { status: 500 })
     }
 
-    // 13. Disparar correo específico según el estado destino (fire-and-forget)
+    // 13. Disparar correo específico según el estado destino si corresponde
     const threadBase = {
       fr_number:    eq.fr_number,
       client_name:  eq.client_name,
@@ -200,41 +207,58 @@ export async function POST(
       email_cc:     eq.email_cc ?? [],
     }
 
-    if (eq.email_thread_id) {
-      // Solo enviamos reply si existe un hilo (equipo tiene correo de ingreso registrado)
-      if (targetNameLower === ESTADO_INFORME_ODP && pdfBuffer) {
-        const parsed = informeODPSchema.parse(rawBody)
-        mailer.sendInformeODP({
-          ...threadBase,
-          diagnostico:  parsed.diagnostico,
-          pdf_buffer:   pdfBuffer,
-          pdf_filename: pdfFilename,
-        }).catch(err => console.error('[update-status] sendInformeODP error:', err))
+    let mailWarning: string | null = null
+    const requiresEmail =
+      targetNameLower === ESTADO_INFORME_ODP ||
+      targetNameLower === ESTADO_APROBACION_VENTAS ||
+      targetNameLower === ESTADO_ENTREGA_LOGISTICA ||
+      targetNameLower === ESTADO_CULMINADO_ODP
 
-      } else if (targetNameLower === ESTADO_APROBACION_VENTAS) {
-        const parsed = aprobacionVentasSchema.parse(rawBody)
-        mailer.sendAprobacionVentas({
-          ...threadBase,
-          items:         parsed.items,
-          observaciones: parsed.observaciones,
-        }).catch(err => console.error('[update-status] sendAprobacionVentas error:', err))
+    if (requiresEmail) {
+      if (!eq.email_thread_id) {
+        mailWarning = 'El equipo no tiene un hilo de correo previo registrado, por lo que no se pudo enviar la notificación en hilo.'
+      } else {
+        try {
+          let mailResult: { success: boolean; skipped?: boolean; error?: string } = { success: true }
 
-      } else if (targetNameLower === ESTADO_ENTREGA_LOGISTICA) {
-        const parsed = entregaLogisticaSchema.parse(rawBody)
-        mailer.sendEntregaLogistica({
-          ...threadBase,
-          items:         parsed.items,
-          observaciones: parsed.observaciones,
-        }).catch(err => console.error('[update-status] sendEntregaLogistica error:', err))
+          if (targetNameLower === ESTADO_INFORME_ODP && pdfBuffer) {
+            const parsed = informeODPSchema.parse(rawBody)
+            mailResult = await mailer.sendInformeODP({
+              ...threadBase,
+              diagnostico:  parsed.diagnostico,
+              pdf_buffer:   pdfBuffer,
+              pdf_filename: pdfFilename,
+            })
+          } else if (targetNameLower === ESTADO_APROBACION_VENTAS) {
+            const parsed = aprobacionVentasSchema.parse(rawBody)
+            mailResult = await mailer.sendAprobacionVentas({
+              ...threadBase,
+              items:         parsed.items,
+              observaciones: parsed.observaciones,
+            })
+          } else if (targetNameLower === ESTADO_ENTREGA_LOGISTICA) {
+            const parsed = entregaLogisticaSchema.parse(rawBody)
+            mailResult = await mailer.sendEntregaLogistica({
+              ...threadBase,
+              items:         parsed.items,
+              observaciones: parsed.observaciones,
+            })
+          } else if (targetNameLower === ESTADO_CULMINADO_ODP) {
+            const parsed = culminadoODPSchema.parse(rawBody)
+            mailResult = await mailer.sendCulminadoODP({
+              ...threadBase,
+              observaciones: parsed.observaciones,
+            })
+          }
 
-      } else if (targetNameLower === ESTADO_CULMINADO_ODP) {
-        const parsed = culminadoODPSchema.parse(rawBody)
-        mailer.sendCulminadoODP({
-          ...threadBase,
-          observaciones: parsed.observaciones,
-        }).catch(err => console.error('[update-status] sendCulminadoODP error:', err))
+          if (!mailResult.success && !mailResult.skipped) {
+            mailWarning = mailResult.error || 'Ocurrió un error al despachar la notificación por correo.'
+          }
+        } catch (mailErr: any) {
+          console.error('[POST update-status] Error sending email notification:', mailErr)
+          mailWarning = mailErr?.message || 'Error inesperado al enviar la notificación por correo.'
+        }
       }
-      // Otros estados (en diagnóstico, en mantenimiento, etc.) no disparan correo
     }
 
     return NextResponse.json({
@@ -243,6 +267,7 @@ export async function POST(
         new_status_name:  targetName,
         new_status_color: (targetState as any).color,
       },
+      warning: mailWarning,
     })
 
   } catch (err) {

@@ -130,24 +130,31 @@ export async function POST(
     }
 
     // 12. Correo interno — solo si el superadmin activó la casilla notify_by_email
+    let mailWarning: string | null = null
     if (notify_by_email) {
-      mailer.sendStatusChange(
-        {
-          fr_number: activeEquipment.fr_number,
-          client_name: activeEquipment.client_name,
-          brand: activeEquipment.brand,
-          model: activeEquipment.model,
-          serial_number: activeEquipment.serial_number,
-          new_status_name: activeTargetState.name,
-          previous_status_name: previousStateName,
-          override_reason: override_reason.trim().toUpperCase(),
-          changed_by: activeProfile.username,
-        },
-        true, // isOverride = true → banner amarillo en el correo
-        cc_extra ?? []
-      ).catch((err) => {
+      try {
+        const mailResult = await mailer.sendStatusChange(
+          {
+            fr_number: activeEquipment.fr_number,
+            client_name: activeEquipment.client_name,
+            brand: activeEquipment.brand,
+            model: activeEquipment.model,
+            serial_number: activeEquipment.serial_number,
+            new_status_name: activeTargetState.name,
+            previous_status_name: previousStateName,
+            override_reason: override_reason.trim().toUpperCase(),
+            changed_by: activeProfile.username,
+          },
+          true, // isOverride = true → banner amarillo en el correo
+          cc_extra ?? []
+        )
+        if (!mailResult.success && !mailResult.skipped) {
+          mailWarning = mailResult.error || 'No se pudo enviar la notificación por correo del override.'
+        }
+      } catch (err: any) {
         console.error('[POST force-status] Background mailer error:', err)
-      })
+        mailWarning = err?.message || 'Error al enviar notificación por correo del override.'
+      }
     }
 
     return NextResponse.json({
@@ -155,7 +162,8 @@ export async function POST(
       data: {
         new_status_name: activeTargetState.name,
         new_status_color: activeTargetState.color,
-      }
+      },
+      warning: mailWarning,
     })
 
   } catch (err) {

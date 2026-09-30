@@ -74,6 +74,9 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
       }
 
       toast.success('Equipo registrado con éxito')
+      if (resData.warning) {
+        toast.warning(`Aviso de notificación: ${resData.warning}`)
+      }
       reset()
       setSelectedCcEmails([])
       if (onSuccess) onSuccess()

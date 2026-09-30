@@ -224,6 +224,11 @@ export default function StatusChangeModal({
           ? `Estado forzado con éxito a ${resData.data?.new_status_name}`
           : `Estado actualizado con éxito a ${resData.data?.new_status_name}`
       )
+
+      if (resData.warning) {
+        toast.warning(`Aviso de notificación: ${resData.warning}`)
+      }
+
       onSuccess()
       onClose()
     } catch (err: any) {

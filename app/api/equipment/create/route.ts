@@ -172,8 +172,9 @@ export async function POST(request: NextRequest) {
     const activeEquipment = newEquipment as any
 
     // 10. Enviar correo de ingreso y guardar el message-id en BD para el hilo
+    let mailWarning: string | null = null
     try {
-      const threadId = await mailer.sendEquipmentEntry({
+      const mailResult = await mailer.sendEquipmentEntry({
         fr_number,
         client_name,
         brand,
@@ -186,19 +187,23 @@ export async function POST(request: NextRequest) {
       }, cc_extra)
 
       // Si Resend devolvió un message-id, lo guardamos para enhebrar los replies
-      if (threadId) {
+      if (mailResult.success && mailResult.messageId) {
         await supabase
           .from('equipment_records')
-          .update({ email_thread_id: threadId } as any)
+          .update({ email_thread_id: mailResult.messageId } as any)
           .eq('id', activeEquipment.id)
+      } else if (!mailResult.success && !mailResult.skipped) {
+        mailWarning = mailResult.error || 'No se pudo enviar el correo de ingreso'
       }
     } catch (mailErr) {
       console.error('[POST /api/equipment/create] Background mailer error:', mailErr)
+      mailWarning = 'Error al enviar correo de notificación'
     }
 
     return NextResponse.json({
       success: true,
-      data: { id: activeEquipment.id }
+      data: { id: activeEquipment.id },
+      warning: mailWarning,
     })
 
   } catch (err) {

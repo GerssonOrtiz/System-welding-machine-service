@@ -13,11 +13,12 @@ const FROM_ADDRESS = 'Ventas Cabelab <onboarding@resend.dev>'
 
 // TO del correo de ingreso — siempre fijos
 const ENTRY_TO = [
-  'ventas@cabelab.com',         // Recepción / Ventas
-  'odp@cabelab.com',            // Operaciones
-  'heady.mamani@cabelab.com',   // Logística
-  'daniel.rojas@cabelab.com',   // Fijo adicional
-  'vivian.mamani@cabelab.com',  // Fijo adicional
+  'gortizri19@gmail.com'
+  //'ventas@cabelab.com',         // Recepción / Ventas
+  //'odp@cabelab.com',            // Operaciones
+  //'heady.mamani@cabelab.com',   // Logística
+  //'daniel.rojas@cabelab.com',   // Fijo adicional
+  //'vivian.mamani@cabelab.com',  // Fijo adicional
 ]
 
 // ─────────────────────────────────────────
@@ -439,6 +440,16 @@ function threadHeaders(threadId: string): Record<string, string> {
 }
 
 // ─────────────────────────────────────────
+// RESPUESTA ESTÁNDAR DEL MAILER
+// ─────────────────────────────────────────
+export interface MailerResult {
+  success: boolean
+  messageId?: string
+  skipped?: boolean
+  error?: string
+}
+
+// ─────────────────────────────────────────
 // API PÚBLICA DEL MAILER
 // ─────────────────────────────────────────
 export const mailer = {
@@ -447,10 +458,10 @@ export const mailer = {
    * TO fijo: ventas, odp, heady, daniel, vivian
    * CC: los seleccionados en el formulario de ingreso
    */
-  async sendEquipmentEntry(data: EquipmentEntryData, cc_extra: string[] = []): Promise<string | null> {
+  async sendEquipmentEntry(data: EquipmentEntryData, cc_extra: string[] = []): Promise<MailerResult> {
     if (!resend) {
       console.warn('[Mailer] sendEquipmentEntry — RESEND_API_KEY no configurada, correo omitido.')
-      return null
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
       const res = await resend.emails.send({
@@ -460,11 +471,15 @@ export const mailer = {
         subject: `📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
         html: buildEntryHtml(data),
       })
-      // Resend devuelve el id del mensaje en res.data.id
-      return (res as any)?.data?.id ?? null
-    } catch (error) {
+      const messageId = (res as any)?.data?.id
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendEquipmentEntry Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error al enviar correo con Resend' }
+      }
+      return { success: true, messageId: messageId ?? undefined }
+    } catch (error: any) {
       console.error('[Mailer] sendEquipmentEntry error:', error)
-      return null
+      return { success: false, error: error?.message || 'Error inesperado al enviar correo de ingreso' }
     }
   },
 
@@ -472,13 +487,13 @@ export const mailer = {
    * ODP responde el hilo con el informe técnico + PDF adjunto.
    * Estado: "Pendiente de aprobación"
    */
-  async sendInformeODP(data: InformeODPData): Promise<void> {
+  async sendInformeODP(data: InformeODPData): Promise<MailerResult> {
     if (!resend) {
       console.warn('[Mailer] sendInformeODP — RESEND_API_KEY no configurada, correo omitido.')
-      return
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
-      await resend.emails.send({
+      const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
         ...(data.email_cc.length > 0 && { cc: data.email_cc }),
@@ -492,8 +507,14 @@ export const mailer = {
           },
         ],
       })
-    } catch (error) {
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendInformeODP Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error de envío de informe técnico' }
+      }
+      return { success: true, messageId: (res as any)?.data?.id }
+    } catch (error: any) {
       console.error('[Mailer] sendInformeODP error:', error)
+      return { success: false, error: error?.message || 'Error al enviar correo de informe técnico' }
     }
   },
 
@@ -501,13 +522,13 @@ export const mailer = {
    * Ventas responde el hilo con la aprobación del cliente (tabla de repuestos/servicios).
    * Estado: "Aprobado"
    */
-  async sendAprobacionVentas(data: AprobacionVentasData): Promise<void> {
+  async sendAprobacionVentas(data: AprobacionVentasData): Promise<MailerResult> {
     if (!resend) {
       console.warn('[Mailer] sendAprobacionVentas — RESEND_API_KEY no configurada, correo omitido.')
-      return
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
-      await resend.emails.send({
+      const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
         ...(data.email_cc.length > 0 && { cc: data.email_cc }),
@@ -515,8 +536,14 @@ export const mailer = {
         html: buildAprobacionVentasHtml(data),
         headers: threadHeaders(data.thread_id),
       })
-    } catch (error) {
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendAprobacionVentas Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error de envío de aprobación de presupuesto' }
+      }
+      return { success: true, messageId: (res as any)?.data?.id }
+    } catch (error: any) {
       console.error('[Mailer] sendAprobacionVentas error:', error)
+      return { success: false, error: error?.message || 'Error al enviar correo de aprobación de ventas' }
     }
   },
 
@@ -524,13 +551,13 @@ export const mailer = {
    * Logística responde el hilo con la entrega de repuestos.
    * Estado: "En espera de repuesto" (cuando se gestiona la entrega)
    */
-  async sendEntregaLogistica(data: EntregaLogisticaData): Promise<void> {
+  async sendEntregaLogistica(data: EntregaLogisticaData): Promise<MailerResult> {
     if (!resend) {
       console.warn('[Mailer] sendEntregaLogistica — RESEND_API_KEY no configurada, correo omitido.')
-      return
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
-      await resend.emails.send({
+      const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
         ...(data.email_cc.length > 0 && { cc: data.email_cc }),
@@ -538,8 +565,14 @@ export const mailer = {
         html: buildEntregaLogisticaHtml(data),
         headers: threadHeaders(data.thread_id),
       })
-    } catch (error) {
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendEntregaLogistica Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error de envío de entrega de repuestos' }
+      }
+      return { success: true, messageId: (res as any)?.data?.id }
+    } catch (error: any) {
       console.error('[Mailer] sendEntregaLogistica error:', error)
+      return { success: false, error: error?.message || 'Error al enviar correo de entrega de repuestos' }
     }
   },
 
@@ -547,13 +580,13 @@ export const mailer = {
    * ODP responde el hilo informando que el servicio está culminado.
    * Estado: "Listo para entrega"
    */
-  async sendCulminadoODP(data: CulminadoODPData): Promise<void> {
+  async sendCulminadoODP(data: CulminadoODPData): Promise<MailerResult> {
     if (!resend) {
       console.warn('[Mailer] sendCulminadoODP — RESEND_API_KEY no configurada, correo omitido.')
-      return
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
-      await resend.emails.send({
+      const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
         ...(data.email_cc.length > 0 && { cc: data.email_cc }),
@@ -561,8 +594,14 @@ export const mailer = {
         html: buildCulminadoODPHtml(data),
         headers: threadHeaders(data.thread_id),
       })
-    } catch (error) {
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendCulminadoODP Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error de envío de servicio culminado' }
+      }
+      return { success: true, messageId: (res as any)?.data?.id }
+    } catch (error: any) {
       console.error('[Mailer] sendCulminadoODP error:', error)
+      return { success: false, error: error?.message || 'Error al enviar correo de culminado' }
     }
   },
 
@@ -573,25 +612,31 @@ export const mailer = {
     data: StatusChangeData,
     isOverride: boolean = false,
     cc_extra: string[] = []
-  ): Promise<void> {
+  ): Promise<MailerResult> {
     if (!resend) {
       console.warn('[Mailer] sendStatusChange — RESEND_API_KEY no configurada, correo omitido.')
-      return
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
       const subject = isOverride
         ? `⚠️ [OVERRIDE] Cambio Forzado de Estado — ${data.fr_number} — ${data.client_name}`
         : `🔄 Cambio de Estado — ${data.fr_number} — ${data.client_name}`
 
-      await resend.emails.send({
+      const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
         ...(cc_extra.length > 0 && { cc: cc_extra }),
         subject,
         html: buildStatusChangeHtml(data, isOverride),
       })
-    } catch (error) {
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendStatusChange Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error de envío de cambio de estado' }
+      }
+      return { success: true, messageId: (res as any)?.data?.id }
+    } catch (error: any) {
       console.error('[Mailer] sendStatusChange error:', error)
+      return { success: false, error: error?.message || 'Error al enviar notificación de cambio de estado' }
     }
   },
 }

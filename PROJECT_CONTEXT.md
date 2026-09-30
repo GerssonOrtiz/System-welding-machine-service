@@ -1,11 +1,11 @@
-# PROJECT_CONTEXT.md — CABELAB v2.5
+# PROJECT_CONTEXT.md — SYNAPSE v2.5
 > Documento de contexto técnico optimizado para lectura por IA. Contiene arquitectura, estructura, flujos y convenciones. Leer antes de tocar cualquier archivo.
 
 ---
 
 ## 1. IDENTIDAD DEL PROYECTO
 
-**CABELAB** es un sistema de gestión operativa para un taller de mantenimiento de motosoldadoras en Arequipa, Perú. Digitaliza el ciclo completo: ingreso → diagnóstico → cotización/aprobación → mantenimiento → entrega, con una **Pizarra Virtual** sincronizada en tiempo real como pieza central.
+**SYNAPSE** es un sistema de gestión operativa para un taller de mantenimiento de motosoldadoras en Arequipa, Perú. Digitaliza el ciclo completo: ingreso → diagnóstico → cotización/aprobación → mantenimiento → entrega, con una **Pizarra Virtual** sincronizada en tiempo real como pieza central.
 
 ---
 
@@ -345,21 +345,24 @@ supabase/migrations/013_email_thread.sql        → Columnas email_thread_id y e
 
 ### Funciones del mailer
 
-| Función | Descripción |
-|---|---|
-| `sendEquipmentEntry(data, cc_extra[])` | Correo de ingreso. **Devuelve** el `message-id` para guardarlo en BD |
-| `sendInformeODP(data)` | Reply con diagnóstico + PDF adjunto (Buffer) |
-| `sendAprobacionVentas(data)` | Reply con tabla de ítems aprobados |
-| `sendEntregaLogistica(data)` | Reply con tabla de repuestos entregados |
-| `sendCulminadoODP(data)` | Reply con texto predefinido + observaciones |
+Todas las funciones retornan un objeto normalizado `MailerResult` (`{ success: boolean, messageId?: string, skipped?: boolean, error?: string }`). Si `RESEND_API_KEY` no está configurada, retornan `{ success: false, skipped: true }` sin lanzar error no controlado.
 
-### `update-status/route.ts` — lógica de detección
+| Función | Descripción | Retorno |
+|---|---|---|
+| `sendEquipmentEntry(data, cc_extra[])` | Correo de ingreso con tabla horizontal. | `Promise<MailerResult>` (incluye `messageId` para persistir `email_thread_id`) |
+| `sendInformeODP(data)` | Reply en hilo con diagnóstico + PDF adjunto (Buffer). | `Promise<MailerResult>` |
+| `sendAprobacionVentas(data)` | Reply en hilo con tabla de repuestos/servicios aprobados. | `Promise<MailerResult>` |
+| `sendEntregaLogistica(data)` | Reply en hilo con tabla de repuestos entregados y nota compatible. | `Promise<MailerResult>` |
+| `sendCulminadoODP(data)` | Reply en hilo con texto institucional de culminado + observaciones. | `Promise<MailerResult>` |
+| `sendStatusChange(data, isOverride, cc_extra[])` | Correo interno por override (banner amarillo) o cambio manual. | `Promise<MailerResult>` |
 
-El route acepta tanto **JSON** como **FormData** (`multipart/form-data`):
-- `multipart/form-data` → estado "Pendiente de aprobación" (lleva PDF como `File`)
-- `application/json` → todos los demás estados
+### `update-status/route.ts` — lógica de ejecución y resiliencia
 
-Solo dispara correo si `equipment_records.email_thread_id` no es null (el equipo tiene correo de ingreso registrado).
+1. **Recepción:** Acepta tanto **JSON** como **FormData** (`multipart/form-data` para subida de informe PDF).
+2. **Validación:** Valida con Zod y comprueba permisos con `WorkflowEngine.validateTransition`.
+3. **Persistencia e Historial:** Actualiza `equipment_records`, disparando el trigger en PostgreSQL que inserta inmutablemente en `status_history`.
+4. **Despacho de Correo:** Si el estado destino requiere correo y existe `email_thread_id`, ejecuta el reply correspondiente mediante `mailer`.
+5. **Resiliencia (No Reversión):** Si el cambio de estado tiene éxito pero el envío de correo falla (o no hay hilo registrado), **el estado no se revierte** en base de datos. La API retorna `success: true` con una propiedad `warning: string` que `StatusChangeModal` muestra mediante `toast.warning()`, permitiendo al usuario conocer el incidente y reintentar si lo requiere.
 
 ### Para modificar destinatarios o CC opcionales
 
@@ -386,7 +389,7 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 
 ## 12. ESTADO ACTUAL Y PENDIENTES
 
-> Última sesión: 24/09/2026
+> Última sesión: 29/09/2026
 
 ### ✅ Implementado y funcional
 
@@ -410,10 +413,13 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
   - Iconos Lucide profesionales en Sidebar (`Sidebar.tsx`) reemplazando emojis
   - Pie de Sidebar con Avatar, nombre y rol de usuario activo en tiempo real
 - **Experiencia de Usuario (UX)**:
-  - Títulos dinámicos de pestañas con formato `[Vista] | CABELAB` vía hook `usePageTitle.ts`
+  - Títulos dinámicos de pestañas con formato `[Vista] | SYNAPSE` vía hook `usePageTitle.ts`
   - Componente reutilizable de estados vacíos `EmptyState.tsx` aplicado en tablas
   - Página 404 personalizada (`app/not-found.tsx`) con temática oscura y estética del sistema
-- **Sistema de correos en hilo completo** (código listo, pendiente solo configuración)
+- **Sistema de correos en hilo integrado con el workflow**:
+  - Orquestación completa: validación Zod / permisos de rol ➔ actualización en BD ➔ disparo de trigger para `status_history` ➔ envío de correo de notificación en hilo vía Resend.
+  - Eventos integrados: ingreso de equipo, informe técnico ODP (con PDF adjunto y enlace a Drive), aprobación de ventas (tabla de repuestos/servicios), entrega de repuestos por logística (con notas de repuestos compatibles) y servicio culminado (ODP).
+  - Manejo de resiliencia: si el correo falla o la API Key no está configurada, **no se revierte el cambio de estado**, notificando una advertencia informativa (`toast.warning`) que permite al usuario reintentar sin inconsistencias.
 - **Sistema de Códigos QR y Documentación Técnica Pública — v2.5**:
   - Librería `qrcode.react` instalada y configurada
   - Modal `QRPrintModal` para generar e imprimir etiquetas físicas con datos del equipo
