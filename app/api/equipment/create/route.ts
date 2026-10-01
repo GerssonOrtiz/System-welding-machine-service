@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
     // 1. VERIFICAR USUARIO AUTENTICADO
     // ============================================================
 
-    // getUser() verifica el usuario directamente con Supabase Auth.
-    // Es preferible a getSession() para validar identidad en el servidor.
+    // Usamos getUser() en lugar de getSession()
+    // porque getUser() valida la identidad contra Supabase Auth.
     const {
       data: { user },
       error: authError,
@@ -34,7 +34,10 @@ export async function POST(request: NextRequest) {
     // 2. OBTENER PERFIL DEL USUARIO
     // ============================================================
 
-    const { data: userProfile, error: profileError } = await supabase
+    const {
+      data: userProfile,
+      error: profileError,
+    } = await supabase
       .from('user_profiles')
       .select('role, is_active, is_superadmin')
       .eq('id', user.id)
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================================
-    // 3. VERIFICAR ESTADO DE LA CUENTA
+    // 3. VERIFICAR CUENTA ACTIVA
     // ============================================================
 
     if (!userProfile.is_active) {
@@ -90,10 +93,14 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================================
-    // 5. LEER Y VALIDAR BODY
+    // 5. LEER BODY
     // ============================================================
 
     const body = await request.json()
+
+    // ============================================================
+    // 6. VALIDAR BODY CON ZOD
+    // ============================================================
 
     const parsed = createEquipmentSchema.safeParse(body)
 
@@ -111,12 +118,16 @@ export async function POST(request: NextRequest) {
     const { data } = parsed
 
     // ============================================================
-    // 6. NORMALIZAR DATOS
+    // 7. NORMALIZAR DATOS
     // ============================================================
 
-    const fr_number = data.fr_number.trim().toUpperCase()
+    const fr_number = data.fr_number
+      .trim()
+      .toUpperCase()
 
-    const client_name = data.client_name.trim().toUpperCase()
+    const client_name = data.client_name
+      .trim()
+      .toUpperCase()
 
     const brand = data.brand?.trim()
       ? data.brand.trim().toUpperCase()
@@ -142,13 +153,13 @@ export async function POST(request: NextRequest) {
     const additional_observations =
       data.additional_observations?.trim().toUpperCase() || null
 
-    // CC se utiliza para el correo.
-    // NO se guarda en equipment_records porque la columna email_cc
-    // no existe actualmente en Supabase.
+    // CC se utiliza exclusivamente para el correo.
+    // No se guarda en equipment_records porque actualmente
+    // no existe la columna email_cc.
     const cc_extra: string[] = data.cc_extra ?? []
 
     // ============================================================
-    // 7. VERIFICAR SI EL FR YA EXISTE
+    // 8. VERIFICAR FR DUPLICADO
     // ============================================================
 
     const {
@@ -169,7 +180,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'No se pudo verificar si la Ficha de Recepción ya existe',
+          error:
+            'No se pudo verificar si la Ficha de Recepción ya existe',
         },
         { status: 500 }
       )
@@ -186,7 +198,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================================
-    // 8. OBTENER ESTADO INICIAL DEL WORKFLOW
+    // 9. OBTENER ESTADO INICIAL DEL WORKFLOW
     // ============================================================
 
     const {
@@ -215,7 +227,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================================
-    // 9. REGISTRAR MARCA Y MODELO EN EL CATÁLOGO
+    // 10. REGISTRAR MARCA Y MODELO EN CATÁLOGO
     // ============================================================
 
     if (brand !== 'S/M') {
@@ -223,7 +235,7 @@ export async function POST(request: NextRequest) {
         let brand_id: string | null = null
 
         // --------------------------------------------------------
-        // Buscar marca
+        // Buscar marca existente
         // --------------------------------------------------------
 
         const {
@@ -271,7 +283,7 @@ export async function POST(request: NextRequest) {
         }
 
         // --------------------------------------------------------
-        // Registrar modelo
+        // Registrar modelo si no existe
         // --------------------------------------------------------
 
         if (brand_id && model !== 'S/M') {
@@ -293,7 +305,9 @@ export async function POST(request: NextRequest) {
           }
 
           if (!existingModel) {
-            const { error: newModelError } = await supabase
+            const {
+              error: newModelError,
+            } = await supabase
               .from('catalog_models')
               .insert({
                 brand_id,
@@ -309,7 +323,8 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (catalogErr) {
-        // Un error de catálogo NO debe impedir registrar el equipo.
+        // El error del catálogo no debe impedir
+        // registrar el equipo.
         console.error(
           '[POST /api/equipment/create] Error updating catalog:',
           catalogErr
@@ -318,15 +333,21 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================================
-    // 10. REGISTRAR EQUIPO
+    // 11. REGISTRAR EQUIPO
     // ============================================================
 
-    // IMPORTANTE:
-    // NO se incluye:
-    //
-    // email_cc: cc_extra
-    //
-    // porque esa columna NO existe actualmente en equipment_records.
+    /*
+     * IMPORTANTE:
+     *
+     * NO incluimos:
+     *
+     * email_cc: cc_extra
+     *
+     * porque esa columna no existe en equipment_records.
+     *
+     * cc_extra continuará utilizándose posteriormente
+     * para enviar el correo.
+     */
 
     const {
       data: newEquipment,
@@ -353,16 +374,17 @@ export async function POST(request: NextRequest) {
 
         priority_level: data.priority_level || 0,
 
-        is_priority: (data.priority_level || 0) > 0,
+        is_priority:
+          (data.priority_level || 0) > 0,
 
         report_url:
           data.report_url?.trim() || null,
-      })
+      } as any)
       .select('id')
       .single()
 
     // ============================================================
-    // 11. VERIFICAR INSERCIÓN
+    // 12. VERIFICAR INSERCIÓN
     // ============================================================
 
     if (insertError || !newEquipment) {
@@ -384,43 +406,50 @@ export async function POST(request: NextRequest) {
     const equipmentId = newEquipment.id
 
     // ============================================================
-    // 12. ENVIAR CORREO DE INGRESO
+    // 13. ENVIAR CORREO DE INGRESO
     // ============================================================
 
     let mailWarning: string | null = null
 
     try {
-      const mailResult = await mailer.sendEquipmentEntry(
-        {
-          fr_number,
-          client_name,
-          brand,
-          model,
-          serial_number,
-          service_type: data.service_type,
+      const mailResult =
+        await mailer.sendEquipmentEntry(
+          {
+            fr_number,
+            client_name,
+            brand,
+            model,
+            serial_number,
+            service_type: data.service_type,
 
-          client_report:
-            client_report || 'SIN REPORTE',
+            client_report:
+              client_report || 'SIN REPORTE',
 
-          accessories:
-            accessories || 'NINGUNO',
+            accessories:
+              accessories || 'NINGUNO',
 
-          is_priority:
-            (data.priority_level || 0) > 0,
-        },
-        cc_extra
-      )
+            is_priority:
+              (data.priority_level || 0) > 0,
+          },
+          cc_extra
+        )
 
       // ==========================================================
-      // 13. GUARDAR ID DEL HILO DE CORREO
+      // 14. GUARDAR ID DEL HILO DEL CORREO
       // ==========================================================
 
-      if (mailResult.success && mailResult.messageId) {
-        const { error: threadError } = await supabase
+      if (
+        mailResult.success &&
+        mailResult.messageId
+      ) {
+        const {
+          error: threadError,
+        } = await supabase
           .from('equipment_records')
           .update({
-            email_thread_id: mailResult.messageId,
-          })
+            email_thread_id:
+              mailResult.messageId,
+          } as any)
           .eq('id', equipmentId)
 
         if (threadError) {
@@ -429,8 +458,6 @@ export async function POST(request: NextRequest) {
             threadError
           )
 
-          // El equipo ya fue creado correctamente.
-          // Solo dejamos advertencia.
           mailWarning =
             'El equipo fue registrado, pero no se pudo guardar el identificador del correo.'
         }
@@ -448,14 +475,14 @@ export async function POST(request: NextRequest) {
         mailErr
       )
 
-      // No hacemos rollback del equipo.
-      // El registro ya existe correctamente.
+      // El equipo ya fue creado.
+      // No hacemos rollback por un error del correo.
       mailWarning =
         'El equipo fue registrado, pero ocurrió un error al enviar el correo de notificación.'
     }
 
     // ============================================================
-    // 14. RESPUESTA EXITOSA
+    // 15. RESPUESTA EXITOSA
     // ============================================================
 
     return NextResponse.json({
@@ -469,7 +496,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (err) {
     // ============================================================
-    // ERROR NO CONTROLADO
+    // ERROR GENERAL NO CONTROLADO
     // ============================================================
 
     console.error(
