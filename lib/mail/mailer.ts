@@ -505,21 +505,38 @@ export const mailer = {
       const resendApiId = (res as any)?.data?.id
 
       // Obtener el Message-ID RFC 5322 real que el MTA de Resend usó.
-      // Es el único valor válido para In-Reply-To / References en los replies.
+      // Resend llena este campo de forma asíncrona una vez que el mensaje
+      // sale del sistema, por lo que una consulta inmediata puede devolver
+      // message_id: null. Se reintenta con backoff hasta obtenerlo.
+      const RETRY_DELAYS_MS = [500, 1000, 2000, 3000]
       let realMessageId: string | null = null
-      try {
-        const detail = await resend.emails.get(resendApiId)
-        realMessageId = (detail as any)?.data?.message_id ?? null
-        console.log('[Mailer] sendEquipmentEntry -> Message-ID RFC 5322 real obtenido:', {
-          resendApiId,
-          realMessageId,
-        })
-      } catch (fetchErr) {
-        console.warn('[Mailer] sendEquipmentEntry -> No se pudo obtener el message_id real de Resend:', fetchErr)
+
+      for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+        if (attempt > 0) {
+          const delay = RETRY_DELAYS_MS[attempt - 1]
+          console.log(`[Mailer] sendEquipmentEntry -> Esperando ${delay}ms antes de reintentar obtener message_id (intento ${attempt}/${RETRY_DELAYS_MS.length})...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+        try {
+          const detail = await resend.emails.get(resendApiId)
+          const candidate = (detail as any)?.data?.message_id ?? null
+          if (candidate) {
+            realMessageId = candidate
+            console.log('[Mailer] sendEquipmentEntry -> Message-ID RFC 5322 real obtenido:', {
+              resendApiId,
+              realMessageId,
+              attempt,
+            })
+            break
+          }
+          console.log(`[Mailer] sendEquipmentEntry -> message_id aún null en intento ${attempt}, resendApiId: ${resendApiId}`)
+        } catch (fetchErr) {
+          console.warn(`[Mailer] sendEquipmentEntry -> Error al consultar Resend en intento ${attempt}:`, fetchErr)
+        }
       }
 
       if (!realMessageId) {
-        console.warn('[Mailer] sendEquipmentEntry -> message_id real no disponible; el threading de correos no funcionará para este equipo.')
+        console.warn('[Mailer] sendEquipmentEntry -> message_id real no disponible tras todos los reintentos; el threading de correos no funcionará para este equipo.')
         return { success: true, messageId: undefined }
       }
 
