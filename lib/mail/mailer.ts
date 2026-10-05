@@ -420,6 +420,12 @@ function buildStatusChangeHtml(data: StatusChangeData, isOverride: boolean): str
 // ─────────────────────────────────────────
 // HELPER: cabeceras de hilo
 // ─────────────────────────────────────────
+function getSenderDomain(): string {
+  const domainMatch = FROM_ADDRESS.match(/@([^>]+)>/)
+  return domainMatch ? domainMatch[1].trim() : 'resend.dev'
+}
+
+
 function formatMessageId(threadId: string): string {
   const cleanId = threadId.trim().replace(/^<|>$/g, '')
   if (!cleanId) return ''
@@ -429,10 +435,8 @@ function formatMessageId(threadId: string): string {
     return `<${cleanId}>`
   }
 
-  // Extraer dominio del remitente actual (ej. 'onboarding@resend.dev' -> 'resend.dev')
-  const domainMatch = FROM_ADDRESS.match(/@([^>]+)>/)
-  const domain = domainMatch ? domainMatch[1].trim() : 'resend.dev'
-
+  // Compatibilidad con registros legacy que guardaron el UUID crudo
+  const domain = getSenderDomain()
   return `<${cleanId}@${domain}>`
 }
 
@@ -461,7 +465,11 @@ export interface MailerResult {
 // ─────────────────────────────────────────
 export const mailer = {
   /**
-   * Correo de ingreso de equipo. Devuelve el message-id para guardarlo en BD.
+   * Correo de ingreso de equipo.
+   * Envía el correo y luego consulta GET /emails/{id} de Resend para obtener
+   * el Message-ID RFC 5322 real (el que el MTA realmente usó). Ese valor es
+   * el que debe guardarse en equipment_records.email_thread_id y usarse como
+   * In-Reply-To / References en todos los correos posteriores del hilo.
    * TO fijo: ventas, odp, heady, daniel, vivian
    */
   async sendEquipmentEntry(data: EquipmentEntryData): Promise<MailerResult> {
@@ -469,19 +477,56 @@ export const mailer = {
       console.warn('[Mailer] sendEquipmentEntry — RESEND_API_KEY no configurada, correo omitido.')
       return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
+
+    const subject = `📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
+
+    console.log('[Mailer] sendEquipmentEntry -> Iniciando despacho:', {
+      from: FROM_ADDRESS,
+      to: ENTRY_TO,
+      subject,
+    })
+
     try {
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        subject: `📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
+        subject,
         html: buildEntryHtml(data),
+        // NOTA: NO se establece headers['Message-ID'] porque Resend/SES
+        // ignora ese header y genera el suyo propio. El Message-ID real
+        // se obtiene a continuación via GET /emails/{id}.
       })
-      const messageId = (res as any)?.data?.id
+
       if ((res as any)?.error) {
         console.error('[Mailer] sendEquipmentEntry Resend error:', (res as any).error)
         return { success: false, error: (res as any).error?.message || 'Error al enviar correo con Resend' }
       }
-      return { success: true, messageId: messageId ?? undefined }
+
+      const resendApiId = (res as any)?.data?.id
+
+      // Obtener el Message-ID RFC 5322 real que el MTA de Resend usó.
+      // Es el único valor válido para In-Reply-To / References en los replies.
+      let realMessageId: string | null = null
+      try {
+        const detail = await resend.emails.get(resendApiId)
+        realMessageId = (detail as any)?.data?.message_id ?? null
+        console.log('[Mailer] sendEquipmentEntry -> Message-ID RFC 5322 real obtenido:', {
+          resendApiId,
+          realMessageId,
+        })
+      } catch (fetchErr) {
+        console.warn('[Mailer] sendEquipmentEntry -> No se pudo obtener el message_id real de Resend:', fetchErr)
+      }
+
+      if (!realMessageId) {
+        console.warn('[Mailer] sendEquipmentEntry -> message_id real no disponible; el threading de correos no funcionará para este equipo.')
+        return { success: true, messageId: undefined }
+      }
+
+      // realMessageId tiene el formato "<xxx@email.resend.dev>" — es lo que
+      // debe guardarse en equipment_records.email_thread_id para usarlo
+      // como In-Reply-To / References en todos los correos posteriores.
+      return { success: true, messageId: realMessageId }
     } catch (error: any) {
       console.error('[Mailer] sendEquipmentEntry error:', error)
       return { success: false, error: error?.message || 'Error inesperado al enviar correo de ingreso' }

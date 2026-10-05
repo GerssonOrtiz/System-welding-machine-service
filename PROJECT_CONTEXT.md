@@ -98,8 +98,8 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `/api/public/equipment/fr/[fr]` | GET | **Público**: consulta de un único ingreso por FR number. Usado por el QR de equipos sin número de serie |
 | `/api/equipment/export` | GET | Exportar a Excel (.xlsx) |
 | `/api/equipment/import` | POST | Importar desde Excel |
-| `/api/equipment/create` | POST | Creación de equipo. Guarda `email_thread_id`, `email_cc` y `report_url` |
-| `/api/equipment/[id]/update-status` | POST | Cambio de estado. Detecta estado destino y dispara correo-reply específico. Acepta JSON o FormData (informe ODP con PDF y `report_url`) |
+| `/api/equipment/create` | POST | Creación de equipo. Guarda `email_thread_id` y `report_url` |
+| `/api/equipment/[id]/update-status` | POST | Cambio de estado. Detecta estado destino y dispara correo-reply específico en el hilo existente (`In-Reply-To` / `References` normalizados). Acepta JSON o FormData (informe ODP con PDF y `report_url`). Usa `supabase.auth.getUser()` |
 | `/api/equipment/[id]/update` | PUT | Edición completa por superadmin (incluye `report_url`) |
 | `/api/equipment/[id]/force-status` | POST | Override de estado (solo superadmin). Notificación por correo opcional |
 | `/api/workflow/states` | GET/POST | CRUD de estados del workflow |
@@ -118,7 +118,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 |---|---|
 | `layout/Sidebar.tsx` | Navegación lateral. Items visibles según `SIDEBAR_ITEMS_BY_ROLE` del tipo `user.ts` |
 | `layout/Navbar.tsx` | Barra superior con usuario activo y logout |
-| `equipment/EquipmentForm.tsx` | Formulario de creación/edición. Incluye selector de CC para el correo de ingreso |
+| `equipment/EquipmentForm.tsx` | Formulario de creación/edición de equipos |
 | `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Historial, cambio de estado, edición de timestamps (superadmin), botón de QR y visualización de informe |
 | `equipment/EquipmentTable.tsx` | Tabla paginada con indicadores VIP, filtros y botón directo de etiqueta QR |
 | `equipment/QRPrintModal.tsx` | Modal con generación de código QR (qrcode.react) e impresión optimizada de etiqueta física |
@@ -145,9 +145,9 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `supabase/server.ts` | Cliente Supabase para Server Components y API Routes (`createServerClient`) |
 | `supabase/middleware.ts` | `updateSession()` — refresca cookies de sesión en cada request |
 | `workflow/engine.ts` | `WorkflowEngine` — clase estática: `validateTransition`, `getNextStates`, `isTerminal` |
-| `validations/equipment.schema.ts` | Schemas Zod: `createEquipmentSchema` (con `cc_extra`), `updateStatusSchema`, `forceStatusSchema`, + 4 schemas de eventos de correo |
+| `validations/equipment.schema.ts` | Schemas Zod: `createEquipmentSchema`, `updateStatusSchema`, `forceStatusSchema`, + 4 schemas de eventos de correo |
 | `validations/user.schema.ts` | Schema Zod para validar inputs de usuarios |
-| `mail/mailer.ts` | Sistema de correos en hilo con Resend. Ver sección 11 para detalle completo |
+| `mail/mailer.ts` | Sistema de correos en hilo con Resend (envíos dirigidos a `ENTRY_TO` y cabeceras normalizadas RFC 2822). Ver sección 11 para detalle completo |
 | `env.ts` | Validación de variables de entorno al arrancar |
 | `permissions.ts` | (vacío — lógica de permisos está en `types/user.ts`) |
 
@@ -187,8 +187,8 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 ### Columnas de correo y documentación en `equipment_records`
 | Columna | Tipo | Migración | Descripción |
 |---|---|---|---|
-| `email_thread_id` | `TEXT` | 013 | Message-ID devuelto por Resend al enviar el correo de ingreso. Se usa como `In-Reply-To` en todos los replies del hilo |
-| `email_cc` | `TEXT[]` | 013 | Correos CC elegidos al ingresar el equipo. Se reutilizan en todos los correos del hilo |
+| `email_thread_id` | `TEXT` | 013 | Message-ID devuelto por Resend al enviar el correo de ingreso. Se usa formateado como `<id@domain>` en `In-Reply-To` y `References` en todos los replies del hilo |
+| `email_cc` | `TEXT[]` | 013 | Columna en BD (legacy / sin uso actual: CC fue removido del frontend y backend para simplificar el flujo) |
 | `report_url` | `TEXT` | 015 | Enlace directo al PDF del informe técnico (Google Drive u otro). Se muestra en la página pública por QR `/doc/[serial]` |
 
 ### Vista central: `equipment_with_status`
@@ -288,17 +288,18 @@ RESEND_API_KEY=re_xxxxxxxxxxxx      # Obtener en resend.com — sin esto los cor
 
 ## 11. SISTEMA DE CORREOS EN HILO — DETALLE COMPLETO
 
-> Última actualización: 11/09/2026
+> Última actualización: 04/10/2026
 
 ### Arquitectura general
 
 - **Proveedor:** [Resend](https://resend.com) — infraestructura de email como servicio. No requiere cuentas de correo reales. Solo la `RESEND_API_KEY`.
 - **Remitente actual:** `Ventas Cabelab <onboarding@resend.dev>` (dominio de prueba de Resend).
 - **Remitente en producción:** Cambiar a `notificaciones@cabelab.com` una vez verificado el dominio `cabelab.com` en el panel de Resend.
-- **Hilo de correo:** El correo de ingreso guarda su `message-id` en `equipment_records.email_thread_id`. Todos los correos posteriores del mismo equipo usan `In-Reply-To: <thread_id>` y asunto `RE:` idéntico → aparecen en el mismo hilo en Gmail y Outlook.
+- **Hilo de correo:** El correo de ingreso guarda su `id` devuelto por Resend en `equipment_records.email_thread_id`. Todos los correos posteriores del mismo equipo usan `In-Reply-To` y `References` normalizados al estándar RFC 2822 (`<threadId@dominio>`) con asunto `RE:` idéntico → se agrupan de forma fiable en el mismo hilo en Gmail, Outlook y otros clientes de correo.
+- **Sin CC:** Para simplificar el sistema, se eliminó la selección y envío de CC del frontend y backend; los correos se envían exclusivamente a los destinatarios definidos en `ENTRY_TO`.
 - **Los correos del workflow NO se almacenan en BD** — solo van al correo. Ahorra espacio en Supabase gratuito (500 MB límite).
 
-### Destinatarios fijos del correo de ingreso (TO)
+### Destinatarios fijos de todos los correos (ENTRY_TO)
 ```
 ventas@cabelab.com       → Recepción / Ventas
 odp@cabelab.com          → Operaciones
@@ -307,18 +308,11 @@ daniel.rojas@cabelab.com → Fijo adicional
 vivian.mamani@cabelab.com → Fijo adicional
 ```
 
-### CC opcionales (selector en el formulario de ingreso)
-```
-mauricio.beltran@cabelab.com
-gersson.ortiz@cabelab.com
-```
-Los CC se guardan en `equipment_records.email_cc[]` y se reutilizan automáticamente en todos los correos del hilo.
-
 ### Puntos de disparo de correo
 
 | Estado destino | Quién lo hace | Correo que se envía | Datos requeridos en el modal |
 |---|---|---|---|
-| **Ingreso** (al crear equipo) | Recepción / Ventas | Tabla horizontal con datos del equipo | Selector CC opcional |
+| **Ingreso** (al crear equipo) | Recepción / Ventas | Tabla horizontal con datos del equipo | Datos del equipo |
 | **Pendiente de aprobación** | ODP | Informe técnico con PDF adjunto | Texto de diagnóstico + archivo PDF |
 | **Aprobado** | Ventas | Tabla de repuestos/servicios aprobados | Filas: descripción / cantidad / precio + observaciones |
 | **En espera de repuesto** | Logística | Lista de repuestos entregados | Filas: descripción / cantidad / nota-compatible + observaciones |
@@ -329,18 +323,18 @@ Los CC se guardan en `equipment_records.email_cc[]` y se reutilizan automáticam
 ### Archivos del sistema de correos
 
 ```
-lib/mail/mailer.ts                              → Lógica central. ENTRY_TO[], CC_OPTIONS[], 5 funciones de envío
+lib/mail/mailer.ts                              → Lógica central. ENTRY_TO[], normalización formatMessageId(), 5 funciones de envío
 lib/validations/equipment.schema.ts             → 4 schemas Zod para eventos de correo
-app/api/equipment/create/route.ts               → Guarda email_thread_id y email_cc tras el envío
-app/api/equipment/[id]/update-status/route.ts   → Detecta estado destino y dispara el correo correcto
+app/api/equipment/create/route.ts               → Guarda email_thread_id tras el envío de ingreso
+app/api/equipment/[id]/update-status/route.ts   → Detecta estado destino y dispara el reply en hilo correspondiente
 app/api/equipment/[id]/force-status/route.ts    → Override con correo opcional
-components/equipment/EquipmentForm.tsx          → Selector CC en el formulario de ingreso
+components/equipment/EquipmentForm.tsx          → Formulario de ingreso de equipo
 components/equipment/StatusChangeModal.tsx      → Orquesta sub-modales según estado destino
 components/equipment/modals/ModalInformeODP.tsx         → Diagnóstico + upload PDF
 components/equipment/modals/ModalAprobacionVentas.tsx   → Tabla dinámica repuestos aprobados
 components/equipment/modals/ModalEntregaLogistica.tsx   → Tabla repuestos entregados
 components/equipment/modals/ModalCulminadoODP.tsx       → Texto predefinido + observaciones
-supabase/migrations/013_email_thread.sql        → Columnas email_thread_id y email_cc
+supabase/migrations/013_email_thread.sql        → Columna email_thread_id
 ```
 
 ### Funciones del mailer
@@ -349,30 +343,28 @@ Todas las funciones retornan un objeto normalizado `MailerResult` (`{ success: b
 
 | Función | Descripción | Retorno |
 |---|---|---|
-| `sendEquipmentEntry(data, cc_extra[])` | Correo de ingreso con tabla horizontal. | `Promise<MailerResult>` (incluye `messageId` para persistir `email_thread_id`) |
+| `sendEquipmentEntry(data)` | Correo de ingreso con tabla horizontal. | `Promise<MailerResult>` (incluye `messageId` para persistir `email_thread_id`) |
 | `sendInformeODP(data)` | Reply en hilo con diagnóstico + PDF adjunto (Buffer). | `Promise<MailerResult>` |
 | `sendAprobacionVentas(data)` | Reply en hilo con tabla de repuestos/servicios aprobados. | `Promise<MailerResult>` |
 | `sendEntregaLogistica(data)` | Reply en hilo con tabla de repuestos entregados y nota compatible. | `Promise<MailerResult>` |
 | `sendCulminadoODP(data)` | Reply en hilo con texto institucional de culminado + observaciones. | `Promise<MailerResult>` |
-| `sendStatusChange(data, isOverride, cc_extra[])` | Correo interno por override (banner amarillo) o cambio manual. | `Promise<MailerResult>` |
+| `sendStatusChange(data, isOverride)` | Correo interno por override (banner amarillo) o cambio manual. | `Promise<MailerResult>` |
 
 ### `update-status/route.ts` — lógica de ejecución y resiliencia
 
 1. **Recepción:** Acepta tanto **JSON** como **FormData** (`multipart/form-data` para subida de informe PDF).
-2. **Validación:** Valida con Zod y comprueba permisos con `WorkflowEngine.validateTransition`.
-3. **Persistencia e Historial:** Actualiza `equipment_records`, disparando el trigger en PostgreSQL que inserta inmutablemente en `status_history`.
-4. **Despacho de Correo:** Si el estado destino requiere correo y existe `email_thread_id`, ejecuta el reply correspondiente mediante `mailer`.
-5. **Resiliencia (No Reversión):** Si el cambio de estado tiene éxito pero el envío de correo falla (o no hay hilo registrado), **el estado no se revierte** en base de datos. La API retorna `success: true` con una propiedad `warning: string` que `StatusChangeModal` muestra mediante `toast.warning()`, permitiendo al usuario conocer el incidente y reintentar si lo requiere.
+2. **Autenticación robusta:** Valida la sesión con `supabase.auth.getUser()`.
+3. **Validación:** Valida con Zod y comprueba permisos con `WorkflowEngine.validateTransition`. Maneja adecuadamente errores de base de datos diferenciándolos de "Equipo no encontrado".
+4. **Persistencia e Historial:** Actualiza `equipment_records`, disparando el trigger en PostgreSQL que inserta inmutablemente en `status_history`.
+5. **Despacho de Correo:** Si el estado destino requiere correo y existe `email_thread_id`, ejecuta el reply correspondiente mediante `mailer` con cabeceras `In-Reply-To` y `References` delimitadas.
+6. **Resiliencia (No Reversión):** Si el cambio de estado tiene éxito pero el envío de correo falla (o no hay hilo registrado), **el estado no se revierte** en base de datos. La API retorna `success: true` con una propiedad `warning: string` que `StatusChangeModal` muestra mediante `toast.warning()`, permitiendo al usuario conocer el incidente y reintentar si lo requiere.
 
-### Para modificar destinatarios o CC opcionales
+### Para modificar destinatarios
 
 Editar directamente `lib/mail/mailer.ts`:
 ```typescript
 // Destinatarios fijos de todos los correos:
 const ENTRY_TO = [ ... ]
-
-// CC opcionales que aparecen en el selector del frontend:
-export const CC_OPTIONS: CcOption[] = [ ... ]
 ```
 
 ### Pasos pendientes para activar el sistema de correos
@@ -389,7 +381,7 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 
 ## 12. ESTADO ACTUAL Y PENDIENTES
 
-> Última sesión: 29/09/2026
+> Última sesión: 04/10/2026
 
 ### ✅ Implementado y funcional
 
@@ -403,7 +395,7 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 - DNA del equipo (historial por número de serie)
 - Dashboard analítico con estadísticas por empresa
 - Export/Import Excel
-- Audit log inmutable (`status_history`)
+- Audit log inmutable (`status_history`) con captura automática del rol (`changed_by_role`) y comentarios/motivos opcionales (`notes`) para auditoría precisa de tiempos por rol
 - Timestamps operativos por fase + edición superadmin
 - Buscador instantáneo (FR, cliente, serie)
 - **Identidad visual propia y autoría**:
@@ -419,6 +411,8 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 - **Sistema de correos en hilo integrado con el workflow**:
   - Orquestación completa: validación Zod / permisos de rol ➔ actualización en BD ➔ disparo de trigger para `status_history` ➔ envío de correo de notificación en hilo vía Resend.
   - Eventos integrados: ingreso de equipo, informe técnico ODP (con PDF adjunto y enlace a Drive), aprobación de ventas (tabla de repuestos/servicios), entrega de repuestos por logística (con notas de repuestos compatibles) y servicio culminado (ODP).
+  - Normalización RFC 2822: delimitación de `In-Reply-To` y `References` con `<...>` y formato `@dominio` para asegurar el agrupamiento de hilos en clientes SMTP.
+  - Flujo simplificado: eliminación de CC en frontend y backend, envíos centralizados a `ENTRY_TO`.
   - Manejo de resiliencia: si el correo falla o la API Key no está configurada, **no se revierte el cambio de estado**, notificando una advertencia informativa (`toast.warning`) que permite al usuario reintentar sin inconsistencias.
 - **Sistema de Códigos QR y Documentación Técnica Pública — v2.5**:
   - Librería `qrcode.react` instalada y configurada

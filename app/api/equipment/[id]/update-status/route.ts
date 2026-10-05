@@ -231,6 +231,11 @@ export async function POST(
       if (!eq.email_thread_id) {
         mailWarning = 'El equipo no tiene un hilo de correo previo registrado, por lo que no se pudo enviar la notificación en hilo.'
       } else {
+        console.log('[POST update-status] Despachando notificación en hilo:', {
+          equipmentId,
+          targetName,
+          email_thread_id: eq.email_thread_id,
+        })
         try {
           let mailResult: { success: boolean; skipped?: boolean; error?: string } = { success: true }
 
