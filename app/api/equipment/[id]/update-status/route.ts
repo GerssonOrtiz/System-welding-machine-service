@@ -169,6 +169,7 @@ export async function POST(
     const updateData: Record<string, any> = {
       current_status_id: new_status_id,
       additional_observations: rawBody.notes?.trim().toUpperCase() || null,
+      status_change_notes: rawBody.notes?.trim() || null,
     }
 
     const isTargetApproval = targetNameLower === 'pendiente de aprobación' || targetNameLower === 'aprobado'

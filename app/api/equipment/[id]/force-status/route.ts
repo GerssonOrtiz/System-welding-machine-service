@@ -121,8 +121,10 @@ export async function POST(
         new_status: activeTargetState.name,
         changed_by_id: session.user.id,
         changed_by_username: activeProfile.username,
+        changed_by_role: activeProfile.role || 'superadmin',
         is_override: true,
         override_reason: override_reason.trim().toUpperCase(),
+        notes: override_reason.trim(),
       })
 
     if (historyError) {

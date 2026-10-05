@@ -191,9 +191,10 @@ export default function StatusChangeModal({
 
       } else {
         // Resto de eventos como JSON
+        const finalNotes = notes || (showAprobacionVentas ? ventasObservaciones : showEntregaLogistica ? logisticaObservaciones : showCulminadoODP ? culminadoObs : null)
         const payload: Record<string, any> = {
           new_status_id: parseInt(targetStatusId, 10),
-          notes: notes || null,
+          notes: finalNotes || null,
           assigned_technician_ids: selectedTechIds,
         }
 
@@ -369,13 +370,14 @@ export default function StatusChangeModal({
             {/* Observaciones / Motivo override */}
             {!isOverride && !showInformeODP && !showAprobacionVentas && !showEntregaLogistica && !showCulminadoODP && (
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                  Observaciones adicionales
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center justify-between">
+                  <span>Comentarios / Motivo</span>
+                  <span className="text-[10px] text-text-muted lowercase font-normal">(opcional)</span>
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Escriba aquí observaciones sobre este cambio de estado..."
+                  placeholder="Comentario o justificación del cambio / avance de estado (opcional)..."
                   rows={3}
                   className="w-full bg-bg-elevated border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,229,255,0.2)] focus:outline-none transition-all resize-none"
                 />

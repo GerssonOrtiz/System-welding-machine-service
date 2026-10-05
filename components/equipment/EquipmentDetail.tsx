@@ -631,12 +631,25 @@ export default function EquipmentDetail({
                             <span className="text-[10px] text-text-muted">{formatDate(h.timestamp)}</span>
                           </div>
                           <div className="flex justify-between items-center text-[10px] text-text-secondary mt-1">
-                            <span>Modificado por: <strong className="text-text-primary">{h.changed_by_username}</strong></span>
+                            <span className="flex items-center gap-1.5 flex-wrap">
+                              <span>Modificado por: <strong className="text-text-primary">{h.changed_by_username}</strong></span>
+                              {h.changed_by_role && (
+                                <span className="px-1.5 py-0.5 rounded bg-bg-surface border border-border-subtle text-[9px] font-bold text-neon-blue uppercase">
+                                  {h.changed_by_role}
+                                </span>
+                              )}
+                            </span>
                             {h.is_override && <span className="text-neon-purple font-bold">⚠️ OVERRIDE DE SUPERADMIN</span>}
                           </div>
-                          {h.is_override && h.override_reason && (
+                          {h.notes && !h.is_override && (
+                            <div className="mt-1.5 p-2 bg-bg-surface/60 border border-border-subtle/80 text-text-secondary text-[11px] rounded leading-relaxed">
+                              <span className="font-semibold text-text-primary">Nota / Comentario: </span>
+                              {h.notes}
+                            </div>
+                          )}
+                          {h.is_override && (h.override_reason || h.notes) && (
                             <div className="mt-1.5 p-2 bg-neon-purple/5 border border-neon-purple/20 text-neon-purple text-[10px] rounded italic">
-                              Motivo: {h.override_reason}
+                              Motivo: {h.override_reason || h.notes}
                             </div>
                           )}
                         </div>

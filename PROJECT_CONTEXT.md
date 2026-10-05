@@ -475,6 +475,7 @@ export const CC_OPTIONS: CcOption[] = [ ... ]
 | 013 | `013_email_thread.sql` | Columnas `email_thread_id TEXT` y `email_cc TEXT[]` en `equipment_records` |
 | 014 | `014_user_full_name.sql` | Columna `full_name TEXT` en `user_profiles` y actualización de trigger `handle_new_user` |
 | 015 | `015_equipment_report_url.sql` | Columna `report_url TEXT` en `equipment_records` y recrea vista `equipment_with_status` |
+| 016 | `016_status_history_role_and_comments.sql` | Columnas `changed_by_role` y `notes` en `status_history`, actualiza trigger para auditoría de roles y comentarios opcionales |
 
 ---
 

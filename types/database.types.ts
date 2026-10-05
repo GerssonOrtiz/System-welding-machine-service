@@ -217,33 +217,39 @@ export type Database = {
       status_history: {
         Row: {
           changed_by_id: string | null
+          changed_by_role: string | null
           changed_by_username: string
           equipment_id: string
           id: number
           is_override: boolean
           new_status: string
+          notes: string | null
           override_reason: string | null
           previous_status: string | null
           timestamp: string
         }
         Insert: {
           changed_by_id?: string | null
+          changed_by_role?: string | null
           changed_by_username: string
           equipment_id: string
           id?: number
           is_override?: boolean
           new_status: string
+          notes?: string | null
           override_reason?: string | null
           previous_status?: string | null
           timestamp?: string
         }
         Update: {
           changed_by_id?: string | null
+          changed_by_role?: string | null
           changed_by_username?: string
           equipment_id?: string
           id?: number
           is_override?: boolean
           new_status?: string
+          notes?: string | null
           override_reason?: string | null
           previous_status?: string | null
           timestamp?: string
