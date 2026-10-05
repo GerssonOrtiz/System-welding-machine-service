@@ -55,7 +55,7 @@ export async function POST(
       )
     }
 
-    const { new_status_id, override_reason, notify_by_email, cc_extra } = parsed.data
+    const { new_status_id, override_reason, notify_by_email } = parsed.data
 
     // 6. Verificar que el estado destino existe
     const { data: targetState, error: stateError } = await normalSupabase
@@ -147,8 +147,7 @@ export async function POST(
             override_reason: override_reason.trim().toUpperCase(),
             changed_by: activeProfile.username,
           },
-          true, // isOverride = true → banner amarillo en el correo
-          cc_extra ?? []
+          true // isOverride = true → banner amarillo en el correo
         )
         if (!mailResult.success && !mailResult.skipped) {
           mailWarning = mailResult.error || 'No se pudo enviar la notificación por correo del override.'

@@ -153,11 +153,6 @@ export async function POST(request: NextRequest) {
     const additional_observations =
       data.additional_observations?.trim().toUpperCase() || null
 
-    // CC se utiliza exclusivamente para el correo.
-    // No se guarda en equipment_records porque actualmente
-    // no existe la columna email_cc.
-    const cc_extra: string[] = data.cc_extra ?? []
-
     // ============================================================
     // 8. VERIFICAR FR DUPLICADO
     // ============================================================
@@ -336,19 +331,6 @@ export async function POST(request: NextRequest) {
     // 11. REGISTRAR EQUIPO
     // ============================================================
 
-    /*
-     * IMPORTANTE:
-     *
-     * NO incluimos:
-     *
-     * email_cc: cc_extra
-     *
-     * porque esa columna no existe en equipment_records.
-     *
-     * cc_extra continuará utilizándose posteriormente
-     * para enviar el correo.
-     */
-
     const {
       data: newEquipment,
       error: insertError,
@@ -430,8 +412,7 @@ export async function POST(request: NextRequest) {
 
             is_priority:
               (data.priority_level || 0) > 0,
-          },
-          cc_extra
+          }
         )
 
       // ==========================================================

@@ -16,8 +16,6 @@ export const createEquipmentSchema = z.object({
   additional_observations: z.string().optional().nullable(),
   priority_level: z.number().int().min(0).max(3).default(0),
   report_url: z.string().url({ message: 'El enlace del informe debe ser una URL válida' }).optional().nullable().or(z.literal('')),
-  /** Correos adicionales en copia seleccionados al ingresar el equipo */
-  cc_extra: z.array(z.string().email()).optional().default([]),
 })
 
 export const updateStatusSchema = z.object({
@@ -33,8 +31,6 @@ export const forceStatusSchema = z.object({
   override_reason: z.string().min(5, { message: 'El motivo del override debe tener al menos 5 caracteres' }),
   /** Si es true, se enviará una notificación interna por correo del cambio forzado */
   notify_by_email: z.boolean().default(false),
-  /** Correos adicionales en copia seleccionados para notificar el cambio forzado */
-  cc_extra: z.array(z.string().email()).optional().default([]),
 })
 
 // ─── Schemas para los payloads de correo por evento ───────────────────────────

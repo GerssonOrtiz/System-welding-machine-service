@@ -25,18 +25,22 @@ export async function POST(
     const { id: equipmentId } = await params
     const supabase = await createServerClient()
 
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
+    // 1. Verificar usuario
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
       return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
     }
 
     // 2. Obtener perfil
-    const { data: userProfile } = await supabase
+    const { data: userProfile, error: profileError } = await supabase
       .from('user_profiles')
       .select('username, role, is_active')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
+
+    if (profileError || !userProfile) {
+      return NextResponse.json({ success: false, error: 'Perfil de usuario no encontrado' }, { status: 404 })
+    }
 
     const activeProfile = userProfile as any
     if (!activeProfile?.is_active) {
@@ -83,14 +87,23 @@ export async function POST(
     }
     const { new_status_id } = baseParsed.data
 
-    // 5. Obtener datos del equipo (incluyendo thread y cc para los correos)
+    // 5. Obtener datos del equipo (incluyendo thread_id para los correos)
     const { data: equipment, error: eqError } = await supabase
       .from('equipment_records')
-      .select('current_status_id, fr_number, client_name, brand, model, serial_number, email_thread_id, email_cc')
+      .select('current_status_id, fr_number, client_name, brand, model, serial_number, email_thread_id')
       .eq('id', equipmentId)
       .single()
 
-    if (eqError || !equipment) {
+    if (eqError) {
+      // PGRST116 es el código de PostgREST para "JSON object requested, multiple (or no) rows returned"
+      if (eqError.code === 'PGRST116' || !equipment) {
+        return NextResponse.json({ success: false, error: 'Equipo no encontrado' }, { status: 404 })
+      }
+      console.error('[POST update-status] Error fetching equipment:', eqError)
+      return NextResponse.json({ success: false, error: 'Error al consultar el equipo en la base de datos' }, { status: 500 })
+    }
+
+    if (!equipment) {
       return NextResponse.json({ success: false, error: 'Equipo no encontrado' }, { status: 404 })
     }
     const eq = equipment as any
@@ -205,7 +218,6 @@ export async function POST(
       model:        eq.model,
       serial_number: eq.serial_number,
       thread_id:    eq.email_thread_id ?? '',
-      email_cc:     eq.email_cc ?? [],
     }
 
     let mailWarning: string | null = null

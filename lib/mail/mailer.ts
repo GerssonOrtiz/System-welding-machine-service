@@ -38,16 +38,6 @@ export interface StatusChangeData {
   changed_by: string
 }
 
-export interface CcOption {
-  email: string
-  label: string
-}
-
-export const CC_OPTIONS: CcOption[] = [
-  { email: 'mauricio.beltran@cabelab.com', label: 'Mauricio Beltrán' },
-  { email: 'gersson.ortiz@cabelab.com',    label: 'Gersson Ortiz' },
-]
-
 // ─────────────────────────────────────────
 // ESTILOS COMPARTIDOS
 // ─────────────────────────────────────────
@@ -116,8 +106,6 @@ export interface ThreadBaseData {
   serial_number?: string | null
   /** message-id del correo de ingreso guardado en BD */
   thread_id: string
-  /** Correos CC guardados al ingresar el equipo */
-  email_cc: string[]
 }
 
 export interface InformeODPData extends ThreadBaseData {
@@ -456,9 +444,8 @@ export const mailer = {
   /**
    * Correo de ingreso de equipo. Devuelve el message-id para guardarlo en BD.
    * TO fijo: ventas, odp, heady, daniel, vivian
-   * CC: los seleccionados en el formulario de ingreso
    */
-  async sendEquipmentEntry(data: EquipmentEntryData, cc_extra: string[] = []): Promise<MailerResult> {
+  async sendEquipmentEntry(data: EquipmentEntryData): Promise<MailerResult> {
     if (!resend) {
       console.warn('[Mailer] sendEquipmentEntry — RESEND_API_KEY no configurada, correo omitido.')
       return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
@@ -467,7 +454,6 @@ export const mailer = {
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        ...(cc_extra.length > 0 && { cc: cc_extra }),
         subject: `📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
         html: buildEntryHtml(data),
       })
@@ -496,7 +482,6 @@ export const mailer = {
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        ...(data.email_cc.length > 0 && { cc: data.email_cc }),
         subject: `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
         html: buildInformeODPHtml(data),
         headers: threadHeaders(data.thread_id),
@@ -531,7 +516,6 @@ export const mailer = {
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        ...(data.email_cc.length > 0 && { cc: data.email_cc }),
         subject: `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
         html: buildAprobacionVentasHtml(data),
         headers: threadHeaders(data.thread_id),
@@ -560,7 +544,6 @@ export const mailer = {
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        ...(data.email_cc.length > 0 && { cc: data.email_cc }),
         subject: `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
         html: buildEntregaLogisticaHtml(data),
         headers: threadHeaders(data.thread_id),
@@ -589,7 +572,6 @@ export const mailer = {
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        ...(data.email_cc.length > 0 && { cc: data.email_cc }),
         subject: `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
         html: buildCulminadoODPHtml(data),
         headers: threadHeaders(data.thread_id),
@@ -610,8 +592,7 @@ export const mailer = {
    */
   async sendStatusChange(
     data: StatusChangeData,
-    isOverride: boolean = false,
-    cc_extra: string[] = []
+    isOverride: boolean = false
   ): Promise<MailerResult> {
     if (!resend) {
       console.warn('[Mailer] sendStatusChange — RESEND_API_KEY no configurada, correo omitido.')
@@ -625,7 +606,6 @@ export const mailer = {
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        ...(cc_extra.length > 0 && { cc: cc_extra }),
         subject,
         html: buildStatusChangeHtml(data, isOverride),
       })

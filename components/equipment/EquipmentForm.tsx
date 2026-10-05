@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { createEquipmentSchema, type CreateEquipmentInput } from '@/lib/validations/equipment.schema'
-import { CC_OPTIONS } from '@/lib/mail/mailer'
 import ClientSelector from './ClientSelector'
 import BrandSelector from './BrandSelector'
 import ModelSelector from './ModelSelector'
@@ -21,13 +20,6 @@ interface EquipmentFormProps {
 
 export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [selectedCcEmails, setSelectedCcEmails] = useState<string[]>([])
-
-  const toggleCcEmail = (email: string) => {
-    setSelectedCcEmails(prev =>
-      prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
-    )
-  }
 
   // Extraemos control y reset que faltaban
   const {
@@ -49,7 +41,6 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
       accessories: '',
       additional_observations: '',
       priority_level: 1,
-      cc_extra: [],
     },
   })
 
@@ -64,7 +55,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
       const response = await fetch('/api/equipment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, cc_extra: selectedCcEmails }),
+        body: JSON.stringify(data),
       })
 
       const resData = await response.json()
@@ -78,7 +69,6 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
         toast.warning(`Aviso de notificación: ${resData.warning}`)
       }
       reset()
-      setSelectedCcEmails([])
       if (onSuccess) onSuccess()
     } catch (err: any) {
       console.error(err)
@@ -258,40 +248,6 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
             autoComplete="off"
           />
         </div>
-      </div>
-
-      {/* Selector de CC para el correo de ingreso */}
-      <div className="space-y-2 pt-2 border-t border-border-subtle">
-        <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block">
-          📬 Poner en copia en el correo de ingreso (CC)
-        </label>
-        <p className="text-[10px] text-text-muted">
-          El correo siempre llega a: Ventas, ODP, Logística, Daniel y Vivian. Estos son opcionales:
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {CC_OPTIONS.map((opt) => {
-            const isSelected = selectedCcEmails.includes(opt.email)
-            return (
-              <button
-                key={opt.email}
-                type="button"
-                onClick={() => toggleCcEmail(opt.email)}
-                className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${
-                  isSelected
-                    ? 'bg-neon-purple/20 border-neon-purple text-neon-purple shadow-[0_0_10px_rgba(157,78,221,0.2)]'
-                    : 'bg-bg-elevated border-border-subtle text-text-muted hover:border-white/20'
-                }`}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
-        {selectedCcEmails.length > 0 && (
-          <p className="text-[9px] text-text-muted font-mono truncate">
-            CC: {selectedCcEmails.join(', ')}
-          </p>
-        )}
       </div>
 
       {/* Botones de acción */}
