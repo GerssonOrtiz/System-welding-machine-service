@@ -420,10 +420,29 @@ function buildStatusChangeHtml(data: StatusChangeData, isOverride: boolean): str
 // ─────────────────────────────────────────
 // HELPER: cabeceras de hilo
 // ─────────────────────────────────────────
+function formatMessageId(threadId: string): string {
+  const cleanId = threadId.trim().replace(/^<|>$/g, '')
+  if (!cleanId) return ''
+
+  // Si ya contiene un dominio (@...), solo envolvemos en brackets si faltan
+  if (cleanId.includes('@')) {
+    return `<${cleanId}>`
+  }
+
+  // Extraer dominio del remitente actual (ej. 'onboarding@resend.dev' -> 'resend.dev')
+  const domainMatch = FROM_ADDRESS.match(/@([^>]+)>/)
+  const domain = domainMatch ? domainMatch[1].trim() : 'resend.dev'
+
+  return `<${cleanId}@${domain}>`
+}
+
 function threadHeaders(threadId: string): Record<string, string> {
+  const formattedId = formatMessageId(threadId)
+  if (!formattedId) return {}
+
   return {
-    'In-Reply-To': threadId,
-    'References': threadId,
+    'In-Reply-To': formattedId,
+    'References': formattedId,
   }
 }
 
