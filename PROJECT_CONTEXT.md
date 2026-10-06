@@ -119,7 +119,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `layout/Sidebar.tsx` | Navegación lateral. Items visibles según `SIDEBAR_ITEMS_BY_ROLE` del tipo `user.ts` |
 | `layout/Navbar.tsx` | Barra superior con usuario activo y logout |
 | `equipment/EquipmentForm.tsx` | Formulario de creación/edición de equipos |
-| `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Historial, cambio de estado, edición de timestamps (superadmin), botón de QR y visualización de informe |
+| `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Layout reorganizado con secciones colapsables: Tiempos Operativos, Demora por Fases e Historial de Estados (cerradas por defecto). Datos principales en grid 2 columnas (Identificación / Equipo). Cabecera fija con estado y acciones siempre visibles. |
 | `equipment/EquipmentTable.tsx` | Tabla paginada con indicadores VIP, filtros y botón directo de etiqueta QR |
 | `equipment/QRPrintModal.tsx` | Modal con generación de código QR (qrcode.react) e impresión optimizada de etiqueta física |
 | `equipment/StatusChangeModal.tsx` | Modal principal de cambio de estado. Renderiza sub-modales de correo según estado destino |
@@ -428,14 +428,6 @@ const ENTRY_TO = [ ... ]
   - API pública `/api/public/equipment/serial/[serial]` para consulta por serie
   - API pública `/api/public/equipment/fr/[fr]` para consulta por FR number
   - Soporte de campo `report_url` (enlace Google Drive) visible en ambas páginas públicas
-
-### ⚠️ Listo en código pero pendiente de activar
-
-| Pendiente | Qué hacer |
-|---|---|
-| Migración report_url | Ejecutar migración `015_equipment_report_url.sql` en el panel SQL de Supabase |
-| Correos en producción | Ejecutar migración 013, configurar `RESEND_API_KEY`, verificar dominio en Resend |
-| Remitente con dominio propio | Cambiar `FROM_ADDRESS` en `mailer.ts` a `notificaciones@cabelab.com` |
 
 ### 📋 Roadmap pendiente
 

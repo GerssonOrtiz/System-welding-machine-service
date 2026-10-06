@@ -4,6 +4,23 @@
 import React, { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { toast } from 'sonner'
+import {
+  ChevronDown,
+  ChevronUp,
+  QrCode,
+  Pencil,
+  Save,
+  X,
+  Zap,
+  Clock,
+  BarChart2,
+  History,
+  FileText,
+  ExternalLink,
+  Dna,
+  User,
+  Wrench,
+} from 'lucide-react'
 import { useEquipmentDetail } from '@/hooks/useEquipmentList'
 import { useUser } from '@/hooks/useUser'
 import StatusBadge from './StatusBadge'
@@ -17,6 +34,48 @@ interface EquipmentDetailProps {
   onClose: () => void
   equipmentId: string | null
   onStatusUpdated?: () => void
+}
+
+/** Botón de sección colapsable reutilizable */
+function CollapsibleSection({
+  title,
+  icon,
+  children,
+  defaultOpen = false,
+  badge,
+}: {
+  title: string
+  icon: React.ReactNode
+  children: React.ReactNode
+  defaultOpen?: boolean
+  badge?: string | number
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="rounded-lg border border-border-subtle overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-bg-elevated/30 hover:bg-bg-elevated/60 transition-colors text-left group"
+      >
+        <span className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider group-hover:text-text-primary transition-colors">
+          {icon}
+          {title}
+          {badge !== undefined && (
+            <span className="px-1.5 py-0.5 rounded-full bg-neon-blue/10 text-neon-blue text-[9px] font-bold border border-neon-blue/20">
+              {badge}
+            </span>
+          )}
+        </span>
+        {open ? (
+          <ChevronUp size={14} className="text-text-secondary shrink-0" />
+        ) : (
+          <ChevronDown size={14} className="text-text-secondary shrink-0" />
+        )}
+      </button>
+      {open && <div className="px-4 py-4 bg-bg-elevated/10">{children}</div>}
+    </div>
+  )
 }
 
 export default function EquipmentDetail({
@@ -64,20 +123,18 @@ export default function EquipmentDetail({
     if (onStatusUpdated) onStatusUpdated()
   }
 
-  // Helper to format date for datetime-local input
   const formatToLocalISO = (dateStr: string | null) => {
     if (!dateStr) return ''
     try {
       const d = new Date(dateStr)
       const offset = d.getTimezoneOffset()
-      const localDate = new Date(d.getTime() - (offset * 60 * 1000))
+      const localDate = new Date(d.getTime() - offset * 60 * 1000)
       return localDate.toISOString().slice(0, 16)
     } catch {
       return ''
     }
   }
 
-  // Format date to local Lima format
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-'
     return new Date(dateStr).toLocaleString('es-PE', {
@@ -87,7 +144,6 @@ export default function EquipmentDetail({
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
     })
   }
 
@@ -108,7 +164,7 @@ export default function EquipmentDetail({
       try {
         const d = new Date(equipment.date_in)
         const offset = d.getTimezoneOffset()
-        const localDate = new Date(d.getTime() - (offset * 60 * 1000))
+        const localDate = new Date(d.getTime() - offset * 60 * 1000)
         setEditDateIn(localDate.toISOString().slice(0, 16))
       } catch {
         setEditDateIn('')
@@ -120,8 +176,6 @@ export default function EquipmentDetail({
     setEditAccessories(equipment.accessories || '')
     setEditConditionIn(equipment.condition_in || '')
     setEditObservations(equipment.additional_observations || '')
-
-    // Initialize timestamps
     setEditStartDiag(formatToLocalISO(equipment.start_diagnosis_at))
     setEditEndDiag(formatToLocalISO(equipment.end_diagnosis_at))
     setEditPendingAppr(formatToLocalISO(equipment.pending_approval_at))
@@ -129,7 +183,6 @@ export default function EquipmentDetail({
     setEditStartMaint(formatToLocalISO(equipment.start_maintenance_at))
     setEditEndMaint(formatToLocalISO(equipment.end_maintenance_at))
     setEditFinalized(formatToLocalISO(equipment.finalized_at))
-
     setIsEditing(true)
   }
 
@@ -155,7 +208,6 @@ export default function EquipmentDetail({
           accessories: editAccessories,
           condition_in: editConditionIn,
           additional_observations: editObservations,
-          // Timestamps operativos
           start_diagnosis_at: editStartDiag ? new Date(editStartDiag).toISOString() : null,
           end_diagnosis_at: editEndDiag ? new Date(editEndDiag).toISOString() : null,
           pending_approval_at: editPendingAppr ? new Date(editPendingAppr).toISOString() : null,
@@ -163,7 +215,7 @@ export default function EquipmentDetail({
           start_maintenance_at: editStartMaint ? new Date(editStartMaint).toISOString() : null,
           end_maintenance_at: editEndMaint ? new Date(editEndMaint).toISOString() : null,
           finalized_at: editFinalized ? new Date(editFinalized).toISOString() : null,
-        })
+        }),
       })
 
       const resData = await res.json()
@@ -183,482 +235,446 @@ export default function EquipmentDetail({
     }
   }
 
+  const priorityLevel = equipment?.priority_level || (equipment?.is_priority ? 1 : 0)
+  const GENERIC_SERIALS = ['N/S', 'S/N', 'N/A', 'SIN SERIE', 'SIN N/S', '-', '.']
+  const hasValidSerial =
+    Boolean(equipment?.serial_number?.trim()) &&
+    !GENERIC_SERIALS.includes((equipment?.serial_number || '').trim().toUpperCase())
+
+  // Input style shared
+  const inputCls =
+    'bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary w-full'
+
   return (
     <>
       <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-bg-elevated/85 backdrop-blur-sm z-40 transition-opacity" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[800px] max-h-[90vh] overflow-y-auto bg-bg-surface border border-neon-blue/20 rounded-xl shadow-neon-blue p-6 md:p-8 z-40 font-sans text-text-primary animate-in fade-in zoom-in-95 duration-150 scrollbar-thin">
-            <Dialog.Title className="text-xl font-bold text-neon-blue mb-6 flex justify-between items-center border-b border-border-subtle pb-3">
-              <span>📋 Ficha Detallada: {equipment?.fr_number || 'Cargando...'}</span>
-              <div className="flex items-center gap-2">
-                {(equipment?.priority_level || (equipment?.is_priority ? 1 : 0)) > 0 && (
-                  <span className="bg-neon-purple/20 border border-neon-purple/50 text-neon-purple text-[10px] font-bold px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(157,78,221,0.3)] animate-pulse">
-                    {Array((equipment?.priority_level || 1)).fill('⭐').join('')} VIP {equipment?.priority_level || 1}
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[840px] max-h-[92vh] overflow-y-auto bg-bg-surface border border-neon-blue/20 rounded-xl shadow-neon-blue z-40 font-sans text-text-primary animate-in fade-in zoom-in-95 duration-150 scrollbar-thin">
+
+            {/* ── Cabecera fija ── */}
+            <div className="sticky top-0 z-10 bg-bg-surface border-b border-border-subtle px-6 py-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <FileText size={16} className="text-neon-blue shrink-0" />
+                <Dialog.Title className="text-base font-bold text-neon-blue truncate">
+                  {equipment?.fr_number || 'Cargando...'}
+                </Dialog.Title>
+                {priorityLevel > 0 && (
+                  <span className="shrink-0 bg-neon-purple/20 border border-neon-purple/50 text-neon-purple text-[10px] font-bold px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(157,78,221,0.3)] animate-pulse">
+                    {Array(priorityLevel).fill('⭐').join('')} VIP {priorityLevel}
                   </span>
                 )}
-                <button
-                  onClick={onClose}
-                  className="text-text-secondary hover:text-neon-blue transition-colors text-sm font-semibold uppercase"
-                >
-                  Cerrar
-                </button>
+                {equipment && <StatusBadge status={equipment.status_name} color={equipment.status_color} />}
               </div>
-            </Dialog.Title>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors shrink-0"
+                aria-label="Cerrar"
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <span className="text-neon-blue animate-pulse font-mono tracking-widest uppercase">Cargando detalles del equipo...</span>
-              </div>
-            ) : !equipment ? (
-              <div className="text-center py-12">
-                <p className="text-red-400 font-semibold">No se pudo cargar la información del equipo.</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* 1. Encabezado rápido con estado y acciones */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-bg-elevated/40 p-4 rounded-lg border border-border-subtle">
-                  <div className="space-y-1">
-                    <span className="text-xs text-text-secondary font-bold uppercase tracking-wider">Estado Actual</span>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge status={equipment.status_name} color={equipment.status_color} />
-                    </div>
-                  </div>
+            {/* ── Cuerpo ── */}
+            <div className="px-6 py-5">
+              {isLoading ? (
+                <div className="flex justify-center items-center py-16">
+                  <span className="text-neon-blue animate-pulse font-mono tracking-widest uppercase text-sm">
+                    Cargando detalles...
+                  </span>
+                </div>
+              ) : !equipment ? (
+                <div className="text-center py-16">
+                  <p className="text-red-400 font-semibold">No se pudo cargar la información del equipo.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
 
-                  {/* Acciones de cambio de estado / edición */}
-                  <div className="flex flex-wrap gap-2 items-center">
+                  {/* ── Barra de Acciones ── */}
+                  <div className="flex flex-wrap gap-2 items-center justify-end">
                     <button
                       type="button"
                       onClick={() => setIsQrModalOpen(true)}
-                      className="px-3.5 py-2.5 rounded-lg border border-neon-blue/60 text-neon-blue hover:bg-neon-blue/10 text-xs font-bold uppercase transition-all flex items-center gap-1.5"
-                      title="Ver e imprimir etiqueta física con código QR"
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-neon-blue/60 text-neon-blue hover:bg-neon-blue/10 text-xs font-bold uppercase transition-all"
                     >
-                      <span>📱 Etiqueta QR</span>
+                      <QrCode size={13} />
+                      Etiqueta QR
                     </button>
 
                     {isSuperadmin && (
-                      <button
-                        onClick={isEditing ? handleSaveEdit : startEditMode}
-                        disabled={isSaving}
-                        className={`px-5 py-2.5 rounded-lg text-white text-xs font-bold uppercase hover:brightness-110 transition-all select-none ${
-                          isEditing
-                            ? 'bg-emerald-600 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                            : 'bg-neon-purple/70 border border-neon-purple hover:bg-neon-purple/90'
-                        }`}
-                      >
-                        {isSaving ? 'Guardando...' : isEditing ? '💾 Guardar Cambios' : '✏️ Editar Ficha'}
-                      </button>
+                      <>
+                        <button
+                          onClick={isEditing ? handleSaveEdit : startEditMode}
+                          disabled={isSaving}
+                          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-xs font-bold uppercase transition-all ${
+                            isEditing
+                              ? 'bg-emerald-600 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                              : 'bg-neon-purple/70 border border-neon-purple hover:bg-neon-purple/90'
+                          }`}
+                        >
+                          {isEditing ? (
+                            <><Save size={13} />{isSaving ? 'Guardando...' : 'Guardar Cambios'}</>
+                          ) : (
+                            <><Pencil size={13} />Editar Ficha</>
+                          )}
+                        </button>
+                        {isEditing && (
+                          <button
+                            onClick={() => setIsEditing(false)}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-bg-surface border border-border-subtle text-text-primary text-xs font-bold uppercase transition-all hover:bg-bg-elevated"
+                          >
+                            <X size={13} />
+                            Cancelar
+                          </button>
+                        )}
+                      </>
                     )}
-                    {isEditing && (
-                      <button
-                        onClick={() => setIsEditing(false)}
-                        className="px-5 py-2.5 rounded-lg bg-bg-surface hover:bg-bg-surface/85 border border-border-subtle text-text-primary text-xs font-bold uppercase transition-all select-none"
-                      >
-                        Cancelar
-                      </button>
-                    )}
+
                     {(canAdvance || isSuperadmin) && !isEditing && (
                       <button
                         onClick={() => setIsStatusModalOpen(true)}
-                        className="px-5 py-2.5 rounded-lg bg-electric text-white text-xs font-bold uppercase hover:shadow-neon-blue hover:brightness-110 transition-all select-none"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-electric text-white text-xs font-bold uppercase hover:shadow-neon-blue hover:brightness-110 transition-all"
                       >
-                        {isSuperadmin ? '⚡ Cambiar/Forzar Estado' : '🔄 Avanzar Estado'}
+                        <Zap size={13} />
+                        {isSuperadmin ? 'Cambiar / Forzar Estado' : 'Avanzar Estado'}
                       </button>
                     )}
                   </div>
-                </div>
 
-                {/* 2. Información General */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-bg-elevated/20 p-5 rounded-lg border border-border-subtle">
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-bold text-neon-blue uppercase tracking-wider border-b border-border-subtle/50 pb-1">Datos Generales</h3>
-                    <div className="grid grid-cols-3 gap-3 text-xs items-center">
-                      <span className="text-text-secondary font-semibold uppercase">Ficha (FR):</span>
-                      {isEditing ? (
-                        <div className="col-span-2 flex items-center gap-3">
-                          <input
-                            type="text"
-                            value={editFr}
-                            onChange={(e) => setEditFr(e.target.value)}
-                            className="flex-1 bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-xs focus:border-neon-blue focus:outline-none font-mono text-text-primary"
-                          />
-                          <select
-                            value={editPriorityLevel}
-                            onChange={(e) => setEditPriorityLevel(parseInt(e.target.value))}
-                            className="bg-bg-elevated border border-neon-purple/20 text-neon-purple text-[10px] font-bold px-2 py-1.5 rounded focus:outline-none"
-                          >
-                            <option value={0}>Regular</option>
-                            <option value={1}>⭐ VIP 1</option>
-                            <option value={2}>⭐⭐ VIP 2</option>
-                            <option value={3}>⭐⭐⭐ VIP 3</option>
-                          </select>
-                        </div>
-                      ) : (
-                        <span className="col-span-2 font-mono font-bold text-neon-blue uppercase">{equipment.fr_number}</span>
-                      )}
+                  {/* ── Sección: Datos del Equipo ── */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                      <span className="text-text-secondary font-semibold uppercase">Cliente:</span>
-                      {isEditing ? (
-                        <div className="col-span-2">
-                          <ClientSelector
-                            value={editClientName}
-                            onChange={(val) => setEditClientName(val)}
-                          />
-                        </div>
-                      ) : (
-                        <span className="col-span-2 font-medium">{equipment.client_name}</span>
-                      )}
+                    {/* Columna izq: Identificación */}
+                    <div className="rounded-lg border border-border-subtle bg-bg-elevated/10 p-4 space-y-3">
+                      <h3 className="text-xs font-bold text-neon-blue uppercase tracking-wider flex items-center gap-1.5 border-b border-border-subtle/50 pb-2">
+                        <FileText size={12} /> Identificación
+                      </h3>
+                      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2.5 text-xs items-center">
 
-                      <span className="text-text-secondary font-semibold uppercase">Servicio:</span>
-                      {isEditing ? (
-                        <select
-                          value={editServiceType}
-                          onChange={(e) => setEditServiceType(e.target.value)}
-                          className="col-span-2 bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary"
-                        >
-                          <option value="GARANTIA_CABELAB">GARANTÍA CABELAB</option>
-                          <option value="GARANTIA_ESAB">GARANTÍA ESAB</option>
-                          <option value="REVISION_GENERAL">REVISIÓN GENERAL</option>
-                        </select>
-                      ) : (
-                        <span className="col-span-2 font-mono text-[11px] text-neon-purple font-semibold">{equipment.service_type}</span>
-                      )}
-
-                      <span className="text-text-secondary font-semibold uppercase">Marca:</span>
-                      {isEditing ? (
-                        <div className="col-span-2">
-                          <BrandSelector
-                            value={editBrand}
-                            onChange={(val) => setEditBrand(val)}
-                          />
-                        </div>
-                      ) : (
-                        <span className="col-span-2 font-medium">{equipment.brand}</span>
-                      )}
-
-                      <span className="text-text-secondary font-semibold uppercase">Modelo:</span>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editModel}
-                          onChange={(e) => setEditModel(e.target.value)}
-                          className="col-span-2 bg-bg-elevated"
-                        />
-                      ) : (
-                        <span className="col-span-2 font-medium">{equipment.model}</span>
-                      )}
-
-                      <span className="text-text-secondary font-semibold uppercase">N° Serie:</span>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editSerial}
-                          onChange={(e) => setEditSerial(e.target.value)}
-                          className="col-span-2 bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-xs focus:border-neon-blue focus:outline-none font-mono text-text-primary"
-                        />
-                      ) : (
-                        <div className="col-span-2 flex items-center gap-2">
-                          <span className="font-mono">{equipment.serial_number || '-'}</span>
-                          {equipment.serial_number && 
-                           !['N/S', 'S/N', 'N/A', 'SIN SERIE', 'SIN N/S', '-', '.'].includes(equipment.serial_number.trim().toUpperCase()) && (
-                            <a 
-                              href={`/dna?s=${encodeURIComponent(equipment.serial_number)}`}
-                              className="text-[9px] bg-neon-purple/10 border border-neon-purple/30 text-neon-purple px-1.5 py-0.5 rounded hover:bg-neon-purple/20 transition-colors font-bold uppercase"
-                              title="Ver Historial Clínico (DNA)"
+                        <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Ficha (FR):</span>
+                        {isEditing ? (
+                          <div className="flex items-center gap-2">
+                            <input type="text" value={editFr} onChange={(e) => setEditFr(e.target.value)} className={inputCls} />
+                            <select
+                              value={editPriorityLevel}
+                              onChange={(e) => setEditPriorityLevel(parseInt(e.target.value))}
+                              className="bg-bg-elevated border border-neon-purple/20 text-neon-purple text-[10px] font-bold px-2 py-1.5 rounded focus:outline-none shrink-0"
                             >
-                              Ver DNA 🧬
-                            </a>
-                          )}
-                        </div>
-                      )}
+                              <option value={0}>Regular</option>
+                              <option value={1}>⭐ VIP 1</option>
+                              <option value={2}>⭐⭐ VIP 2</option>
+                              <option value={3}>⭐⭐⭐ VIP 3</option>
+                            </select>
+                          </div>
+                        ) : (
+                          <span className="font-mono font-bold text-neon-blue uppercase">{equipment.fr_number}</span>
+                        )}
 
-                      {/* Mostrar N° Informe solo si fue ingresado manualmente (no es código interno INT-xxxx) */}
-                      {isEditing ? (
-                        <>
-                          <span className="text-text-secondary font-semibold uppercase">N° Informe:</span>
-                          <input
-                            type="text"
-                            value={editReportNumber}
-                            onChange={(e) => setEditReportNumber(e.target.value)}
-                            placeholder="Ej: INF-001"
-                            className="col-span-2 bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-xs focus:border-neon-blue focus:outline-none font-mono text-text-primary"
-                          />
-                          <span className="text-text-secondary font-semibold uppercase">Enlace PDF:</span>
-                          <input
-                            type="url"
-                            value={editReportUrl}
-                            onChange={(e) => setEditReportUrl(e.target.value)}
-                            placeholder="https://drive.google.com/..."
-                            className="col-span-2 bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-xs focus:border-neon-blue focus:outline-none font-mono text-text-primary"
-                          />
-                        </>
-                      ) : (
-                        <>
-                          {equipment.report_number && !equipment.report_number.startsWith('INT-') && (
-                            <>
-                              <span className="text-text-secondary font-semibold uppercase">N° Informe:</span>
-                              <span className="col-span-2 font-mono text-neon-blue font-semibold">{equipment.report_number}</span>
-                            </>
-                          )}
-                          {(equipment as any).report_url && (
-                            <>
-                              <span className="text-text-secondary font-semibold uppercase">Informe PDF:</span>
-                              <div className="col-span-2 flex items-center gap-2">
+                        <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Cliente:</span>
+                        {isEditing ? (
+                          <ClientSelector value={editClientName} onChange={(val) => setEditClientName(val)} />
+                        ) : (
+                          <span className="font-medium">{equipment.client_name}</span>
+                        )}
+
+                        <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Servicio:</span>
+                        {isEditing ? (
+                          <select value={editServiceType} onChange={(e) => setEditServiceType(e.target.value)} className={inputCls}>
+                            <option value="GARANTIA_CABELAB">GARANTÍA CABELAB</option>
+                            <option value="GARANTIA_ESAB">GARANTÍA ESAB</option>
+                            <option value="REVISION_GENERAL">REVISIÓN GENERAL</option>
+                          </select>
+                        ) : (
+                          <span className="font-mono text-[11px] text-neon-purple font-semibold">{equipment.service_type}</span>
+                        )}
+
+                        <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Ingreso:</span>
+                        {isEditing ? (
+                          <input type="datetime-local" value={editDateIn} onChange={(e) => setEditDateIn(e.target.value)} className={inputCls} />
+                        ) : (
+                          <span className="font-mono text-[11px]">{formatDate(equipment.date_in)}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Columna der: Equipo */}
+                    <div className="rounded-lg border border-border-subtle bg-bg-elevated/10 p-4 space-y-3">
+                      <h3 className="text-xs font-bold text-neon-blue uppercase tracking-wider flex items-center gap-1.5 border-b border-border-subtle/50 pb-2">
+                        <Wrench size={12} /> Equipo
+                      </h3>
+                      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2.5 text-xs items-center">
+
+                        <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Marca:</span>
+                        {isEditing ? (
+                          <BrandSelector value={editBrand} onChange={(val) => setEditBrand(val)} />
+                        ) : (
+                          <span className="font-medium">{equipment.brand}</span>
+                        )}
+
+                        <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Modelo:</span>
+                        {isEditing ? (
+                          <input type="text" value={editModel} onChange={(e) => setEditModel(e.target.value)} className={inputCls} />
+                        ) : (
+                          <span className="font-medium">{equipment.model}</span>
+                        )}
+
+                        <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">N° Serie:</span>
+                        {isEditing ? (
+                          <input type="text" value={editSerial} onChange={(e) => setEditSerial(e.target.value)} className={`${inputCls} font-mono`} />
+                        ) : (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono">{equipment.serial_number || '-'}</span>
+                            {hasValidSerial && (
+                              <a
+                                href={`/dna?s=${encodeURIComponent(equipment.serial_number!)}`}
+                                className="flex items-center gap-1 text-[9px] bg-neon-purple/10 border border-neon-purple/30 text-neon-purple px-1.5 py-0.5 rounded hover:bg-neon-purple/20 transition-colors font-bold uppercase"
+                                title="Ver Historial Clínico (DNA)"
+                              >
+                                <Dna size={9} /> DNA
+                              </a>
+                            )}
+                          </div>
+                        )}
+
+                        {/* N° Informe y enlace PDF */}
+                        {isEditing ? (
+                          <>
+                            <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">N° Informe:</span>
+                            <input type="text" value={editReportNumber} onChange={(e) => setEditReportNumber(e.target.value)} placeholder="Ej: INF-001" className={`${inputCls} font-mono`} />
+                            <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Enlace PDF:</span>
+                            <input type="url" value={editReportUrl} onChange={(e) => setEditReportUrl(e.target.value)} placeholder="https://drive.google.com/..." className={`${inputCls} font-mono`} />
+                          </>
+                        ) : (
+                          <>
+                            {equipment.report_number && !equipment.report_number.startsWith('INT-') && (
+                              <>
+                                <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">N° Informe:</span>
+                                <span className="font-mono text-neon-blue font-semibold">{equipment.report_number}</span>
+                              </>
+                            )}
+                            {(equipment as any).report_url && (
+                              <>
+                                <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Informe PDF:</span>
                                 <a
                                   href={(equipment as any).report_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#00E5FF]/10 border border-[#00E5FF]/30 text-[#00E5FF] hover:bg-[#00E5FF]/20 font-bold text-[11px] transition-colors"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-neon-blue/10 border border-neon-blue/30 text-neon-blue hover:bg-neon-blue/20 font-bold text-[11px] transition-colors"
                                 >
-                                  <span>📄 Ver Informe en Google Drive</span>
-                                  <span>↗</span>
+                                  <FileText size={11} /> Ver Informe <ExternalLink size={10} />
                                 </a>
-                              </div>
-                            </>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── Personal Asignado ── */}
+                  <div className="rounded-lg border border-border-subtle bg-bg-elevated/10 px-4 py-3 flex items-center gap-3 flex-wrap">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-text-secondary uppercase tracking-wider shrink-0">
+                      <User size={12} /> Técnicos:
+                    </span>
+                    {equipment.assigned_technicians && equipment.assigned_technicians.length > 0 ? (
+                      equipment.assigned_technicians.map((tech: string, idx: number) => (
+                        <span key={idx} className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-neon-blue/10 border border-neon-blue/20 text-neon-blue uppercase">
+                          {tech}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-text-muted italic">Sin personal asignado</span>
+                    )}
+                  </div>
+
+                  {/* ── Observaciones y Reportes — siempre visibles si tienen contenido ── */}
+                  {(equipment.client_report || equipment.accessories || equipment.condition_in || equipment.additional_observations || isEditing) && (
+                    <CollapsibleSection
+                      title="Observaciones y Reportes"
+                      icon={<FileText size={12} />}
+                      defaultOpen={isEditing || !!(equipment.client_report || equipment.additional_observations)}
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Falla Reportada por Cliente</span>
+                          {isEditing ? (
+                            <textarea value={editClientReport} onChange={(e) => setEditClientReport(e.target.value)} rows={3} className="w-full bg-bg-elevated border border-border-subtle rounded-lg p-2.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary resize-none" />
+                          ) : (
+                            <p className="text-xs text-text-primary/80 whitespace-pre-wrap leading-relaxed">{equipment.client_report || <span className="text-text-muted italic">Ninguno</span>}</p>
                           )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-bold text-neon-blue uppercase tracking-wider border-b border-border-subtle/50 pb-1">Personal Asignado</h3>
-                    <div className="flex flex-wrap gap-2 py-1">
-                      {equipment.assigned_technicians && equipment.assigned_technicians.length > 0 ? (
-                        equipment.assigned_technicians.map((tech: string, idx: number) => (
-                          <span key={idx} className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-neon-blue/10 border border-neon-blue/20 text-neon-blue uppercase shadow-[0_0_10px_rgba(0,229,255,0.05)]">
-                            {tech}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-xs text-text-muted italic">SIN PERSONAL ASIGNADO</span>
-                      )}
-                    </div>
-
-                    <h3 className="text-sm font-bold text-neon-blue uppercase tracking-wider border-b border-border-subtle/50 pb-1 pt-2">Tiempos Operativos</h3>
-                    <div className="grid grid-cols-3 gap-2 text-xs items-center">
-                      <span className="text-text-secondary font-semibold uppercase">Ingreso:</span>
-                      {isEditing ? (
-                        <input
-                          type="datetime-local"
-                          value={editDateIn}
-                          onChange={(e) => setEditDateIn(e.target.value)}
-                          className="col-span-2 bg-bg-elevated"
-                        />
-                      ) : (
-                        <span className="col-span-2">{formatDate(equipment.date_in)}</span>
-                      )}
-
-                      <span className="text-text-secondary font-semibold uppercase">Diagnóstico:</span>
-                      {isEditing ? (
-                        <div className="col-span-2 flex flex-col gap-1">
-                          <input
-                            type="datetime-local"
-                            value={editStartDiag}
-                            onChange={(e) => setEditStartDiag(e.target.value)}
-                            className="bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-[10px] focus:border-neon-blue focus:outline-none text-text-primary"
-                          />
-                          <input
-                            type="datetime-local"
-                            value={editEndDiag}
-                            onChange={(e) => setEditEndDiag(e.target.value)}
-                            className="bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-[10px] focus:border-neon-blue focus:outline-none text-text-primary"
-                          />
                         </div>
-                      ) : (
-                        <span className="col-span-2">
-                          {equipment.start_diagnosis_at ? `${formatDate(equipment.start_diagnosis_at)} (Inicio)` : 'PENDIENTE'}
-                          {equipment.end_diagnosis_at && <><br/>{formatDate(equipment.end_diagnosis_at)} (Fin)</>}
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Accesorios Incluidos</span>
+                          {isEditing ? (
+                            <textarea value={editAccessories} onChange={(e) => setEditAccessories(e.target.value)} rows={3} className="w-full bg-bg-elevated border border-border-subtle rounded-lg p-2.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary resize-none" />
+                          ) : (
+                            <p className="text-xs text-text-primary/80 whitespace-pre-wrap leading-relaxed">{equipment.accessories || <span className="text-text-muted italic">Ninguno</span>}</p>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Condición Física de Ingreso</span>
+                          {isEditing ? (
+                            <textarea value={editConditionIn} onChange={(e) => setEditConditionIn(e.target.value)} rows={3} className="w-full bg-bg-elevated border border-border-subtle rounded-lg p-2.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary resize-none" />
+                          ) : (
+                            <p className="text-xs text-text-primary/80 whitespace-pre-wrap leading-relaxed">{equipment.condition_in || <span className="text-text-muted italic">Ninguna</span>}</p>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Observaciones Técnicas</span>
+                          {isEditing ? (
+                            <textarea value={editObservations} onChange={(e) => setEditObservations(e.target.value)} rows={3} className="w-full bg-bg-elevated border border-border-subtle rounded-lg p-2.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary resize-none" />
+                          ) : (
+                            <p className="text-xs text-neon-blue/90 whitespace-pre-wrap leading-relaxed">{equipment.additional_observations || <span className="text-text-muted italic not-italic text-text-muted">Ninguna</span>}</p>
+                          )}
+                        </div>
+                      </div>
+                    </CollapsibleSection>
+                  )}
+
+                  {/* ── Tiempos Operativos — colapsable, cerrado por defecto ── */}
+                  <CollapsibleSection title="Tiempos Operativos" icon={<Clock size={12} />} defaultOpen={isEditing}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      {/* Diagnóstico */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase">Inicio de Diagnóstico</span>
+                        {isEditing ? (
+                          <input type="datetime-local" value={editStartDiag} onChange={(e) => setEditStartDiag(e.target.value)} className={inputCls} />
+                        ) : (
+                          <p className="text-text-primary/80">{formatDate(equipment.start_diagnosis_at)}</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase">Fin de Diagnóstico</span>
+                        {isEditing ? (
+                          <input type="datetime-local" value={editEndDiag} onChange={(e) => setEditEndDiag(e.target.value)} className={inputCls} />
+                        ) : (
+                          <p className="text-text-primary/80">{formatDate(equipment.end_diagnosis_at)}</p>
+                        )}
+                      </div>
+                      {/* Pendiente aprob. / Aprobación */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase">Pendiente de Aprobación</span>
+                        {isEditing ? (
+                          <input type="datetime-local" value={editPendingAppr} onChange={(e) => setEditPendingAppr(e.target.value)} className={inputCls} />
+                        ) : (
+                          <p className="text-text-primary/80">{formatDate(equipment.pending_approval_at)}</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase">Aprobación</span>
+                        {isEditing ? (
+                          <input type="datetime-local" value={editAppr} onChange={(e) => setEditAppr(e.target.value)} className={inputCls} />
+                        ) : (
+                          <p className="text-text-primary/80">{formatDate(equipment.approval_at)}</p>
+                        )}
+                      </div>
+                      {/* Mantenimiento */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase">Inicio de Mantenimiento</span>
+                        {isEditing ? (
+                          <input type="datetime-local" value={editStartMaint} onChange={(e) => setEditStartMaint(e.target.value)} className={inputCls} />
+                        ) : (
+                          <p className="text-text-primary/80">{formatDate(equipment.start_maintenance_at)}</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase">Fin de Mantenimiento</span>
+                        {isEditing ? (
+                          <input type="datetime-local" value={editEndMaint} onChange={(e) => setEditEndMaint(e.target.value)} className={inputCls} />
+                        ) : (
+                          <p className="text-text-primary/80">{formatDate(equipment.end_maintenance_at)}</p>
+                        )}
+                      </div>
+                      {/* Finalizado */}
+                      <div className="space-y-1 sm:col-span-2">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase">Finalizado / Entregado</span>
+                        {isEditing ? (
+                          <input type="datetime-local" value={editFinalized} onChange={(e) => setEditFinalized(e.target.value)} className={inputCls} />
+                        ) : (
+                          <p className="text-text-primary/80">{formatDate(equipment.finalized_at)}</p>
+                        )}
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  {/* ── Seguimiento por Fases — colapsable, cerrado por defecto ── */}
+                  <CollapsibleSection title="Demora por Fases" icon={<BarChart2 size={12} />}>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-bg-elevated/60 p-3 rounded-lg border border-border-subtle flex flex-col items-center text-center">
+                        <span className="text-[9px] text-text-secondary font-bold uppercase mb-1.5 leading-tight">Fase 1<br/>Ingreso → Pendiente</span>
+                        <span className="text-lg font-mono font-bold text-neon-blue">
+                          {equipment.phase_1_days}
+                          <small className="text-[9px] ml-0.5">d</small>
                         </span>
-                      )}
-
-                      <span className="text-text-secondary font-semibold uppercase">Mantenimiento:</span>
-                      {isEditing ? (
-                        <div className="col-span-2 flex flex-col gap-1">
-                          <input
-                            type="datetime-local"
-                            value={editStartMaint}
-                            onChange={(e) => setEditStartMaint(e.target.value)}
-                            className="bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-[10px] focus:border-neon-blue focus:outline-none text-text-primary"
-                          />
-                          <input
-                            type="datetime-local"
-                            value={editEndMaint}
-                            onChange={(e) => setEditEndMaint(e.target.value)}
-                            className="bg-bg-elevated border border-border-subtle rounded px-2.5 py-1.5 text-[10px] focus:border-neon-blue focus:outline-none text-text-primary"
-                          />
-                        </div>
-                      ) : (
-                        <span className="col-span-2">
-                          {equipment.start_maintenance_at ? `${formatDate(equipment.start_maintenance_at)} (Inicio)` : 'PENDIENTE'}
-                          {equipment.end_maintenance_at && <><br/>{formatDate(equipment.end_maintenance_at)} (Fin)</>}
+                      </div>
+                      <div className="bg-bg-elevated/60 p-3 rounded-lg border border-border-subtle flex flex-col items-center text-center">
+                        <span className="text-[9px] text-text-secondary font-bold uppercase mb-1.5 leading-tight">Fase 2<br/>Eval. → Aprobación</span>
+                        <span className="text-lg font-mono font-bold text-neon-purple">
+                          {equipment.phase_2_days}
+                          <small className="text-[9px] ml-0.5">d</small>
                         </span>
-                      )}
+                      </div>
+                      <div className="bg-bg-elevated/60 p-3 rounded-lg border border-border-subtle flex flex-col items-center text-center">
+                        <span className="text-[9px] text-text-secondary font-bold uppercase mb-1.5 leading-tight">Fase 3<br/>Aprob. → Entrega</span>
+                        <span className="text-lg font-mono font-bold text-emerald-400">
+                          {equipment.phase_3_days}
+                          <small className="text-[9px] ml-0.5">d</small>
+                        </span>
+                      </div>
                     </div>
+                    {/* Total días */}
+                    <div className="mt-3 flex items-center justify-end gap-2 text-xs">
+                      <span className="text-text-secondary uppercase font-semibold">Total transcurrido:</span>
+                      <span className="font-mono font-bold text-neon-blue text-sm">{equipment.days_elapsed} <small className="text-[10px]">días</small></span>
+                    </div>
+                  </CollapsibleSection>
 
-                    <h3 className="text-sm font-bold text-neon-blue uppercase tracking-wider border-b border-border-subtle/50 pb-1 pt-4">Seguimiento por Fases</h3>
-                    {isEditing ? (
-                      <div className="grid grid-cols-2 gap-2 py-2">
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-text-secondary font-bold uppercase">Pendiente Aprob.</label>
-                          <input
-                            type="datetime-local"
-                            value={editPendingAppr}
-                            onChange={(e) => setEditPendingAppr(e.target.value)}
-                            className="w-full bg-bg-elevated border border-border-subtle rounded px-2 py-1 text-[10px] focus:border-neon-blue focus:outline-none text-text-primary"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-text-secondary font-bold uppercase">Aprobación</label>
-                          <input
-                            type="datetime-local"
-                            value={editAppr}
-                            onChange={(e) => setEditAppr(e.target.value)}
-                            className="w-full bg-bg-elevated border border-border-subtle rounded px-2 py-1 text-[10px] focus:border-neon-blue focus:outline-none text-text-primary"
-                          />
-                        </div>
-                        <div className="space-y-1 col-span-2">
-                          <label className="text-[9px] text-text-secondary font-bold uppercase">Finalizado/Entregado</label>
-                          <input
-                            type="datetime-local"
-                            value={editFinalized}
-                            onChange={(e) => setEditFinalized(e.target.value)}
-                            className="w-full bg-bg-elevated border border-border-subtle rounded px-2 py-1 text-[10px] focus:border-neon-blue focus:outline-none text-text-primary"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-2">
-                        <div className="bg-bg-elevated/40 p-2 rounded-lg border border-border-subtle flex flex-col items-center text-center">
-                          <span className="text-[9px] text-text-secondary font-bold uppercase mb-1 leading-tight">Fase 1:<br/>Ingreso → Pendiente</span>
-                          <span className="text-base font-mono font-bold text-neon-blue">{equipment.phase_1_days} <small className="text-[9px]">DÍAS</small></span>
-                        </div>
-                        <div className="bg-bg-elevated/40 p-2 rounded-lg border border-border-subtle flex flex-col items-center text-center">
-                          <span className="text-[9px] text-text-secondary font-bold uppercase mb-1 leading-tight">Fase 2:<br/>Evaluación → Aprobación</span>
-                          <span className="text-base font-mono font-bold text-neon-purple">{equipment.phase_2_days} <small className="text-[9px]">DÍAS</small></span>
-                        </div>
-                        <div className="bg-bg-elevated/40 p-2 rounded-lg border border-border-subtle flex flex-col items-center text-center">
-                          <span className="text-[9px] text-text-secondary font-bold uppercase mb-1 leading-tight">Fase 3:<br/>Aprobación → Entrega</span>
-                          <span className="text-base font-mono font-bold text-emerald-400">{equipment.phase_3_days} <small className="text-[9px]">DÍAS</small></span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 3. Reportes y Observaciones */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Falla Reportada por Cliente</span>
-                    {isEditing ? (
-                      <textarea
-                        value={editClientReport}
-                        onChange={(e) => setEditClientReport(e.target.value)}
-                        rows={3}
-                        className="w-full bg-bg-elevated border border-border-subtle rounded-lg p-2.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary resize-none"
-                      />
-                    ) : (
-                      <div className="text-xs bg-bg-elevated/40 p-3 rounded-lg border border-border-subtle min-h-[70px] whitespace-pre-wrap">
-                        {equipment.client_report || 'NINGUNO'}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Accesorios Incluidos</span>
-                    {isEditing ? (
-                      <textarea
-                        value={editAccessories}
-                        onChange={(e) => setEditAccessories(e.target.value)}
-                        rows={3}
-                        className="w-full bg-bg-elevated border border-border-subtle rounded-lg p-2.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary resize-none"
-                      />
-                    ) : (
-                      <div className="text-xs bg-bg-elevated/40 p-3 rounded-lg border border-border-subtle min-h-[70px] whitespace-pre-wrap">
-                        {equipment.accessories || 'NINGUNO'}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Condición Física de Ingreso</span>
-                    {isEditing ? (
-                      <textarea
-                        value={editConditionIn}
-                        onChange={(e) => setEditConditionIn(e.target.value)}
-                        rows={3}
-                        className="w-full bg-bg-elevated border border-border-subtle rounded-lg p-2.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary resize-none"
-                      />
-                    ) : (
-                      <div className="text-xs bg-bg-elevated/40 p-3 rounded-lg border border-border-subtle min-h-[70px] whitespace-pre-wrap">
-                        {equipment.condition_in || 'NINGUNO'}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Observaciones Técnicas</span>
-                    {isEditing ? (
-                      <textarea
-                        value={editObservations}
-                        onChange={(e) => setEditObservations(e.target.value)}
-                        rows={3}
-                        className="w-full bg-bg-elevated border border-border-subtle rounded-lg p-2.5 text-xs focus:border-neon-blue focus:outline-none text-text-primary resize-none"
-                      />
-                    ) : (
-                      <div className="text-xs bg-bg-elevated/40 p-3 rounded-lg border border-border-subtle min-h-[70px] whitespace-pre-wrap text-neon-blue">
-                        {equipment.additional_observations || 'NINGUNA'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 4. Historial de Estados */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-neon-blue uppercase tracking-wider border-b border-border-subtle pb-1">Historial de Estados</h3>
-                  <div className="space-y-2 max-h-[250px] overflow-y-auto scrollbar-thin">
-                    {history.length === 0 ? (
-                      <p className="text-xs text-text-secondary">No hay registros de historial de estado.</p>
-                    ) : (
-                      history.map((h: any, idx: number) => (
-                        <div key={h.id || idx} className="flex flex-col gap-1 p-3 text-xs bg-bg-elevated/30 rounded-lg border border-border-subtle/50">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-text-secondary font-mono">{h.previous_status || 'REGISTRO'}</span>
-                              <span className="text-neon-blue font-bold">➔</span>
-                              <span className="text-neon-blue font-bold uppercase">{h.new_status}</span>
+                  {/* ── Historial de Estados — colapsable, cerrado por defecto ── */}
+                  <CollapsibleSection
+                    title="Historial de Estados"
+                    icon={<History size={12} />}
+                    badge={history.length}
+                  >
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
+                      {history.length === 0 ? (
+                        <p className="text-xs text-text-secondary text-center py-4">No hay registros en el historial.</p>
+                      ) : (
+                        history.map((h: any, idx: number) => (
+                          <div key={h.id || idx} className="p-3 text-xs bg-bg-elevated/30 rounded-lg border border-border-subtle/50 space-y-1.5">
+                            <div className="flex justify-between items-center gap-2 flex-wrap">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-text-secondary font-mono">{h.previous_status || 'REGISTRO'}</span>
+                                <span className="text-neon-blue font-bold">➔</span>
+                                <span className="text-neon-blue font-bold uppercase">{h.new_status}</span>
+                                {h.is_override && (
+                                  <span className="text-neon-purple font-bold text-[10px]">⚠️ OVERRIDE</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-text-muted shrink-0">{formatDate(h.timestamp)}</span>
                             </div>
-                            <span className="text-[10px] text-text-muted">{formatDate(h.timestamp)}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-[10px] text-text-secondary mt-1">
-                            <span className="flex items-center gap-1.5 flex-wrap">
-                              <span>Modificado por: <strong className="text-text-primary">{h.changed_by_username}</strong></span>
+                            <div className="flex items-center gap-2 flex-wrap text-[10px] text-text-secondary">
+                              <span>Por: <strong className="text-text-primary">{h.changed_by_username}</strong></span>
                               {h.changed_by_role && (
                                 <span className="px-1.5 py-0.5 rounded bg-bg-surface border border-border-subtle text-[9px] font-bold text-neon-blue uppercase">
                                   {h.changed_by_role}
                                 </span>
                               )}
-                            </span>
-                            {h.is_override && <span className="text-neon-purple font-bold">⚠️ OVERRIDE DE SUPERADMIN</span>}
+                            </div>
+                            {(h.notes || h.override_reason) && (
+                              <div className={`p-2 rounded text-[10px] leading-relaxed ${h.is_override ? 'bg-neon-purple/5 border border-neon-purple/20 text-neon-purple italic' : 'bg-bg-surface/60 border border-border-subtle/80 text-text-secondary'}`}>
+                                {h.is_override ? 'Motivo: ' : 'Nota: '}
+                                {h.override_reason || h.notes}
+                              </div>
+                            )}
                           </div>
-                          {h.notes && !h.is_override && (
-                            <div className="mt-1.5 p-2 bg-bg-surface/60 border border-border-subtle/80 text-text-secondary text-[11px] rounded leading-relaxed">
-                              <span className="font-semibold text-text-primary">Nota / Comentario: </span>
-                              {h.notes}
-                            </div>
-                          )}
-                          {h.is_override && (h.override_reason || h.notes) && (
-                            <div className="mt-1.5 p-2 bg-neon-purple/5 border border-neon-purple/20 text-neon-purple text-[10px] rounded italic">
-                              Motivo: {h.override_reason || h.notes}
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
+                        ))
+                      )}
+                    </div>
+                  </CollapsibleSection>
+
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -677,7 +693,7 @@ export default function EquipmentDetail({
         />
       )}
 
-      {/* Modal de etiqueta QR para impresión */}
+      {/* Modal de etiqueta QR */}
       {equipment && (
         <QRPrintModal
           isOpen={isQrModalOpen}
