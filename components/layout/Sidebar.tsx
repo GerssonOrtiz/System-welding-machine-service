@@ -22,6 +22,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Calculator,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -96,6 +97,12 @@ const ALL_SIDEBAR_ITEMS: Record<string, SidebarItem> = {
     label: 'Estadísticas',
     href: '/estadisticas',
     icon: BarChart2,
+  },
+  pronostico: {
+    key: 'pronostico',
+    label: 'Pronóstico',
+    href: '/auditoria-modelos',
+    icon: Calculator,
   },
   dna: {
     key: 'dna',

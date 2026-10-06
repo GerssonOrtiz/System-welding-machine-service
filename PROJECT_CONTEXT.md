@@ -428,6 +428,12 @@ const ENTRY_TO = [ ... ]
   - API pública `/api/public/equipment/serial/[serial]` para consulta por serie
   - API pública `/api/public/equipment/fr/[fr]` para consulta por FR number
   - Soporte de campo `report_url` (enlace Google Drive) visible en ambas páginas públicas
+- **Módulo de Auditoría y Pronóstico Predictivo por Modelo — v2.5**:
+  - Motor de pronóstico en `lib/stats/model-forecast.ts` con cálculo de percentiles (p20, p80, medianas), días hábiles vs calendario y clasificador NLP de motivos de retraso en notas por rol
+  - Endpoints REST de analítica: `GET /api/stats/models` y `GET /api/stats/models/[model]` con soporte de filtros por marca y tipo de servicio
+  - Componentes modulares en `components/auditoria/`: `ModelSelectorHeader`, `ModelKpiCards`, `StageGanttTimeline`, `DeliveryForecastCalculator` y `DelayFactorsAudit`
+  - Vista integrada interactiva `/auditoria-modelos` accesible desde el Sidebar para roles autorizados
+  - Migración `017_audit_forecast_indexes.sql` para indexación de consultas de alto volumen
 
 ### 📋 Roadmap pendiente
 
@@ -462,6 +468,7 @@ const ENTRY_TO = [ ... ]
 | 014 | `014_user_full_name.sql` | Columna `full_name TEXT` en `user_profiles` y actualización de trigger `handle_new_user` |
 | 015 | `015_equipment_report_url.sql` | Columna `report_url TEXT` en `equipment_records` y recrea vista `equipment_with_status` |
 | 016 | `016_status_history_role_and_comments.sql` | Columnas `changed_by_role` y `notes` en `status_history`, actualiza trigger para auditoría de roles y comentarios opcionales |
+| 017 | `017_audit_forecast_indexes.sql` | Índices en `equipment_records(model)`, `equipment_records(brand, model)` y `status_history(equipment_id, timestamp)` para optimización de auditoría y pronóstico |
 
 ---
 
