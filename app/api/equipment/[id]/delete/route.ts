@@ -1,6 +1,6 @@
-// app/api/equipment/[id]/delete/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api/auth'
+import { canDeleteEquipment } from '@/types/user'
 
 export async function DELETE(
   request: NextRequest,
@@ -8,30 +8,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerClient()
+    const authResult = await requireAuth('role, is_active')
+    if (!authResult.ok) return authResult.error
+    const { supabase, profile } = authResult.ctx
 
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Obtener perfil
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active')
-      .eq('id', session.user.id)
-      .single()
-
-    const activeProfile = userProfile as any
-
-    if (!activeProfile?.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
-
-    // 3. Verificar permisos de eliminación (solo superadmin y admin)
-    const allowedRoles = ['superadmin', 'admin']
-    if (!allowedRoles.includes(activeProfile.role)) {
+    // 3. Verificar permisos de eliminación
+    if (!canDeleteEquipment(profile.role as any)) {
       return NextResponse.json({ success: false, error: 'No cuentas con permisos para eliminar equipos' }, { status: 403 })
     }
 

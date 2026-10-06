@@ -11,34 +11,41 @@ export function useUser() {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
+    const supabase = createClient()
     let isMounted = true
 
-    async function getSession() {
+    async function loadUserProfile(userId: string) {
+      try {
+        const { data: profileData } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', userId)
+          .single()
+
+        if (isMounted) {
+          setProfile(profileData)
+        }
+      } catch (err) {
+        console.error('Error fetching user profile:', err)
+      }
+    }
+
+    async function initSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (!isMounted) return
 
         if (session) {
           setUser(session.user)
-          // Buscar perfil
-          const { data: profileData } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-
-          if (isMounted) {
-            setProfile(profileData)
-          }
+          await loadUserProfile(session.user.id)
         } else {
           setUser(null)
           setProfile(null)
         }
       } catch (err) {
-        console.error('Error fetching user session/profile:', err)
+        console.error('Error fetching user session:', err)
       } finally {
         if (isMounted) {
           setLoading(false)
@@ -46,27 +53,20 @@ export function useUser() {
       }
     }
 
-    getSession()
+    initSession()
 
     // Suscribirse a cambios de estado de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         if (!isMounted) return
         if (session) {
           setUser(session.user)
-          const { data: profileData } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          if (isMounted) {
-            setProfile(profileData)
-            setLoading(false)
-          }
+          await loadUserProfile(session.user.id)
+          if (isMounted) setLoading(false)
         } else {
           setUser(null)
           setProfile(null)
-          setLoading(false)
+          if (isMounted) setLoading(false)
         }
       }
     )
@@ -75,7 +75,7 @@ export function useUser() {
       isMounted = false
       subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [])
 
   return {
     user,

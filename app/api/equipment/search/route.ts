@@ -1,33 +1,11 @@
-// app/api/equipment/search/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Verificar cuenta activa
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('is_active')
-      .eq('id', session.user.id)
-      .single()
-
-    if (!userProfile) {
-      return NextResponse.json({ success: false, error: 'Perfil de usuario no encontrado' }, { status: 404 })
-    }
-
-    const activeProfile = userProfile as any
-
-    if (!activeProfile.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
+    const authResult = await requireAuth('is_active')
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     // 3. Obtener query y normalizar
     const { searchParams } = new URL(request.url)

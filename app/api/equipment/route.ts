@@ -1,57 +1,14 @@
 // app/api/equipment/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireAuth, requireSuperadmin } from '@/lib/api/auth'
 import { canViewAllEquipment } from '@/types/user'
-
-const CAN_VIEW_ALL = ['superadmin', 'admin', 'visualizador']
-
-const ROLE_RELEVANT_STATES: Record<string, string[]> = {
-  operaciones: [
-    'En espera de diagnóstico',
-    'En diagnóstico',
-    'En espera de repuesto',
-    'Aprobado',
-    'En mantenimiento',
-    'En espera de repuesto adicional',
-  ],
-  recepcion: [
-    'En espera de diagnóstico',
-    'Pendiente de aprobación',
-    'Aprobado',
-    'Entregado',
-  ],
-  almacen: [
-    'En espera de repuesto',
-    'En espera de repuesto adicional',
-  ],
-}
+import { ROLE_RELEVANT_STATES } from '@/types/equipment'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Obtener perfil del usuario
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active, is_superadmin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (!userProfile) {
-      return NextResponse.json({ success: false, error: 'Perfil de usuario no encontrado' }, { status: 404 })
-    }
-
-    const activeProfile = userProfile as any
-
-    if (!activeProfile.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
+    const authResult = await requireAuth()
+    if (!authResult.ok) return authResult.error
+    const { supabase, profile } = authResult.ctx
 
     // 3. Leer query params
     const { searchParams } = new URL(request.url)
@@ -67,9 +24,9 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact' })
 
     // Filtrar por estados del rol si no tiene permiso general para ver todo
-    const hasViewAll = CAN_VIEW_ALL.includes(activeProfile.role)
+    const hasViewAll = canViewAllEquipment(profile.role as any)
     if (!hasViewAll) {
-      const relevantStates = ROLE_RELEVANT_STATES[activeProfile.role] || []
+      const relevantStates = ROLE_RELEVANT_STATES[profile.role] || []
       query = query.in('status_name', relevantStates)
     }
 
@@ -123,35 +80,9 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Obtener perfil
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active, is_superadmin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (!userProfile) {
-      return NextResponse.json({ success: false, error: 'Perfil de usuario no encontrado' }, { status: 404 })
-    }
-
-    const activeProfile = userProfile as any
-
-    if (!activeProfile.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
-
-    // 3. Verificar que sea superadmin
-    if (activeProfile.role !== 'superadmin' || !activeProfile.is_superadmin) {
-      return NextResponse.json({ success: false, error: 'Acceso denegado. Solo el superadmin puede eliminar todos los equipos' }, { status: 403 })
-    }
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     // 4. Eliminar todos los registros de la tabla
     const { error: deleteError } = await supabase

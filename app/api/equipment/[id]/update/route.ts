@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireSuperadmin } from '@/lib/api/auth'
 
 export async function PUT(
   request: NextRequest,
@@ -7,35 +7,9 @@ export async function PUT(
 ) {
   try {
     const { id: equipmentId } = await params
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Obtener perfil
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active, is_superadmin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (!userProfile) {
-      return NextResponse.json({ success: false, error: 'Perfil de usuario no encontrado' }, { status: 404 })
-    }
-
-    const activeProfile = userProfile as any
-
-    if (!activeProfile.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
-
-    // 3. Verificar que sea superadmin
-    if (activeProfile.role !== 'superadmin' || !activeProfile.is_superadmin) {
-      return NextResponse.json({ success: false, error: 'Acceso denegado. Solo el superadmin puede modificar toda la información de un equipo' }, { status: 403 })
-    }
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     // 4. Leer cuerpo
     const body = await request.json()

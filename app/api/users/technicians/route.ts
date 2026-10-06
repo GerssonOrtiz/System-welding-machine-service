@@ -1,28 +1,11 @@
-// app/api/users/technicians/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Verificar que el usuario sea activo
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active')
-      .eq('id', session.user.id)
-      .single()
-
-    const activeProfile = userProfile as any
-    if (!activeProfile || !activeProfile.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
+    const authResult = await requireAuth('is_active')
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     // 3. Obtener técnicos de la nueva tabla de personal
     const { data: techs, error } = await supabase

@@ -1,6 +1,5 @@
-// app/api/equipment/[id]/details/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api/auth'
 import { WorkflowEngine } from '@/lib/workflow/engine'
 
 export async function GET(
@@ -9,26 +8,9 @@ export async function GET(
 ) {
   try {
     const { id: equipmentId } = await params
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Verificar cuenta activa
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active')
-      .eq('id', session.user.id)
-      .single()
-
-    const activeProfile = userProfile as any
-
-    if (!activeProfile?.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
+    const authResult = await requireAuth('role, is_active')
+    if (!authResult.ok) return authResult.error
+    const { supabase, profile } = authResult.ctx
 
     // 3. Buscar el detalle del equipo
     const { data: equipment, error: eqError } = await supabase
@@ -56,7 +38,7 @@ export async function GET(
     }
 
     // 5. Cargar los siguientes estados posibles según la configuración del workflow y el rol del usuario
-    const nextStates = await WorkflowEngine.getNextStates(activeEquipment.current_status_id, activeProfile.role)
+    const nextStates = await WorkflowEngine.getNextStates(activeEquipment.current_status_id, profile.role)
 
     // El usuario puede avanzar si no está en un estado terminal y tiene estados posibles de destino configurados
     const isTerminal = await WorkflowEngine.isTerminal(activeEquipment.current_status_id)

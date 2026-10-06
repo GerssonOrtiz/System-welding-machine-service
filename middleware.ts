@@ -3,6 +3,7 @@
 // Según GUIA_SUPABASE §5 y ARQUITECTURA_CABELAB_V2 §9
 import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import { ROLE_HOME_ROUTE } from '@/types/user'
 
 // Rutas que NO requieren autenticación
 const PUBLIC_ROUTES = ['/login']
@@ -37,16 +38,7 @@ export async function middleware(request: NextRequest) {
           .single()
 
         if (profile?.is_active) {
-          // Rutas iniciales por rol según GUIA_UI_UX y FLUJOS_DE_USUARIO
-          const homeRoutes: Record<string, string> = {
-            superadmin:   '/admin/usuarios',
-            admin:        '/dashboard',
-            operaciones:  '/taller',
-            recepcion:    '/equipos',
-            almacen:      '/equipos',
-            visualizador: '/pizarra',
-          }
-          const destination = homeRoutes[profile.role] || '/'
+          const destination = ROLE_HOME_ROUTE[profile.role as keyof typeof ROLE_HOME_ROUTE] || '/'
           return NextResponse.redirect(new URL(destination, request.url))
         }
       } catch (e) {

@@ -1,6 +1,5 @@
-// app/api/equipment/[id]/update-status/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api/auth'
 import { WorkflowEngine } from '@/lib/workflow/engine'
 import { mailer } from '@/lib/mail/mailer'
 import {
@@ -23,29 +22,9 @@ export async function POST(
 ) {
   try {
     const { id: equipmentId } = await params
-    const supabase = await createServerClient()
-
-    // 1. Verificar usuario
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Obtener perfil
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('username, role, is_active')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json({ success: false, error: 'Perfil de usuario no encontrado' }, { status: 404 })
-    }
-
-    const activeProfile = userProfile as any
-    if (!activeProfile?.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
+    const authResult = await requireAuth('username, role, is_active')
+    if (!authResult.ok) return authResult.error
+    const { supabase, profile } = authResult.ctx
 
     // 3. Detectar si viene como FormData (informe ODP con PDF) o JSON
     const contentType = request.headers.get('content-type') ?? ''
@@ -131,7 +110,7 @@ export async function POST(
     const targetNameLower = targetName.trim().toLowerCase()
 
     // 8. Validar transición
-    const validation = await WorkflowEngine.validateTransition(eq.current_status_id, new_status_id, activeProfile.role)
+    const validation = await WorkflowEngine.validateTransition(eq.current_status_id, new_status_id, profile.role)
     if (!validation.isValid) {
       return NextResponse.json({ success: false, error: validation.error || 'Transición no permitida' }, { status: 422 })
     }

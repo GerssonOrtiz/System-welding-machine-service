@@ -149,7 +149,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `validations/user.schema.ts` | Schema Zod para validar inputs de usuarios |
 | `mail/mailer.ts` | Sistema de correos en hilo con Resend (envíos dirigidos a `ENTRY_TO` y cabeceras normalizadas RFC 2822). Ver sección 11 para detalle completo |
 | `env.ts` | Validación de variables de entorno al arrancar |
-| `permissions.ts` | (vacío — lógica de permisos está en `types/user.ts`) |
+| `api/auth.ts` | Helpers centralizados de autenticación server-side (`requireAuth`, `requireSuperadmin`) con validación estricta vía `getUser()` |
 
 ### `/hooks/`
 | Hook | Responsabilidad |

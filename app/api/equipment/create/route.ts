@@ -1,88 +1,18 @@
-// app/api/equipment/create/route.ts
-
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api/auth'
+import { canCreateEquipment } from '@/types/user'
 import { createEquipmentSchema } from '@/lib/validations/equipment.schema'
 import { mailer } from '@/lib/mail/mailer'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    // 1. Verificar autenticación
+    const authResult = await requireAuth('role, is_active')
+    if (!authResult.ok) return authResult.error
+    const { supabase, userId, profile } = authResult.ctx
 
-    // ============================================================
-    // 1. VERIFICAR USUARIO AUTENTICADO
-    // ============================================================
-
-    // Usamos getUser() en lugar de getSession()
-    // porque getUser() valida la identidad contra Supabase Auth.
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado',
-        },
-        { status: 401 }
-      )
-    }
-
-    // ============================================================
-    // 2. OBTENER PERFIL DEL USUARIO
-    // ============================================================
-
-    const {
-      data: userProfile,
-      error: profileError,
-    } = await supabase
-      .from('user_profiles')
-      .select('role, is_active, is_superadmin')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      console.error(
-        '[POST /api/equipment/create] User profile error:',
-        profileError
-      )
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Perfil de usuario no encontrado',
-        },
-        { status: 404 }
-      )
-    }
-
-    // ============================================================
-    // 3. VERIFICAR CUENTA ACTIVA
-    // ============================================================
-
-    if (!userProfile.is_active) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Cuenta no activa',
-        },
-        { status: 403 }
-      )
-    }
-
-    // ============================================================
-    // 4. VERIFICAR PERMISOS
-    // ============================================================
-
-    const allowedRoles = [
-      'superadmin',
-      'admin',
-      'recepcion',
-    ]
-
-    if (!allowedRoles.includes(userProfile.role)) {
+    // 2. Verificar permisos
+    if (!canCreateEquipment(profile.role as any)) {
       return NextResponse.json(
         {
           success: false,
@@ -352,7 +282,7 @@ export async function POST(request: NextRequest) {
 
         current_status_id: initialState.id,
 
-        created_by: user.id,
+        created_by: userId,
 
         priority_level: data.priority_level || 0,
 

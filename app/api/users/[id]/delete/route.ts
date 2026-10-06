@@ -1,6 +1,7 @@
 // app/api/users/[id]/delete/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireSuperadmin } from '@/lib/api/auth'
 
 export async function DELETE(
   request: NextRequest,
@@ -8,32 +9,13 @@ export async function DELETE(
 ) {
   try {
     const { id: targetUserId } = await params
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Verificar que el usuario sea superadmin activo
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active, is_superadmin')
-      .eq('id', session.user.id)
-      .single()
-
-    const activeProfile = userProfile as any
-    if (!activeProfile || !activeProfile.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
-
-    if (activeProfile.role !== 'superadmin' || !activeProfile.is_superadmin) {
-      return NextResponse.json({ success: false, error: 'Acceso denegado. Solo el superadmin puede eliminar usuarios' }, { status: 403 })
-    }
+    // 1. Verificar sesión y permisos de superadmin
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { userId } = authResult.ctx
 
     // Prevent deleting oneself
-    if (targetUserId === session.user.id) {
+    if (targetUserId === userId) {
       return NextResponse.json({ success: false, error: 'No puedes eliminarte a ti mismo' }, { status: 400 })
     }
 

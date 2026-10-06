@@ -1,32 +1,14 @@
 // app/api/users/list/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { requireSuperadmin } from '@/lib/api/auth'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Verificar que el usuario sea superadmin activo
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active, is_superadmin')
-      .eq('id', session.user.id)
-      .single()
-
-    const activeProfile = userProfile as any
-    if (!activeProfile || !activeProfile.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
-
-    if (activeProfile.role !== 'superadmin' || !activeProfile.is_superadmin) {
-      return NextResponse.json({ success: false, error: 'Acceso denegado. Solo el superadmin puede listar usuarios' }, { status: 403 })
-    }
+    // 1. Verificar sesión y que el usuario sea superadmin activo
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { profile } = authResult.ctx
 
     // 3. Obtener clientes admin para ver auth.users (service_role)
     const adminSupabase = createAdminClient()

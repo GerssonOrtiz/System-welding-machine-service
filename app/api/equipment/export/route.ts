@@ -1,31 +1,15 @@
-// app/api/equipment/export/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api/auth'
+import { canExportData } from '@/types/user'
 import * as XLSX from 'xlsx'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const authResult = await requireAuth('role, is_active')
+    if (!authResult.ok) return authResult.error
+    const { supabase, profile } = authResult.ctx
 
-    // 1. Verificar sesión
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Verificar que el rol sea superadmin, admin o visualizador
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active, is_superadmin')
-      .eq('id', user.id)
-      .single() as any
-
-    if (!profile?.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
-
-    const allowedRoles = ['superadmin', 'admin', 'visualizador']
-    if (!allowedRoles.includes(profile.role || '')) {
+    if (!canExportData(profile.role as any)) {
       return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
     }
 

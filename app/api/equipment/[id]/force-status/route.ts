@@ -1,6 +1,7 @@
 // app/api/equipment/[id]/force-status/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireSuperadmin } from '@/lib/api/auth'
 import { forceStatusSchema } from '@/lib/validations/equipment.schema'
 import { mailer } from '@/lib/mail/mailer'
 
@@ -11,39 +12,10 @@ export async function POST(
   try {
     const { id: equipmentId } = await params
 
-    // 1. Cliente normal para verificar sesión y rol (respeta RLS)
-    const normalSupabase = await createServerClient()
-
-    // 2. Verificar sesión
-    const { data: { session } } = await normalSupabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 3. Obtener perfil
-    const { data: userProfile } = await normalSupabase
-      .from('user_profiles')
-      .select('username, role, is_active, is_superadmin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (!userProfile) {
-      return NextResponse.json({ success: false, error: 'Perfil de usuario no encontrado' }, { status: 404 })
-    }
-
-    const activeProfile = userProfile as any
-
-    if (!activeProfile.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
-
-    // 4. Doble verificación de Superadmin
-    if (activeProfile.role !== 'superadmin' || !activeProfile.is_superadmin) {
-      return NextResponse.json(
-        { success: false, error: 'Acceso denegado. Solo el superadmin puede forzar estados' },
-        { status: 403 }
-      )
-    }
+    // 1. Verificar sesión y permisos de superadmin
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { supabase: normalSupabase, userId, profile } = authResult.ctx
 
     // 5. Validar body con Zod
     const body = await request.json()
@@ -119,9 +91,9 @@ export async function POST(
         equipment_id: equipmentId,
         previous_status: previousStateName,
         new_status: activeTargetState.name,
-        changed_by_id: session.user.id,
-        changed_by_username: activeProfile.username,
-        changed_by_role: activeProfile.role || 'superadmin',
+        changed_by_id: userId,
+        changed_by_username: profile.username,
+        changed_by_role: profile.role || 'superadmin',
         is_override: true,
         override_reason: override_reason.trim().toUpperCase(),
         notes: override_reason.trim(),
@@ -145,7 +117,7 @@ export async function POST(
             new_status_name: activeTargetState.name,
             previous_status_name: previousStateName,
             override_reason: override_reason.trim().toUpperCase(),
-            changed_by: activeProfile.username,
+            changed_by: profile.username,
           },
           true // isOverride = true → banner amarillo en el correo
         )

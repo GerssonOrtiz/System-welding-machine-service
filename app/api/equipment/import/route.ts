@@ -1,32 +1,12 @@
-// app/api/equipment/import/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireSuperadmin } from '@/lib/api/auth'
 import * as XLSX from 'xlsx'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
-
-    // 2. Verificar que el rol sea superadmin
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role, is_active, is_superadmin')
-      .eq('id', user.id)
-      .single() as any
-
-    if (!profile?.is_active) {
-      return NextResponse.json({ success: false, error: 'Cuenta no activa' }, { status: 403 })
-    }
-
-    if (profile.role !== 'superadmin' || !profile.is_superadmin) {
-      return NextResponse.json({ success: false, error: 'Acceso denegado. Solo superadmin puede importar datos' }, { status: 403 })
-    }
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { supabase, userId } = authResult.ctx
 
     // 3. Leer FormData y procesar archivo
     const formData = await request.formData()
@@ -250,7 +230,7 @@ export async function POST(request: NextRequest) {
         additional_observations: null,
         current_status_id:       currentStatusId,
         date_in:                 dateInValue,
-        created_by:              user.id,
+        created_by:              userId,
       })
 
       // Registrar en el set para evitar duplicados internos dentro del mismo Excel
