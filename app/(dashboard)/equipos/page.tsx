@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -159,9 +159,9 @@ export default function EquiposPage() {
               </Dialog.Trigger>
               <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-bg-base/85 backdrop-blur-sm z-50 transition-opacity" />
-                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[750px] max-h-[90vh] overflow-y-auto bg-bg-surface border border-neon-blue/30 rounded-xl shadow-neon-blue p-6 md:p-8 z-50 text-text-primary animate-in fade-in zoom-in-95 duration-150 scrollbar-thin">
+                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[860px] max-h-[90vh] overflow-y-auto bg-bg-surface border border-neon-blue/30 rounded-xl shadow-neon-blue p-6 md:p-8 z-50 text-text-primary animate-in fade-in zoom-in-95 duration-150 scrollbar-thin">
                   <Dialog.Title className="text-lg font-bold text-neon-blue mb-6 border-b border-border-subtle pb-2 uppercase tracking-wider">
-                    Registrar Nuevo Ingreso de Equipo
+                    Registrar Ingreso de Equipos
                   </Dialog.Title>
                   <EquipmentForm
                     onSuccess={() => {

@@ -84,6 +84,18 @@ function buildSignature(): string {
 // TIPOS
 // ─────────────────────────────────────────
 
+export interface EquipmentItemData {
+  fr_number: string
+  brand: string
+  model: string
+  serial_number: string
+  service_type: string
+  client_report?: string | null
+  accessories?: string | null
+  is_priority?: boolean
+  date_in?: string
+}
+
 export interface EquipmentEntryData {
   fr_number: string
   client_name: string
@@ -97,6 +109,11 @@ export interface EquipmentEntryData {
   date_in?: string
 }
 
+export interface BatchEquipmentEntryData {
+  client_name: string
+  equipments: EquipmentItemData[]
+}
+
 /** Datos base que se reutilizan en todos los reply-correos */
 export interface ThreadBaseData {
   fr_number: string
@@ -106,6 +123,8 @@ export interface ThreadBaseData {
   serial_number?: string | null
   /** message-id del correo de ingreso guardado en BD */
   thread_id: string
+  /** Asunto original del hilo si fue personalizado (ej: lote de varios equipos) */
+  thread_subject?: string | null
 }
 
 export interface InformeODPData extends ThreadBaseData {
@@ -136,9 +155,45 @@ export interface CulminadoODPData extends ThreadBaseData {
 // ─────────────────────────────────────────
 
 function buildEntryHtml(data: EquipmentEntryData): string {
-  const dateStr = data.date_in
-    ? new Date(data.date_in).toLocaleDateString('es-PE')
-    : new Date().toLocaleDateString('es-PE')
+  return buildBatchEntryHtml({
+    client_name: data.client_name,
+    equipments: [
+      {
+        fr_number: data.fr_number,
+        brand: data.brand,
+        model: data.model,
+        serial_number: data.serial_number,
+        service_type: data.service_type,
+        client_report: data.client_report,
+        accessories: data.accessories,
+        is_priority: data.is_priority,
+        date_in: data.date_in,
+      },
+    ],
+  })
+}
+
+function buildBatchEntryHtml(data: BatchEquipmentEntryData): string {
+  const rows = data.equipments.map(eq => {
+    const dateStr = eq.date_in
+      ? new Date(eq.date_in).toLocaleDateString('es-PE')
+      : new Date().toLocaleDateString('es-PE')
+
+    return `
+      <tr>
+        <td style="${tableCellStyle} font-weight: bold;">${eq.fr_number}</td>
+        <td style="${tableCellStyle}">${data.client_name}</td>
+        <td style="${tableCellStyle}">${dateStr}</td>
+        <td style="${tableCellStyle}">${eq.brand}</td>
+        <td style="${tableCellStyle}">${eq.model}</td>
+        <td style="${tableCellStyle} font-family: monospace;">${eq.serial_number}</td>
+        <td style="${tableCellStyle}">${eq.service_type}</td>
+        <td style="${tableCellStyle}">${eq.client_report || '-'}</td>
+        <td style="${tableCellStyle} text-align: center;">${eq.is_priority ? '⭐ Sí' : 'No'}</td>
+        <td style="${tableCellStyle}">${eq.accessories || '-'}</td>
+      </tr>
+    `
+  }).join('')
 
   return `
     <div style="font-family: Calibri, sans-serif; color: #1f375f; line-height: 1.5;">
@@ -161,18 +216,7 @@ function buildEntryHtml(data: EquipmentEntryData): string {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style="${tableCellStyle} font-weight: bold;">${data.fr_number}</td>
-              <td style="${tableCellStyle}">${data.client_name}</td>
-              <td style="${tableCellStyle}">${dateStr}</td>
-              <td style="${tableCellStyle}">${data.brand}</td>
-              <td style="${tableCellStyle}">${data.model}</td>
-              <td style="${tableCellStyle} font-family: monospace;">${data.serial_number}</td>
-              <td style="${tableCellStyle}">${data.service_type}</td>
-              <td style="${tableCellStyle}">${data.client_report || '-'}</td>
-              <td style="${tableCellStyle} text-align: center;">${data.is_priority ? '⭐ Sí' : 'No'}</td>
-              <td style="${tableCellStyle}">${data.accessories || '-'}</td>
-            </tr>
+            ${rows}
           </tbody>
         </table>
       </div>
@@ -465,25 +509,26 @@ export interface MailerResult {
 // ─────────────────────────────────────────
 export const mailer = {
   /**
-   * Correo de ingreso de equipo.
-   * Envía el correo y luego consulta GET /emails/{id} de Resend para obtener
-   * el Message-ID RFC 5322 real (el que el MTA realmente usó). Ese valor es
-   * el que debe guardarse en equipment_records.email_thread_id y usarse como
-   * In-Reply-To / References en todos los correos posteriores del hilo.
-   * TO fijo: ventas, odp, heady, daniel, vivian
+   * Correo de ingreso de múltiples equipos en un solo correo con tabla consolidada.
+   * Envía el correo y consulta GET /emails/{id} con reintentos para obtener el Message-ID RFC 5322 real.
    */
-  async sendEquipmentEntry(data: EquipmentEntryData): Promise<MailerResult> {
+  async sendBatchEquipmentEntry(data: BatchEquipmentEntryData): Promise<MailerResult & { subject?: string }> {
     if (!resend) {
-      console.warn('[Mailer] sendEquipmentEntry — RESEND_API_KEY no configurada, correo omitido.')
+      console.warn('[Mailer] sendBatchEquipmentEntry — RESEND_API_KEY no configurada, correo omitido.')
       return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
 
-    const subject = `📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
+    const frsSummary = data.equipments.map(e => e.fr_number).filter(Boolean).join(', ')
+    const isSingle = data.equipments.length === 1
+    const subject = isSingle
+      ? `📥 Ingreso de Equipo — ${data.equipments[0].fr_number} — ${data.client_name}`
+      : `📥 Ingreso de Equipos — ${frsSummary} — ${data.client_name}`
 
-    console.log('[Mailer] sendEquipmentEntry -> Iniciando despacho:', {
+    console.log('[Mailer] sendBatchEquipmentEntry -> Iniciando despacho:', {
       from: FROM_ADDRESS,
       to: ENTRY_TO,
       subject,
+      totalEquipments: data.equipments.length,
     })
 
     try {
@@ -491,30 +536,23 @@ export const mailer = {
         from: FROM_ADDRESS,
         to: ENTRY_TO,
         subject,
-        html: buildEntryHtml(data),
-        // NOTA: NO se establece headers['Message-ID'] porque Resend/SES
-        // ignora ese header y genera el suyo propio. El Message-ID real
-        // se obtiene a continuación via GET /emails/{id}.
+        html: buildBatchEntryHtml(data),
       })
 
       if ((res as any)?.error) {
-        console.error('[Mailer] sendEquipmentEntry Resend error:', (res as any).error)
+        console.error('[Mailer] sendBatchEquipmentEntry Resend error:', (res as any).error)
         return { success: false, error: (res as any).error?.message || 'Error al enviar correo con Resend' }
       }
 
       const resendApiId = (res as any)?.data?.id
 
-      // Obtener el Message-ID RFC 5322 real que el MTA de Resend usó.
-      // Resend llena este campo de forma asíncrona una vez que el mensaje
-      // sale del sistema, por lo que una consulta inmediata puede devolver
-      // message_id: null. Se reintenta con backoff hasta obtenerlo.
       const RETRY_DELAYS_MS = [500, 1000, 2000, 3000]
       let realMessageId: string | null = null
 
       for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
         if (attempt > 0) {
           const delay = RETRY_DELAYS_MS[attempt - 1]
-          console.log(`[Mailer] sendEquipmentEntry -> Esperando ${delay}ms antes de reintentar obtener message_id (intento ${attempt}/${RETRY_DELAYS_MS.length})...`)
+          console.log(`[Mailer] sendBatchEquipmentEntry -> Esperando ${delay}ms antes de reintentar obtener message_id (intento ${attempt}/${RETRY_DELAYS_MS.length})...`)
           await new Promise(resolve => setTimeout(resolve, delay))
         }
         try {
@@ -522,32 +560,52 @@ export const mailer = {
           const candidate = (detail as any)?.data?.message_id ?? null
           if (candidate) {
             realMessageId = candidate
-            console.log('[Mailer] sendEquipmentEntry -> Message-ID RFC 5322 real obtenido:', {
+            console.log('[Mailer] sendBatchEquipmentEntry -> Message-ID RFC 5322 real obtenido:', {
               resendApiId,
               realMessageId,
               attempt,
             })
             break
           }
-          console.log(`[Mailer] sendEquipmentEntry -> message_id aún null en intento ${attempt}, resendApiId: ${resendApiId}`)
+          console.log(`[Mailer] sendBatchEquipmentEntry -> message_id aún null en intento ${attempt}, resendApiId: ${resendApiId}`)
         } catch (fetchErr) {
-          console.warn(`[Mailer] sendEquipmentEntry -> Error al consultar Resend en intento ${attempt}:`, fetchErr)
+          console.warn(`[Mailer] sendBatchEquipmentEntry -> Error al consultar Resend en intento ${attempt}:`, fetchErr)
         }
       }
 
       if (!realMessageId) {
-        console.warn('[Mailer] sendEquipmentEntry -> message_id real no disponible tras todos los reintentos; el threading de correos no funcionará para este equipo.')
-        return { success: true, messageId: undefined }
+        console.warn('[Mailer] sendBatchEquipmentEntry -> message_id real no disponible tras todos los reintentos; el threading de correos no funcionará para este lote.')
+        return { success: true, messageId: undefined, subject }
       }
 
-      // realMessageId tiene el formato "<xxx@email.resend.dev>" — es lo que
-      // debe guardarse en equipment_records.email_thread_id para usarlo
-      // como In-Reply-To / References en todos los correos posteriores.
-      return { success: true, messageId: realMessageId }
+      return { success: true, messageId: realMessageId, subject }
     } catch (error: any) {
-      console.error('[Mailer] sendEquipmentEntry error:', error)
+      console.error('[Mailer] sendBatchEquipmentEntry error:', error)
       return { success: false, error: error?.message || 'Error inesperado al enviar correo de ingreso' }
     }
+  },
+
+  /**
+   * Correo de ingreso de un solo equipo.
+   * Delega en sendBatchEquipmentEntry para consistencia.
+   */
+  async sendEquipmentEntry(data: EquipmentEntryData): Promise<MailerResult & { subject?: string }> {
+    return this.sendBatchEquipmentEntry({
+      client_name: data.client_name,
+      equipments: [
+        {
+          fr_number: data.fr_number,
+          brand: data.brand,
+          model: data.model,
+          serial_number: data.serial_number,
+          service_type: data.service_type,
+          client_report: data.client_report,
+          accessories: data.accessories,
+          is_priority: data.is_priority,
+          date_in: data.date_in,
+        },
+      ],
+    })
   },
 
   /**
@@ -560,10 +618,14 @@ export const mailer = {
       return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
+      const subject = data.thread_subject
+        ? `RE: ${data.thread_subject.replace(/^RE:\s*/i, '')}`
+        : `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
+
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        subject: `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
+        subject,
         html: buildInformeODPHtml(data),
         headers: threadHeaders(data.thread_id),
         attachments: [
@@ -594,10 +656,14 @@ export const mailer = {
       return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
+      const subject = data.thread_subject
+        ? `RE: ${data.thread_subject.replace(/^RE:\s*/i, '')}`
+        : `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
+
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        subject: `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
+        subject,
         html: buildAprobacionVentasHtml(data),
         headers: threadHeaders(data.thread_id),
       })
@@ -622,10 +688,14 @@ export const mailer = {
       return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
+      const subject = data.thread_subject
+        ? `RE: ${data.thread_subject.replace(/^RE:\s*/i, '')}`
+        : `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
+
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        subject: `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
+        subject,
         html: buildEntregaLogisticaHtml(data),
         headers: threadHeaders(data.thread_id),
       })
@@ -650,10 +720,14 @@ export const mailer = {
       return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
     }
     try {
+      const subject = data.thread_subject
+        ? `RE: ${data.thread_subject.replace(/^RE:\s*/i, '')}`
+        : `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
+
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
-        subject: `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`,
+        subject,
         html: buildCulminadoODPHtml(data),
         headers: threadHeaders(data.thread_id),
       })

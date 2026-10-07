@@ -469,6 +469,7 @@ const ENTRY_TO = [ ... ]
 | 015 | `015_equipment_report_url.sql` | Columna `report_url TEXT` en `equipment_records` y recrea vista `equipment_with_status` |
 | 016 | `016_status_history_role_and_comments.sql` | Columnas `changed_by_role` y `notes` en `status_history`, actualiza trigger para auditoría de roles y comentarios opcionales |
 | 017 | `017_audit_forecast_indexes.sql` | Índices en `equipment_records(model)`, `equipment_records(brand, model)` y `status_history(equipment_id, timestamp)` para optimización de auditoría y pronóstico |
+| 018 | `018_batch_equipment_and_thread_subject.sql` | Columnas `batch_id UUID` y `email_thread_subject TEXT` para soporte de ingreso múltiple y asunto de hilo exacto en replies |
 
 ---
 

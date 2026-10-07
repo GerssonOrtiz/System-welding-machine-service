@@ -66,10 +66,10 @@ export async function POST(
     }
     const { new_status_id } = baseParsed.data
 
-    // 5. Obtener datos del equipo (incluyendo thread_id para los correos)
+    // 5. Obtener datos del equipo (incluyendo thread_id y thread_subject para los correos)
     const { data: equipment, error: eqError } = await supabase
       .from('equipment_records')
-      .select('current_status_id, fr_number, client_name, brand, model, serial_number, email_thread_id')
+      .select('current_status_id, fr_number, client_name, brand, model, serial_number, email_thread_id, email_thread_subject')
       .eq('id', equipmentId)
       .single()
 
@@ -191,12 +191,13 @@ export async function POST(
 
     // 13. Disparar correo específico según el estado destino si corresponde
     const threadBase = {
-      fr_number:    eq.fr_number,
-      client_name:  eq.client_name,
-      brand:        eq.brand,
-      model:        eq.model,
-      serial_number: eq.serial_number,
-      thread_id:    eq.email_thread_id ?? '',
+      fr_number:     eq.fr_number,
+      client_name:   eq.client_name,
+      brand:         eq.brand,
+      model:         eq.model,
+      serial_number:  eq.serial_number,
+      thread_id:     eq.email_thread_id ?? '',
+      thread_subject: eq.email_thread_subject ?? null,
     }
 
     let mailWarning: string | null = null

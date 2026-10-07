@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api/auth'
 import { canCreateEquipment } from '@/types/user'
-import { createEquipmentSchema } from '@/lib/validations/equipment.schema'
-import { mailer } from '@/lib/mail/mailer'
+import { createEquipmentSchema, createBatchEquipmentSchema } from '@/lib/validations/equipment.schema'
+import { mailer, type EquipmentItemData } from '@/lib/mail/mailer'
+import { randomUUID } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,399 +23,265 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // ============================================================
-    // 5. LEER BODY
-    // ============================================================
-
+    // 3. Leer Body
     const body = await request.json()
 
-    // ============================================================
-    // 6. VALIDAR BODY CON ZOD
-    // ============================================================
+    // 4. Determinar si es lote (array 'equipments') o individual
+    let clientNameRaw: string = ''
+    let equipmentsList: Array<any> = []
 
-    const parsed = createEquipmentSchema.safeParse(body)
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Datos de equipo inválidos',
-          details: parsed.error.flatten(),
-        },
-        { status: 400 }
-      )
+    if (Array.isArray(body?.equipments)) {
+      const parsedBatch = createBatchEquipmentSchema.safeParse(body)
+      if (!parsedBatch.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Datos de lote de equipos inválidos',
+            details: parsedBatch.error.flatten(),
+          },
+          { status: 400 }
+        )
+      }
+      clientNameRaw = parsedBatch.data.client_name
+      equipmentsList = parsedBatch.data.equipments
+    } else {
+      const parsedSingle = createEquipmentSchema.safeParse(body)
+      if (!parsedSingle.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Datos de equipo inválidos',
+            details: parsedSingle.error.flatten(),
+          },
+          { status: 400 }
+        )
+      }
+      clientNameRaw = parsedSingle.data.client_name
+      const { client_name: _, ...eqData } = parsedSingle.data
+      equipmentsList = [eqData]
     }
 
-    const { data } = parsed
+    const client_name = clientNameRaw.trim().toUpperCase()
 
-    // ============================================================
-    // 7. NORMALIZAR DATOS
-    // ============================================================
+    // 5. Normalizar equipos
+    const normalizedEquipments = equipmentsList.map(eq => ({
+      fr_number: eq.fr_number.trim().toUpperCase(),
+      service_type: eq.service_type,
+      brand: eq.brand?.trim() ? eq.brand.trim().toUpperCase() : 'S/M',
+      model: eq.model?.trim() ? eq.model.trim().toUpperCase() : 'S/M',
+      serial_number: eq.serial_number?.trim() ? eq.serial_number.trim().toUpperCase() : 'N/S',
+      client_report: eq.client_report?.trim().toUpperCase() || null,
+      accessories: eq.accessories?.trim().toUpperCase() || null,
+      condition_in: eq.condition_in?.trim().toUpperCase() || null,
+      additional_observations: eq.additional_observations?.trim().toUpperCase() || null,
+      priority_level: eq.priority_level || 0,
+      is_priority: (eq.priority_level || 0) > 0,
+      report_url: eq.report_url?.trim() || null,
+    }))
 
-    const fr_number = data.fr_number
-      .trim()
-      .toUpperCase()
+    // 6. Verificar duplicados dentro del mismo payload
+    const frSet = new Set<string>()
+    for (const eq of normalizedEquipments) {
+      if (frSet.has(eq.fr_number)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `El número de FR ${eq.fr_number} está duplicado en la misma solicitud.`,
+          },
+          { status: 400 }
+        )
+      }
+      frSet.add(eq.fr_number)
+    }
 
-    const client_name = data.client_name
-      .trim()
-      .toUpperCase()
-
-    const brand = data.brand?.trim()
-      ? data.brand.trim().toUpperCase()
-      : 'S/M'
-
-    const model = data.model?.trim()
-      ? data.model.trim().toUpperCase()
-      : 'S/M'
-
-    const serial_number = data.serial_number?.trim()
-      ? data.serial_number.trim().toUpperCase()
-      : 'N/S'
-
-    const client_report =
-      data.client_report?.trim().toUpperCase() || null
-
-    const accessories =
-      data.accessories?.trim().toUpperCase() || null
-
-    const condition_in =
-      data.condition_in?.trim().toUpperCase() || null
-
-    const additional_observations =
-      data.additional_observations?.trim().toUpperCase() || null
-
-    // ============================================================
-    // 8. VERIFICAR FR DUPLICADO
-    // ============================================================
-
-    const {
-      data: existingFR,
-      error: existingFRError,
-    } = await supabase
+    // 7. Verificar FRs existentes en la base de datos
+    const frList = Array.from(frSet)
+    const { data: existingFRs, error: existingFRError } = await supabase
       .from('equipment_records')
-      .select('id')
-      .eq('fr_number', fr_number)
-      .maybeSingle()
+      .select('fr_number')
+      .in('fr_number', frList)
 
     if (existingFRError) {
-      console.error(
-        '[POST /api/equipment/create] Error checking FR:',
-        existingFRError
-      )
-
+      console.error('[POST /api/equipment/create] Error checking FRs:', existingFRError)
       return NextResponse.json(
         {
           success: false,
-          error:
-            'No se pudo verificar si la Ficha de Recepción ya existe',
+          error: 'No se pudo verificar si los números de FR ya existen en el sistema',
         },
         { status: 500 }
       )
     }
 
-    if (existingFR) {
+    if (existingFRs && existingFRs.length > 0) {
+      const dupes = existingFRs.map(e => e.fr_number).join(', ')
       return NextResponse.json(
         {
           success: false,
-          error: `Ya existe un equipo registrado con la Ficha de Recepción ${fr_number}`,
+          error: `Ya existe(n) equipo(s) registrado(s) con la(s) Ficha(s) de Recepción: ${dupes}`,
         },
         { status: 409 }
       )
     }
 
-    // ============================================================
-    // 9. OBTENER ESTADO INICIAL DEL WORKFLOW
-    // ============================================================
-
-    const {
-      data: initialState,
-      error: stateError,
-    } = await supabase
+    // 8. Obtener estado inicial del workflow
+    const { data: initialState, error: stateError } = await supabase
       .from('workflow_states')
       .select('id')
       .eq('is_initial', true)
       .single()
 
     if (stateError || !initialState) {
-      console.error(
-        '[POST /api/equipment/create] Initial workflow state not found:',
-        stateError
-      )
-
+      console.error('[POST /api/equipment/create] Initial workflow state not found:', stateError)
       return NextResponse.json(
         {
           success: false,
-          error:
-            'Error de configuración del sistema: No se encontró un estado de workflow inicial',
+          error: 'Error de configuración del sistema: No se encontró un estado de workflow inicial',
         },
         { status: 500 }
       )
     }
 
-    // ============================================================
-    // 10. REGISTRAR MARCA Y MODELO EN CATÁLOGO
-    // ============================================================
-
-    if (brand !== 'S/M') {
-      try {
-        let brand_id: string | null = null
-
-        // --------------------------------------------------------
-        // Buscar marca existente
-        // --------------------------------------------------------
-
-        const {
-          data: existingBrand,
-          error: existingBrandError,
-        } = await supabase
-          .from('catalog_brands')
-          .select('id')
-          .eq('name', brand)
-          .maybeSingle()
-
-        if (existingBrandError) {
-          console.error(
-            '[POST /api/equipment/create] Error checking brand:',
-            existingBrandError
-          )
-        }
-
-        // --------------------------------------------------------
-        // Crear marca si no existe
-        // --------------------------------------------------------
-
-        if (!existingBrand) {
-          const {
-            data: newBrand,
-            error: newBrandError,
-          } = await supabase
+    // 9. Registrar marcas y modelos nuevos en el catálogo
+    for (const eq of normalizedEquipments) {
+      if (eq.brand !== 'S/M') {
+        try {
+          let brand_id: string | null = null
+          const { data: existingBrand } = await supabase
             .from('catalog_brands')
-            .insert({
-              name: brand,
-            })
             .select('id')
-            .single()
-
-          if (newBrandError) {
-            console.error(
-              '[POST /api/equipment/create] Error creating brand:',
-              newBrandError
-            )
-          } else {
-            brand_id = newBrand?.id ?? null
-          }
-        } else {
-          brand_id = existingBrand.id
-        }
-
-        // --------------------------------------------------------
-        // Registrar modelo si no existe
-        // --------------------------------------------------------
-
-        if (brand_id && model !== 'S/M') {
-          const {
-            data: existingModel,
-            error: existingModelError,
-          } = await supabase
-            .from('catalog_models')
-            .select('id')
-            .eq('brand_id', brand_id)
-            .eq('name', model)
+            .eq('name', eq.brand)
             .maybeSingle()
 
-          if (existingModelError) {
-            console.error(
-              '[POST /api/equipment/create] Error checking model:',
-              existingModelError
-            )
+          if (!existingBrand) {
+            const { data: newBrand } = await supabase
+              .from('catalog_brands')
+              .insert({ name: eq.brand })
+              .select('id')
+              .single()
+            brand_id = newBrand?.id ?? null
+          } else {
+            brand_id = existingBrand.id
           }
 
-          if (!existingModel) {
-            const {
-              error: newModelError,
-            } = await supabase
+          if (brand_id && eq.model !== 'S/M') {
+            const { data: existingModel } = await supabase
               .from('catalog_models')
-              .insert({
-                brand_id,
-                name: model,
-              })
+              .select('id')
+              .eq('brand_id', brand_id)
+              .eq('name', eq.model)
+              .maybeSingle()
 
-            if (newModelError) {
-              console.error(
-                '[POST /api/equipment/create] Error creating model:',
-                newModelError
-              )
+            if (!existingModel) {
+              await supabase.from('catalog_models').insert({
+                brand_id,
+                name: eq.model,
+              })
             }
           }
+        } catch (catErr) {
+          console.error('[POST /api/equipment/create] Error auto-registering brand/model:', catErr)
         }
-      } catch (catalogErr) {
-        // El error del catálogo no debe impedir
-        // registrar el equipo.
-        console.error(
-          '[POST /api/equipment/create] Error updating catalog:',
-          catalogErr
-        )
       }
     }
 
-    // ============================================================
-    // 11. REGISTRAR EQUIPO
-    // ============================================================
+    // 10. Generar batch_id para agrupar los equipos si son 2 o más
+    const batchId = normalizedEquipments.length > 1 ? randomUUID() : null
 
-    const {
-      data: newEquipment,
-      error: insertError,
-    } = await supabase
-      .from('equipment_records')
-      .insert({
-        fr_number,
-        client_name,
-        service_type: data.service_type,
+    // 11. Insertar registros en equipment_records
+    const recordsToInsert = normalizedEquipments.map(eq => ({
+      fr_number: eq.fr_number,
+      client_name,
+      service_type: eq.service_type,
+      brand: eq.brand,
+      model: eq.model,
+      serial_number: eq.serial_number,
+      client_report: eq.client_report,
+      accessories: eq.accessories,
+      condition_in: eq.condition_in,
+      additional_observations: eq.additional_observations,
+      current_status_id: initialState.id,
+      created_by: userId,
+      priority_level: eq.priority_level,
+      is_priority: eq.is_priority,
+      report_url: eq.report_url,
+      batch_id: batchId,
+    }))
 
-        brand,
-        model,
-        serial_number,
+    const { data: insertedRecords, error: insertError } = await (supabase.from('equipment_records') as any)
+      .insert(recordsToInsert)
+      .select('id, fr_number')
 
-        client_report,
-        accessories,
-        condition_in,
-        additional_observations,
-
-        current_status_id: initialState.id,
-
-        created_by: userId,
-
-        priority_level: data.priority_level || 0,
-
-        is_priority:
-          (data.priority_level || 0) > 0,
-
-        report_url:
-          data.report_url?.trim() || null,
-      } as any)
-      .select('id')
-      .single()
-
-    // ============================================================
-    // 12. VERIFICAR INSERCIÓN
-    // ============================================================
-
-    if (insertError || !newEquipment) {
-      console.error(
-        '[POST /api/equipment/create] Error inserting equipment:',
-        insertError
-      )
-
+    if (insertError || !insertedRecords || insertedRecords.length === 0) {
+      console.error('[POST /api/equipment/create] Error inserting equipment records:', insertError)
       return NextResponse.json(
         {
           success: false,
-          error:
-            'Ocurrió un error al registrar el equipo en la base de datos',
+          error: 'Ocurrió un error al registrar los equipos en la base de datos',
         },
         { status: 500 }
       )
     }
 
-    const equipmentId = newEquipment.id
+    const insertedIds = insertedRecords.map((r: any) => r.id)
 
-    // ============================================================
-    // 13. ENVIAR CORREO DE INGRESO
-    // ============================================================
-
+    // 12. Despachar UN SOLO CORREO con todos los equipos en la misma tabla
     let mailWarning: string | null = null
 
     try {
-      const mailResult =
-        await mailer.sendEquipmentEntry(
-          {
-            fr_number,
-            client_name,
-            brand,
-            model,
-            serial_number,
-            service_type: data.service_type,
+      const mailEquipments: EquipmentItemData[] = normalizedEquipments.map(eq => ({
+        fr_number: eq.fr_number,
+        brand: eq.brand,
+        model: eq.model,
+        serial_number: eq.serial_number,
+        service_type: eq.service_type,
+        client_report: eq.client_report || 'SIN REPORTE',
+        accessories: eq.accessories || 'NINGUNO',
+        is_priority: eq.is_priority,
+      }))
 
-            client_report:
-              client_report || 'SIN REPORTE',
+      const mailResult = await mailer.sendBatchEquipmentEntry({
+        client_name,
+        equipments: mailEquipments,
+      })
 
-            accessories:
-              accessories || 'NINGUNO',
+      // 13. Guardar email_thread_id y email_thread_subject en TODOS los equipos insertados
+      if (mailResult.success && mailResult.messageId) {
+        const updatePayload: Record<string, any> = {
+          email_thread_id: mailResult.messageId,
+        }
+        if (mailResult.subject) {
+          updatePayload.email_thread_subject = mailResult.subject
+        }
 
-            is_priority:
-              (data.priority_level || 0) > 0,
-          }
-        )
-
-      // ==========================================================
-      // 14. GUARDAR ID DEL HILO DEL CORREO
-      // ==========================================================
-
-      if (
-        mailResult.success &&
-        mailResult.messageId
-      ) {
-        const {
-          error: threadError,
-        } = await supabase
-          .from('equipment_records')
-          .update({
-            email_thread_id:
-              mailResult.messageId,
-          } as any)
-          .eq('id', equipmentId)
+        const { error: threadError } = await (supabase.from('equipment_records') as any)
+          .update(updatePayload)
+          .in('id', insertedIds)
 
         if (threadError) {
-          console.error(
-            '[POST /api/equipment/create] Error saving email thread ID:',
-            threadError
-          )
-
-          mailWarning =
-            'El equipo fue registrado, pero no se pudo guardar el identificador del correo.'
+          console.error('[POST /api/equipment/create] Error saving thread ID/subject:', threadError)
+          mailWarning = 'Los equipos fueron registrados, pero no se pudo asociar el identificador del correo de notificación.'
         }
-      } else if (
-        !mailResult.success &&
-        !mailResult.skipped
-      ) {
-        mailWarning =
-          mailResult.error ||
-          'No se pudo enviar el correo de ingreso'
+      } else if (!mailResult.success && !mailResult.skipped) {
+        mailWarning = mailResult.error || 'No se pudo enviar el correo de ingreso.'
       }
     } catch (mailErr) {
-      console.error(
-        '[POST /api/equipment/create] Mailer error:',
-        mailErr
-      )
-
-      // El equipo ya fue creado.
-      // No hacemos rollback por un error del correo.
-      mailWarning =
-        'El equipo fue registrado, pero ocurrió un error al enviar el correo de notificación.'
+      console.error('[POST /api/equipment/create] Mailer error:', mailErr)
+      mailWarning = 'Los equipos fueron registrados, pero ocurrió un error al enviar el correo de notificación.'
     }
 
-    // ============================================================
-    // 15. RESPUESTA EXITOSA
-    // ============================================================
-
+    // 14. Respuesta exitosa
     return NextResponse.json({
       success: true,
-
       data: {
-        id: equipmentId,
+        id: insertedIds[0],
+        ids: insertedIds,
+        total: insertedIds.length,
+        batch_id: batchId,
       },
-
       warning: mailWarning,
     })
   } catch (err) {
-    // ============================================================
-    // ERROR GENERAL NO CONTROLADO
-    // ============================================================
-
-    console.error(
-      '[POST /api/equipment/create] Unexpected error:',
-      err
-    )
-
+    console.error('[POST /api/equipment/create] Unexpected error:', err)
     return NextResponse.json(
       {
         success: false,

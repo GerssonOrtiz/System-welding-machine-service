@@ -1,6 +1,22 @@
 // lib/validations/equipment.schema.ts
 import { z } from 'zod'
 
+export const singleEquipmentItemSchema = z.object({
+  fr_number: z.string()
+    .min(1, { message: 'El número de FR es obligatorio' })
+    .max(50, { message: 'El FR no puede exceder los 50 caracteres' }),
+  service_type: z.enum(['GARANTIA_CABELAB', 'GARANTIA_ESAB', 'REVISION_GENERAL']),
+  brand: z.string().optional().nullable(),
+  model: z.string().optional().nullable(),
+  serial_number: z.string().optional().nullable(),
+  client_report: z.string().optional().nullable(),
+  accessories: z.string().optional().nullable(),
+  condition_in: z.string().optional().nullable(),
+  additional_observations: z.string().optional().nullable(),
+  priority_level: z.number().int().min(0).max(3).default(0),
+  report_url: z.string().url({ message: 'El enlace del informe debe ser una URL válida' }).optional().nullable().or(z.literal('')),
+})
+
 export const createEquipmentSchema = z.object({
   fr_number: z.string()
     .min(1, { message: 'El número de FR es obligatorio' })
@@ -17,6 +33,14 @@ export const createEquipmentSchema = z.object({
   priority_level: z.number().int().min(0).max(3).default(0),
   report_url: z.string().url({ message: 'El enlace del informe debe ser una URL válida' }).optional().nullable().or(z.literal('')),
 })
+
+export const createBatchEquipmentSchema = z.object({
+  client_name: z.string().min(2, { message: 'El nombre del cliente es obligatorio' }),
+  equipments: z.array(singleEquipmentItemSchema).min(1, { message: 'Debe ingresar al menos un equipo' }),
+})
+
+export type SingleEquipmentItemInput = z.infer<typeof singleEquipmentItemSchema>
+export type CreateBatchEquipmentInput = z.infer<typeof createBatchEquipmentSchema>
 
 export const updateStatusSchema = z.object({
   new_status_id: z.number().int({ message: 'ID de estado inválido' }),
