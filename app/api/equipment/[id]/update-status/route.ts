@@ -6,15 +6,16 @@ import {
   updateStatusSchema,
   informeODPSchema,
   aprobacionVentasSchema,
-  entregaLogisticaSchema,
   culminadoODPSchema,
 } from '@/lib/validations/equipment.schema'
+import type { ApprovedPartItem } from '@/types/equipment'
 
 // Estados que disparan correos específicos (en minúsculas para comparación)
 const ESTADO_INFORME_ODP       = 'pendiente de aprobación'
 const ESTADO_APROBACION_VENTAS = 'aprobado'
-const ESTADO_ENTREGA_LOGISTICA = 'en espera de repuesto'
 const ESTADO_CULMINADO_ODP     = 'listo para entrega'
+// NOTA: Las entregas de repuestos ya no se manejan aquí.
+// Usar POST /api/equipment/[id]/deliver-parts para registrar entregas de Logística.
 
 export async function POST(
   request: NextRequest,
@@ -143,13 +144,6 @@ export async function POST(
       }
     }
 
-    if (targetNameLower === ESTADO_ENTREGA_LOGISTICA) {
-      const parsed = entregaLogisticaSchema.safeParse(rawBody)
-      if (!parsed.success) {
-        return NextResponse.json({ success: false, error: 'Faltan datos de entrega logística', details: parsed.error.flatten() }, { status: 400 })
-      }
-    }
-
     if (targetNameLower === ESTADO_CULMINADO_ODP) {
       const parsed = culminadoODPSchema.safeParse(rawBody)
       if (!parsed.success) {
@@ -179,6 +173,20 @@ export async function POST(
       updateData.report_url = rawBody.report_url?.trim() || null
     }
 
+    // Al pasar a "Aprobado": inicializar approved_parts con los ítems del presupuesto
+    // y fijar parts_status = 'SIN_REPUESTOS' para el seguimiento logístico independiente.
+    if (targetNameLower === ESTADO_APROBACION_VENTAS) {
+      const parsed = aprobacionVentasSchema.parse(rawBody)
+      const initializedParts: ApprovedPartItem[] = parsed.items.map((item, idx) => ({
+        id:                  crypto.randomUUID(),
+        descripcion:         item.descripcion,
+        cantidad_solicitada: parseInt(item.cantidad, 10) || 1,
+        cantidad_entregada:  0,
+        precio:              item.precio,
+      }))
+      updateData.approved_parts = initializedParts
+      updateData.parts_status   = 'SIN_REPUESTOS'
+    }
     // 12. Actualizar BD
     const { error: updateError } = await (supabase.from('equipment_records') as any)
       .update(updateData)
@@ -204,7 +212,6 @@ export async function POST(
     const requiresEmail =
       targetNameLower === ESTADO_INFORME_ODP ||
       targetNameLower === ESTADO_APROBACION_VENTAS ||
-      targetNameLower === ESTADO_ENTREGA_LOGISTICA ||
       targetNameLower === ESTADO_CULMINADO_ODP
 
     if (requiresEmail) {
@@ -230,13 +237,6 @@ export async function POST(
           } else if (targetNameLower === ESTADO_APROBACION_VENTAS) {
             const parsed = aprobacionVentasSchema.parse(rawBody)
             mailResult = await mailer.sendAprobacionVentas({
-              ...threadBase,
-              items:         parsed.items,
-              observaciones: parsed.observaciones,
-            })
-          } else if (targetNameLower === ESTADO_ENTREGA_LOGISTICA) {
-            const parsed = entregaLogisticaSchema.parse(rawBody)
-            mailResult = await mailer.sendEntregaLogistica({
               ...threadBase,
               items:         parsed.items,
               observaciones: parsed.observaciones,

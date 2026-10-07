@@ -53,6 +53,58 @@ export interface WorkflowTransitionWithNames extends WorkflowTransition {
 export type StatusHistoryEntry = Database['public']['Tables']['status_history']['Row']
 
 // ─────────────────────────────────────────
+// Sistema de repuestos desacoplado
+// ─────────────────────────────────────────
+
+/** Estado logístico de repuestos — completamente independiente del estado del servicio */
+export type PartsStatus = 'SIN_REPUESTOS' | 'PARCIAL' | 'COMPLETO'
+
+/** Ítem de repuesto aprobado por Ventas al pasar a estado "Aprobado" */
+export interface ApprovedPartItem {
+  id:                  string  // UUID generado al inicializar
+  descripcion:         string
+  cantidad_solicitada: number
+  cantidad_entregada:  number
+  precio:              string
+}
+
+/** Un ítem individual dentro de una entrega de Logística */
+export interface DeliveryLineItem {
+  descripcion: string
+  cantidad:    number
+  nota?:       string
+}
+
+/** Registro de una entrega de repuestos realizada por Logística */
+export interface PartsDelivery {
+  id:            string  // UUID de la entrega
+  fecha:         string  // ISO 8601
+  entregado_por: string  // username del usuario que registró
+  items:         DeliveryLineItem[]
+  observaciones?: string
+}
+
+/** Body del request POST /api/equipment/[id]/deliver-parts */
+export interface DeliverPartsInput {
+  items:          DeliveryLineItem[]
+  observaciones?: string
+}
+
+/** Labels legibles para el badge de partsStatus en la UI */
+export const PARTS_STATUS_LABELS: Record<PartsStatus, string> = {
+  SIN_REPUESTOS: 'Sin repuestos',
+  PARCIAL:       'Repuestos parciales',
+  COMPLETO:      'Repuestos completos',
+}
+
+/** Clases Tailwind para el badge de partsStatus */
+export const PARTS_STATUS_COLORS: Record<PartsStatus, { bg: string; text: string; border: string }> = {
+  SIN_REPUESTOS: { bg: 'bg-red-500/10',     text: 'text-red-400',     border: 'border-red-500/30' },
+  PARCIAL:       { bg: 'bg-yellow-500/10',  text: 'text-yellow-400',  border: 'border-yellow-500/30' },
+  COMPLETO:      { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+}
+
+// ─────────────────────────────────────────
 // Tipos de respuesta de la API
 // ─────────────────────────────────────────
 
@@ -101,9 +153,10 @@ export const ROLE_RELEVANT_STATES: Record<string, string[]> = {
   operaciones: [
     'En espera de diagnóstico',
     'En diagnóstico',
-    'En espera de repuesto',
     'Aprobado',
     'En mantenimiento',
+    // Compatibilidad con equipos en estados legacy de repuestos
+    'En espera de repuesto',
     'En espera de repuesto adicional',
   ],
   recepcion: [
@@ -113,6 +166,9 @@ export const ROLE_RELEVANT_STATES: Record<string, string[]> = {
     'Entregado',
   ],
   almacen: [
+    // Almacén ve equipos aprobados/en mantenimiento para registrar entregas de repuestos
+    'Aprobado',
+    'En mantenimiento',
     'En espera de repuesto',
     'En espera de repuesto adicional',
   ],

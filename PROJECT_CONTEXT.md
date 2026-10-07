@@ -98,7 +98,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `/api/public/equipment/fr/[fr]` | GET | **Público**: consulta de un único ingreso por FR number. Usado por el QR de equipos sin número de serie |
 | `/api/equipment/export` | GET | Exportar a Excel (.xlsx) |
 | `/api/equipment/import` | POST | Importar desde Excel |
-| `/api/equipment/create` | POST | Creación de equipo. Guarda `email_thread_id` y `report_url` |
+| `/api/equipment/create` | POST | Creación de equipo (individual o lote/batch). Genera un único correo consolidado, asigna `batch_id`, `email_thread_id` y `email_thread_subject` |
 | `/api/equipment/[id]/update-status` | POST | Cambio de estado. Detecta estado destino y dispara correo-reply específico en el hilo existente (`In-Reply-To` / `References` normalizados). Acepta JSON o FormData (informe ODP con PDF y `report_url`). Usa `supabase.auth.getUser()` |
 | `/api/equipment/[id]/update` | PUT | Edición completa por superadmin (incluye `report_url`) |
 | `/api/equipment/[id]/force-status` | POST | Override de estado (solo superadmin). Notificación por correo opcional |
@@ -190,6 +190,8 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `email_thread_id` | `TEXT` | 013 | Message-ID devuelto por Resend al enviar el correo de ingreso. Se usa formateado como `<id@domain>` en `In-Reply-To` y `References` en todos los replies del hilo |
 | `email_cc` | `TEXT[]` | 013 | Columna en BD (legacy / sin uso actual: CC fue removido del frontend y backend para simplificar el flujo) |
 | `report_url` | `TEXT` | 015 | Enlace directo al PDF del informe técnico (Google Drive u otro). Se muestra en la página pública por QR `/doc/[serial]` |
+| `batch_id` | `UUID` | 018 | Identificador del lote para agrupar múltiples equipos ingresados juntos en la misma orden |
+| `email_thread_subject` | `TEXT` | 018 | Asunto original exacto del hilo generado al ingresar el o los equipos. Se usa para prefijar `RE:` idéntico en todos los replies |
 
 ### Vista central: `equipment_with_status`
 JOIN de `equipment_records` + `workflow_states`. Agrega `status_name`, `status_color`, `is_terminal`, `days_elapsed`, `phase_1/2/3_days`, `assigned_technicians[]`, `priority_level`.
@@ -343,11 +345,12 @@ Todas las funciones retornan un objeto normalizado `MailerResult` (`{ success: b
 
 | Función | Descripción | Retorno |
 |---|---|---|
-| `sendEquipmentEntry(data)` | Correo de ingreso con tabla horizontal. | `Promise<MailerResult>` (incluye `messageId` para persistir `email_thread_id`) |
-| `sendInformeODP(data)` | Reply en hilo con diagnóstico + PDF adjunto (Buffer). | `Promise<MailerResult>` |
-| `sendAprobacionVentas(data)` | Reply en hilo con tabla de repuestos/servicios aprobados. | `Promise<MailerResult>` |
-| `sendEntregaLogistica(data)` | Reply en hilo con tabla de repuestos entregados y nota compatible. | `Promise<MailerResult>` |
-| `sendCulminadoODP(data)` | Reply en hilo con texto institucional de culminado + observaciones. | `Promise<MailerResult>` |
+| `sendBatchEquipmentEntry(data)` | Correo de ingreso consolidado con tabla HTML para 1 o varios equipos de un mismo cliente. Genera asunto con lista de FRs. | `Promise<MailerResult & { subject?: string }>` |
+| `sendEquipmentEntry(data)` | Correo de ingreso unitario (delega en `sendBatchEquipmentEntry`). | `Promise<MailerResult & { subject?: string }>` |
+| `sendInformeODP(data)` | Reply en hilo con diagnóstico + PDF adjunto (Buffer). Respeta `thread_subject` si existe. | `Promise<MailerResult>` |
+| `sendAprobacionVentas(data)` | Reply en hilo con tabla de repuestos/servicios aprobados. Respeta `thread_subject` si existe. | `Promise<MailerResult>` |
+| `sendEntregaLogistica(data)` | Reply en hilo con tabla de repuestos entregados y nota compatible. Respeta `thread_subject` si existe. | `Promise<MailerResult>` |
+| `sendCulminadoODP(data)` | Reply en hilo con texto institucional de culminado + observaciones. Respeta `thread_subject` si existe. | `Promise<MailerResult>` |
 | `sendStatusChange(data, isOverride)` | Correo interno por override (banner amarillo) o cambio manual. | `Promise<MailerResult>` |
 
 ### `update-status/route.ts` — lógica de ejecución y resiliencia
@@ -414,6 +417,12 @@ const ENTRY_TO = [ ... ]
   - Normalización RFC 2822: delimitación de `In-Reply-To` y `References` con `<...>` y formato `@dominio` para asegurar el agrupamiento de hilos en clientes SMTP.
   - Flujo simplificado: eliminación de CC en frontend y backend, envíos centralizados a `ENTRY_TO`.
   - Manejo de resiliencia: si el correo falla o la API Key no está configurada, **no se revierte el cambio de estado**, notificando una advertencia informativa (`toast.warning`) que permite al usuario reintentar sin inconsistencias.
+- **Sistema de Ingreso Múltiple por Lote y Hilo Compartido — v2.5**:
+  - Soporte en frontend (`EquipmentForm.tsx`) para registrar 1 o múltiples equipos de un mismo cliente en una sola operación sin saturación visual.
+  - Bloque común de cliente y tipo de servicio general con tarjetas modulares dinámicas, botón de agregar otro equipo, duplicación de datos y detalles colapsables.
+  - Generación de un único correo de ingreso con tabla consolidada de todos los equipos y asunto con el listado de FRs.
+  - Persistencia de `batch_id` y `email_thread_subject` en base de datos (`018_batch_equipment_and_thread_subject.sql`).
+  - Todos los equipos del lote comparten el mismo `email_thread_id` y su asunto base original, garantizando que cambios posteriores de estado (diagnóstico ODP con PDF, aprobación, repuestos, culminado) sigan respondiendo en el mismo hilo en Gmail/Outlook.
 - **Sistema de Códigos QR y Documentación Técnica Pública — v2.5**:
   - Librería `qrcode.react` instalada y configurada
   - Modal `QRPrintModal` para generar e imprimir etiquetas físicas con datos del equipo

@@ -136,7 +136,23 @@ export default function EquipmentTable({
                       {eq.brand} - {eq.model}
                     </td>
                     <td className="px-5 py-4">
-                      <StatusBadge status={eq.status_name} color={eq.status_color} />
+                      <div className="flex flex-col gap-1">
+                        <StatusBadge status={eq.status_name} color={eq.status_color} />
+                        {eq.approved_parts && eq.approved_parts.length > 0 && (() => {
+                          const ps = eq.parts_status ?? 'SIN_REPUESTOS'
+                          const partsCfg: Record<string, { cls: string; label: string }> = {
+                            SIN_REPUESTOS: { cls: 'text-red-400 border-red-500/20 bg-red-500/5',       label: '📦 Sin repuestos' },
+                            PARCIAL:       { cls: 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10', label: '📦 Parcial' },
+                            COMPLETO:      { cls: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10', label: '📦 Listo' },
+                          }
+                          const cfg = partsCfg[ps] ?? partsCfg['SIN_REPUESTOS']
+                          return (
+                            <span className={`inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded border ${cfg.cls}`}>
+                              {cfg.label}
+                            </span>
+                          )
+                        })()}
+                      </div>
                     </td>
                     {showTechs && (
                       <td className="px-5 py-4 text-text-secondary max-w-[120px] truncate">

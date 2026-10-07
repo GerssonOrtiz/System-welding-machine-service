@@ -2,7 +2,9 @@
 'use client'
 
 import React, { useState } from 'react'
+import { Package } from 'lucide-react'
 import EquipmentDetail from '@/components/equipment/EquipmentDetail'
+import type { PartsStatus } from '@/types/equipment'
 
 interface PizarraCardProps {
   equipment: {
@@ -18,6 +20,8 @@ interface PizarraCardProps {
     assigned_technicians?: string[] | null
     priority_level?: number
     is_priority?: boolean // Maintain compatibility
+    parts_status?: string | null
+    approved_parts?: any[] | null
   }
 }
 
@@ -73,7 +77,7 @@ export default function PizarraCard({ equipment }: PizarraCardProps) {
             <span className="text-[11px] font-semibold text-text-primary truncate block uppercase leading-none mb-0.5">
               {equipment.client_name}
             </span>
-            <div className="flex items-center gap-2 overflow-hidden">
+            <div className="flex items-center gap-2 overflow-hidden flex-wrap">
               <span className="text-[9px] text-text-muted truncate shrink-0 uppercase tracking-tight">
                 {equipment.brand} {equipment.model}
               </span>
@@ -89,6 +93,27 @@ export default function PizarraCard({ equipment }: PizarraCardProps) {
                   </div>
                 </div>
               )}
+              {/* Chip de estado de repuestos — solo si hay approved_parts */}
+              {equipment.approved_parts && equipment.approved_parts.length > 0 && (() => {
+                const ps = (equipment.parts_status ?? 'SIN_REPUESTOS') as PartsStatus
+                const chipConfig: Record<PartsStatus, { cls: string; icon: string }> = {
+                  SIN_REPUESTOS: { cls: 'text-red-400/70 border-red-500/20 bg-red-500/5',    icon: '📦' },
+                  PARCIAL:       { cls: 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10', icon: '📦' },
+                  COMPLETO:      { cls: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10', icon: '📦' },
+                }
+                const cfg = chipConfig[ps] ?? chipConfig['SIN_REPUESTOS']
+                const label = ps === 'COMPLETO' ? 'Listo' : ps === 'PARCIAL' ? 'Parcial' : '—'
+                if (ps === 'SIN_REPUESTOS') return (
+                  <span className={`flex items-center gap-0.5 text-[8px] font-bold px-1 rounded border ${cfg.cls}`}>
+                    <Package size={7} /> Sin rep.
+                  </span>
+                )
+                return (
+                  <span className={`flex items-center gap-0.5 text-[8px] font-bold px-1 rounded border ${cfg.cls}`}>
+                    <Package size={7} /> {label}
+                  </span>
+                )
+              })()}
             </div>
           </div>
         </div>

@@ -20,6 +20,7 @@ import {
   Dna,
   User,
   Wrench,
+  Package,
 } from 'lucide-react'
 import { useEquipmentDetail } from '@/hooks/useEquipmentList'
 import { useUser } from '@/hooks/useUser'
@@ -28,6 +29,13 @@ import StatusChangeModal from './StatusChangeModal'
 import ClientSelector from './ClientSelector'
 import BrandSelector from './BrandSelector'
 import QRPrintModal from './QRPrintModal'
+import ModalEntregaRepuestos from './modals/ModalEntregaRepuestos'
+import {
+  PARTS_STATUS_LABELS,
+  PARTS_STATUS_COLORS,
+  type PartsStatus,
+  type ApprovedPartItem,
+} from '@/types/equipment'
 
 interface EquipmentDetailProps {
   isOpen: boolean
@@ -88,6 +96,7 @@ export default function EquipmentDetail({
   const { equipment, history, nextStates, canAdvance, isLoading, mutate } = useEquipmentDetail(equipmentId)
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
   const [isQrModalOpen, setIsQrModalOpen] = useState(false)
+  const [isPartsModalOpen, setIsPartsModalOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -265,6 +274,18 @@ export default function EquipmentDetail({
                   </span>
                 )}
                 {equipment && <StatusBadge status={equipment.status_name} color={equipment.status_color} />}
+                {/* Badge de estado de repuestos — visible cuando hay approved_parts */}
+                {equipment && (equipment as any).approved_parts && (equipment as any).approved_parts.length > 0 && (() => {
+                  const ps = ((equipment as any).parts_status ?? 'SIN_REPUESTOS') as PartsStatus
+                  const colors = PARTS_STATUS_COLORS[ps] ?? PARTS_STATUS_COLORS['SIN_REPUESTOS']
+                  const label = PARTS_STATUS_LABELS[ps] ?? 'Sin repuestos'
+                  return (
+                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${colors.bg} ${colors.text} ${colors.border}`}>
+                      <Package size={9} />
+                      {label}
+                    </span>
+                  )
+                })()}
               </div>
               <button
                 onClick={onClose}
@@ -329,6 +350,20 @@ export default function EquipmentDetail({
                         )}
                       </>
                     )}
+
+                  {/* Botón dedicado para Logística: Registrar Entrega de Repuestos */}
+                    {['almacen', 'admin', 'superadmin'].includes(role || '') &&
+                      (equipment as any).approved_parts &&
+                      (equipment as any).approved_parts.length > 0 &&
+                      !isEditing && (
+                        <button
+                          onClick={() => setIsPartsModalOpen(true)}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-neon-blue/50 text-neon-blue hover:bg-neon-blue/10 text-xs font-bold uppercase transition-all"
+                        >
+                          <Package size={13} />
+                          Registrar Entrega de Repuestos
+                        </button>
+                      )}
 
                     {(canAdvance || isSuperadmin) && !isEditing && (
                       <button
@@ -629,6 +664,85 @@ export default function EquipmentDetail({
                     </div>
                   </CollapsibleSection>
 
+                  {/* ── Control de Repuestos — colapsable, abierto por defecto si hay datos ── */}
+                  {(equipment as any).approved_parts && (equipment as any).approved_parts.length > 0 && (() => {
+                    const approvedParts = (equipment as any).approved_parts as ApprovedPartItem[]
+                    const ps = ((equipment as any).parts_status ?? 'SIN_REPUESTOS') as PartsStatus
+                    const colors = PARTS_STATUS_COLORS[ps] ?? PARTS_STATUS_COLORS['SIN_REPUESTOS']
+                    return (
+                      <CollapsibleSection
+                        title="Control de Repuestos"
+                        icon={<Package size={12} />}
+                        defaultOpen={true}
+                        badge={PARTS_STATUS_LABELS[ps]}
+                      >
+                        <div className="space-y-3">
+                          <div className="rounded-lg border border-border-subtle overflow-hidden">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-bg-elevated/40 text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                                  <th className="px-3 py-2 text-left">Repuesto / Insumo</th>
+                                  <th className="px-3 py-2 text-center">Precio</th>
+                                  <th className="px-3 py-2 text-center">Solicitado</th>
+                                  <th className="px-3 py-2 text-center">Entregado</th>
+                                  <th className="px-3 py-2 text-center">Saldo</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border-subtle/50">
+                                {approvedParts.map((part, idx) => {
+                                  const saldo = part.cantidad_solicitada - part.cantidad_entregada
+                                  return (
+                                    <tr key={part.id || idx} className="hover:bg-bg-elevated/20">
+                                      <td className="px-3 py-2 text-text-primary">{part.descripcion}</td>
+                                      <td className="px-3 py-2 text-center text-text-secondary font-mono text-[11px]">
+                                        S/ {part.precio}
+                                      </td>
+                                      <td className="px-3 py-2 text-center text-text-secondary font-mono font-bold">
+                                        {part.cantidad_solicitada}
+                                      </td>
+                                      <td className="px-3 py-2 text-center font-mono font-bold text-emerald-400">
+                                        {part.cantidad_entregada}
+                                      </td>
+                                      <td className="px-3 py-2 text-center font-mono font-bold">
+                                        {saldo > 0 ? (
+                                          <span className="text-yellow-400">{saldo} Pendiente{saldo > 1 ? 's' : ''}</span>
+                                        ) : (
+                                          <span className="text-emerald-400">✓ Completo</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          {/* Historial de entregas */}
+                          {(equipment as any).parts_deliveries && (equipment as any).parts_deliveries.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                                Historial de Entregas
+                              </p>
+                              {((equipment as any).parts_deliveries as any[]).map((d: any, idx: number) => (
+                                <div key={d.id || idx} className="p-2 rounded-lg bg-bg-elevated/30 border border-border-subtle/50 text-[10px] space-y-0.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-bold text-text-primary">
+                                      {d.items?.map((i: any) => `${i.cantidad}× ${i.descripcion}`).join(', ')}
+                                    </span>
+                                    <span className="text-text-muted shrink-0">{formatDate(d.fecha)}</span>
+                                  </div>
+                                  <span className="text-text-secondary">Por: <strong>{d.entregado_por}</strong></span>
+                                  {d.observaciones && (
+                                    <p className="text-text-muted italic">{d.observaciones}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </CollapsibleSection>
+                    )
+                  })()}
+
                   {/* ── Historial de Estados — colapsable, cerrado por defecto ── */}
                   <CollapsibleSection
                     title="Historial de Estados"
@@ -690,6 +804,21 @@ export default function EquipmentDetail({
           currentStatusColor={equipment.status_color}
           nextStates={nextStates}
           onSuccess={handleStatusChangeSuccess}
+        />
+      )}
+
+      {/* Modal de entrega de repuestos (Logística) */}
+      {equipment && (equipment as any).approved_parts && (equipment as any).approved_parts.length > 0 && (
+        <ModalEntregaRepuestos
+          isOpen={isPartsModalOpen}
+          onClose={() => setIsPartsModalOpen(false)}
+          equipmentId={equipment.id}
+          frNumber={equipment.fr_number || ''}
+          approvedParts={(equipment as any).approved_parts as ApprovedPartItem[]}
+          onSuccess={() => {
+            mutate()
+            if (onStatusUpdated) onStatusUpdated()
+          }}
         />
       )}
 
