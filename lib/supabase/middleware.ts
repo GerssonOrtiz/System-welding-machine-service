@@ -1,5 +1,5 @@
 // lib/supabase/middleware.ts
-// updateSession() — refresco automático de sesión en cada request
+// updateSession() — refresco automático de sesión en cada request para Proxy/Middleware
 // IMPORTANTE: no escribir lógica entre createServerClient y getUser()
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'

@@ -18,26 +18,36 @@ export function useUser() {
 
     async function loadUserProfile(userId: string) {
       try {
-        const { data: profileData } = await supabase
+        const { data: profileData, error } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('id', userId)
           .single()
 
+        if (error) {
+          console.error('Error fetching user profile:', error)
+        }
+
         if (isMounted) {
-          setProfile(profileData)
+          setProfile(profileData || null)
         }
       } catch (err) {
-        console.error('Error fetching user profile:', err)
+        console.error('Unexpected error fetching user profile:', err)
+        if (isMounted) {
+          setProfile(null)
+        }
       }
     }
 
     async function initSession() {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          console.error('Error fetching user session:', error)
+        }
         if (!isMounted) return
 
-        if (session) {
+        if (session?.user) {
           setUser(session.user)
           await loadUserProfile(session.user.id)
         } else {
@@ -45,7 +55,11 @@ export function useUser() {
           setProfile(null)
         }
       } catch (err) {
-        console.error('Error fetching user session:', err)
+        console.error('Unexpected error initializing session:', err)
+        if (isMounted) {
+          setUser(null)
+          setProfile(null)
+        }
       } finally {
         if (isMounted) {
           setLoading(false)
@@ -59,14 +73,15 @@ export function useUser() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (!isMounted) return
-        if (session) {
+        if (session?.user) {
           setUser(session.user)
           await loadUserProfile(session.user.id)
-          if (isMounted) setLoading(false)
         } else {
           setUser(null)
           setProfile(null)
-          if (isMounted) setLoading(false)
+        }
+        if (isMounted) {
+          setLoading(false)
         }
       }
     )

@@ -1,6 +1,5 @@
-// middleware.ts — raíz del proyecto
+// proxy.ts — raíz del proyecto (Next.js 16 Proxy convention)
 // Protección de rutas + refresco de sesión en cada request
-// Según GUIA_SUPABASE §5 y ARQUITECTURA_CABELAB_V2 §9
 import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 import { ROLE_HOME_ROUTE } from '@/types/user'
@@ -11,7 +10,7 @@ const PUBLIC_ROUTES = ['/login']
 // Rutas exclusivas del superadmin
 const SUPERADMIN_ROUTES = ['/admin/usuarios', '/admin/workflow', '/admin/configuracion']
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { supabaseResponse, user, supabase } = await updateSession(request)
   const pathname = request.nextUrl.pathname
 
@@ -27,9 +26,8 @@ export async function middleware(request: NextRequest) {
 
   // 1. Ruta pública de login: dejar pasar o redirigir si ya tiene sesión
   if (PUBLIC_ROUTES.includes(pathname)) {
-    // Si ya tiene sesión activa, redirigir al inicio correspondiente a su rol o al dashboard base
+    // Si ya tiene sesión activa, redirigir al inicio correspondiente a su rol
     if (user) {
-      // Intentamos consultar el perfil para redirigir a su ruta específica
       try {
         const { data: profile } = await supabase
           .from('user_profiles')
@@ -38,20 +36,33 @@ export async function middleware(request: NextRequest) {
           .single()
 
         if (profile?.is_active) {
-          const destination = ROLE_HOME_ROUTE[profile.role as keyof typeof ROLE_HOME_ROUTE] || '/'
-          return NextResponse.redirect(new URL(destination, request.url))
+          const destination = ROLE_HOME_ROUTE[profile.role as keyof typeof ROLE_HOME_ROUTE] || '/pizarra'
+          const redirectResponse = NextResponse.redirect(new URL(destination, request.url))
+          // Copiar cookies refrescadas de Supabase al redirect
+          supabaseResponse.cookies.getAll().forEach((cookie) => {
+            redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+          })
+          return redirectResponse
         }
-      } catch (e) {
-        // Ignorar y usar redirección por defecto
+      } catch {
+        // Ignorar y continuar
       }
-      return NextResponse.redirect(new URL('/', request.url))
+      const defaultRedirect = NextResponse.redirect(new URL('/login', request.url))
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        defaultRedirect.cookies.set(cookie.name, cookie.value, cookie)
+      })
+      return defaultRedirect
     }
     return supabaseResponse
   }
 
   // 2. Sin sesión: redirigir a login
   if (!user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const loginRedirect = NextResponse.redirect(new URL('/login', request.url))
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      loginRedirect.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return loginRedirect
   }
 
   // 3. Verificar is_active y rol del usuario en user_profiles
@@ -63,18 +74,34 @@ export async function middleware(request: NextRequest) {
 
   // 4. Usuario no aprobado o bloqueado: redirigir a login con mensaje
   if (!profile?.is_active) {
-    // Si tiene sesión activa pero no está aprobado, hacemos signOut para borrar la cookie de sesión
-    // y evitar un loop infinito de redirecciones
     const response = NextResponse.redirect(new URL('/login?error=no-aprobado', request.url))
-    // Limpiamos las cookies del cliente
-    response.cookies.delete('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '-auth-token')
+    // Limpiar todas las cookies de supabase auth
+    request.cookies.getAll().forEach((c) => {
+      if (c.name.startsWith('sb-')) {
+        response.cookies.delete(c.name)
+      }
+    })
     return response
   }
 
-  // 5. Rutas de superadmin: verificar is_superadmin
+  // 5. Redirección en raíz (/) según rol del usuario autenticado
+  if (pathname === '/') {
+    const destination = ROLE_HOME_ROUTE[profile.role as keyof typeof ROLE_HOME_ROUTE] || '/pizarra'
+    const homeRedirect = NextResponse.redirect(new URL(destination, request.url))
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      homeRedirect.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return homeRedirect
+  }
+
+  // 6. Rutas de superadmin: verificar is_superadmin
   const isSuperadminRoute = SUPERADMIN_ROUTES.some(r => pathname.startsWith(r))
   if (isSuperadminRoute && !profile.is_superadmin) {
-    return NextResponse.redirect(new URL('/', request.url))
+    const unauthorizedRedirect = NextResponse.redirect(new URL('/pizarra', request.url))
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      unauthorizedRedirect.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return unauthorizedRedirect
   }
 
   return supabaseResponse
