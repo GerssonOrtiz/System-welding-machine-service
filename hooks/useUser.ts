@@ -1,5 +1,7 @@
 // hooks/useUser.ts
-// Hook para obtener el usuario autenticado y su perfil en user_profiles desde componentes cliente
+// Hook para obtener el usuario autenticado y su perfil en user_profiles desde componentes cliente.
+// PATRÓN CORRECTO: usar SOLO onAuthStateChange (event: INITIAL_SESSION) como fuente de verdad.
+// No llamar getSession() en paralelo — genera race conditions y loading infinito.
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -25,63 +27,44 @@ export function useUser() {
           .single()
 
         if (error) {
-          console.error('Error fetching user profile:', error)
+          console.error('[useUser] Error fetching profile:', error.message)
         }
-
         if (isMounted) {
           setProfile(profileData || null)
         }
       } catch (err) {
-        console.error('Unexpected error fetching user profile:', err)
+        console.error('[useUser] Unexpected error fetching profile:', err)
         if (isMounted) {
           setProfile(null)
         }
       }
     }
 
-    async function initSession() {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) {
-          console.error('Error fetching user session:', error)
-        }
-        if (!isMounted) return
-
-        if (session?.user) {
-          setUser(session.user)
-          await loadUserProfile(session.user.id)
-        } else {
-          setUser(null)
-          setProfile(null)
-        }
-      } catch (err) {
-        console.error('Unexpected error initializing session:', err)
-        if (isMounted) {
-          setUser(null)
-          setProfile(null)
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    initSession()
-
-    // Suscribirse a cambios de estado de auth
+    // onAuthStateChange dispara INITIAL_SESSION inmediatamente con la sesión actual
+    // (desde localStorage/cookies). Es la única fuente de verdad — no llamar getSession()
+    // en paralelo para evitar race conditions que dejan loading=true indefinidamente.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (!isMounted) return
-        if (session?.user) {
-          setUser(session.user)
-          await loadUserProfile(session.user.id)
-        } else {
-          setUser(null)
-          setProfile(null)
-        }
-        if (isMounted) {
-          setLoading(false)
+        try {
+          if (session?.user) {
+            setUser(session.user)
+            await loadUserProfile(session.user.id)
+          } else {
+            setUser(null)
+            setProfile(null)
+          }
+        } catch (err) {
+          console.error('[useUser] Error in onAuthStateChange:', err)
+          if (isMounted) {
+            setUser(null)
+            setProfile(null)
+          }
+        } finally {
+          // SIEMPRE desactivar loading, independientemente del resultado
+          if (isMounted) {
+            setLoading(false)
+          }
         }
       }
     )
