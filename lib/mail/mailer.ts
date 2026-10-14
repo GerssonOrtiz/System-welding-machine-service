@@ -146,6 +146,12 @@ export interface EntregaLogisticaData extends ThreadBaseData {
   observaciones: string
 }
 
+export interface SolicitudRepuestosData extends ThreadBaseData {
+  /** Lista de componentes o repuestos solicitados para el mantenimiento */
+  items: Array<{ descripcion: string; cantidad: string; nota?: string }>
+  observaciones: string
+}
+
 export interface CulminadoODPData extends ThreadBaseData {
   observaciones: string
 }
@@ -339,6 +345,54 @@ function buildEntregaLogisticaHtml(data: EntregaLogisticaData): string {
               <th style="${tableHeaderStyle}">Descripción</th>
               <th style="${tableHeaderStyle} text-align: center;">Cantidad</th>
               <th style="${tableHeaderStyle}">Nota / Reemplazo compatible</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRows}
+          </tbody>
+        </table>
+      </div>
+
+      ${data.observaciones ? `
+      <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
+        <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones:</p>
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
+      </div>` : ''}
+
+      ${buildSignature()}
+    </div>
+  `
+}
+
+function buildSolicitudRepuestosHtml(data: SolicitudRepuestosData): string {
+  const itemRows = data.items.map((item, i) => `
+    <tr style="${i % 2 === 0 ? 'background-color: #F8FAFC;' : ''}">
+      <td style="${tableCellStyle}">${item.descripcion}</td>
+      <td style="${tableCellStyle} text-align: center;">${item.cantidad}</td>
+      <td style="${tableCellStyle} color: #6B7280; font-style: italic;">${item.nota ?? '-'}</td>
+    </tr>
+  `).join('')
+
+  return `
+    <div style="font-family: Calibri, sans-serif; color: #1f375f; line-height: 1.5;">
+      <p>Estimados,</p>
+      <p>Se ha registrado el requerimiento de componentes y repuestos para el equipo <strong>${data.fr_number}</strong> — ${data.client_name} (Estado: <strong>En espera de repuesto</strong>).</p>
+
+      <div style="border-left: 4px solid #F59E0B; background-color: #FFFBEB; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+        <span style="font-size: 15px; font-weight: bold; color: #D97706;">⏳ SOLICITUD DE REPUESTOS — REQUERIMIENTO</span>
+        <p style="margin: 6px 0 0 0; font-size: 11px; color: #555;">
+          ${data.brand} ${data.model} &nbsp;|&nbsp; Serie: <span style="font-family: monospace;">${data.serial_number ?? 'N/S'}</span>
+        </p>
+      </div>
+
+      <p style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #1f375f; margin-bottom: 6px;">Lista de componentes solicitados:</p>
+      <div style="overflow-x: auto; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="${tableHeaderStyle}">Descripción / Componente</th>
+              <th style="${tableHeaderStyle} text-align: center;">Cantidad</th>
+              <th style="${tableHeaderStyle}">Detalle / Especificación</th>
             </tr>
           </thead>
           <tbody>
@@ -707,6 +761,38 @@ export const mailer = {
     } catch (error: any) {
       console.error('[Mailer] sendEntregaLogistica error:', error)
       return { success: false, error: error?.message || 'Error al enviar correo de entrega de repuestos' }
+    }
+  },
+
+  /**
+   * Taller/Operaciones responde el hilo solicitando la lista de repuestos/componentes requeridos.
+   * Estado: "En espera de repuesto"
+   */
+  async sendSolicitudRepuestos(data: SolicitudRepuestosData): Promise<MailerResult> {
+    if (!resend) {
+      console.warn('[Mailer] sendSolicitudRepuestos — RESEND_API_KEY no configurada, correo omitido.')
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
+    }
+    try {
+      const subject = data.thread_subject
+        ? `RE: ${data.thread_subject.replace(/^RE:\s*/i, '')}`
+        : `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
+
+      const res = await resend.emails.send({
+        from: FROM_ADDRESS,
+        to: ENTRY_TO,
+        subject,
+        html: buildSolicitudRepuestosHtml(data),
+        headers: threadHeaders(data.thread_id),
+      })
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendSolicitudRepuestos Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error de envío de solicitud de repuestos' }
+      }
+      return { success: true, messageId: (res as any)?.data?.id }
+    } catch (error: any) {
+      console.error('[Mailer] sendSolicitudRepuestos error:', error)
+      return { success: false, error: error?.message || 'Error al enviar correo de solicitud de repuestos' }
     }
   },
 

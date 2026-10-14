@@ -41,21 +41,21 @@ export default function ModalEntregaLogistica({
   return (
     <div className="space-y-4 pt-3 border-t border-neon-blue/20">
       <p className="text-[10px] font-bold text-neon-blue uppercase tracking-wider flex items-center gap-1.5">
-        <Package size={12} /> Entrega de Repuestos — Correo Logística
+        <Package size={12} /> Solicitud de Repuestos — Notificación
       </p>
 
       {/* Tabla de ítems */}
       <div className="space-y-1.5">
         <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-          Repuestos entregados *
+          Repuestos solicitados *
         </label>
 
         <div className="space-y-2">
           {/* Header */}
           <div className="grid grid-cols-[1fr_70px_1fr_32px] gap-1.5 px-1">
-            <span className="text-[9px] font-bold text-text-muted uppercase">Descripción</span>
+            <span className="text-[9px] font-bold text-text-muted uppercase">Descripción / Componente</span>
             <span className="text-[9px] font-bold text-text-muted uppercase text-center">Cant.</span>
-            <span className="text-[9px] font-bold text-text-muted uppercase">Nota / Compatible</span>
+            <span className="text-[9px] font-bold text-text-muted uppercase">Detalle / Especificación</span>
             <span />
           </div>
 
@@ -66,7 +66,7 @@ export default function ModalEntregaLogistica({
                 type="text"
                 value={item.descripcion}
                 onChange={(e) => updateRow(idx, 'descripcion', e.target.value)}
-                placeholder="Ej: Carbón de grafito"
+                placeholder="Ej: Carbón de grafito, Tarjeta de control"
                 className="bg-bg-elevated border border-border-subtle rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:outline-none transition-all"
               />
               <input
@@ -80,7 +80,7 @@ export default function ModalEntregaLogistica({
                 type="text"
                 value={item.nota}
                 onChange={(e) => updateRow(idx, 'nota', e.target.value)}
-                placeholder="Reemplazo compatible (opcional)"
+                placeholder="Código, parte o detalle (opcional)"
                 className="bg-bg-elevated border border-border-subtle rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:outline-none transition-all"
               />
               <button
@@ -112,7 +112,7 @@ export default function ModalEntregaLogistica({
         <textarea
           value={observaciones}
           onChange={(e) => onObservacionesChange(e.target.value)}
-          placeholder="Notas adicionales sobre la entrega..."
+          placeholder="Notas adicionales sobre los componentes requeridos..."
           rows={2}
           className="w-full bg-bg-elevated border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:shadow-[0_0_8px_rgba(0,229,255,0.2)] focus:outline-none transition-all resize-none"
         />

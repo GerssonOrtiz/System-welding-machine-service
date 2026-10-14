@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireSuperadmin } from '@/lib/api/auth'
+import { requireAuth } from '@/lib/api/auth'
+import { mailer } from '@/lib/mail/mailer'
 
 export async function PUT(
   request: NextRequest,
@@ -7,11 +8,57 @@ export async function PUT(
 ) {
   try {
     const { id: equipmentId } = await params
-    const authResult = await requireSuperadmin()
+    const authResult = await requireAuth()
     if (!authResult.ok) return authResult.error
-    const { supabase } = authResult.ctx
+    const { supabase, profile } = authResult.ctx
 
-    // 4. Leer cuerpo
+    const isSuperadmin = profile.role === 'superadmin' && profile.is_superadmin
+    const isAdmin = profile.role === 'admin'
+    const isRecepcion = profile.role === 'recepcion'
+
+    // 1. Obtener el equipo actual con su estado
+    const { data: currentEquipment, error: fetchError } = await (supabase
+      .from('equipment_records') as any)
+      .select(`
+        *,
+        workflow_states:current_status_id (
+          id,
+          name,
+          is_initial
+        )
+      `)
+      .eq('id', equipmentId)
+      .single()
+
+    if (fetchError || !currentEquipment) {
+      return NextResponse.json({ success: false, error: 'Equipo no encontrado' }, { status: 404 })
+    }
+
+    const isInitialState = currentEquipment.workflow_states?.is_initial === true ||
+      currentEquipment.workflow_states?.name === 'En espera de diagnóstico'
+
+    // 2. Verificar permisos:
+    // Superadmin y admin pueden editar siempre.
+    // Recepción solo puede editar si el equipo está en estado inicial ("En espera de diagnóstico").
+    if (!isSuperadmin && !isAdmin) {
+      if (!isRecepcion) {
+        return NextResponse.json(
+          { success: false, error: 'No tienes permisos para modificar este equipo' },
+          { status: 403 }
+        )
+      }
+      if (!isInitialState) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Recepción solo puede modificar equipos que se encuentren en estado "En espera de diagnóstico"',
+          },
+          { status: 403 }
+        )
+      }
+    }
+
+    // 3. Leer cuerpo
     const body = await request.json()
 
     // Normalizar a mayúsculas como en la creación
@@ -39,22 +86,24 @@ export async function PUT(
     }
 
     // Timestamps operativos (solo superadmin puede enviarlos)
-    if (body.start_diagnosis_at !== undefined) updateData.start_diagnosis_at = body.start_diagnosis_at
-    if (body.end_diagnosis_at !== undefined) updateData.end_diagnosis_at = body.end_diagnosis_at
-    if (body.pending_approval_at !== undefined) updateData.pending_approval_at = body.pending_approval_at
-    if (body.approval_at !== undefined) updateData.approval_at = body.approval_at
-    if (body.start_maintenance_at !== undefined) updateData.start_maintenance_at = body.start_maintenance_at
-    if (body.end_maintenance_at !== undefined) updateData.end_maintenance_at = body.end_maintenance_at
-    if (body.finalized_at !== undefined) updateData.finalized_at = body.finalized_at
+    if (isSuperadmin) {
+      if (body.start_diagnosis_at !== undefined) updateData.start_diagnosis_at = body.start_diagnosis_at
+      if (body.end_diagnosis_at !== undefined) updateData.end_diagnosis_at = body.end_diagnosis_at
+      if (body.pending_approval_at !== undefined) updateData.pending_approval_at = body.pending_approval_at
+      if (body.approval_at !== undefined) updateData.approval_at = body.approval_at
+      if (body.start_maintenance_at !== undefined) updateData.start_maintenance_at = body.start_maintenance_at
+      if (body.end_maintenance_at !== undefined) updateData.end_maintenance_at = body.end_maintenance_at
+      if (body.finalized_at !== undefined) updateData.finalized_at = body.finalized_at
+    }
 
-    // 5. Validaciones mínimas
+    // 4. Validaciones mínimas
     if (updateData.client_name === '') return NextResponse.json({ success: false, error: 'El cliente no puede estar vacío' }, { status: 400 })
     if (updateData.fr_number === '') return NextResponse.json({ success: false, error: 'El número de FR no puede estar vacío' }, { status: 400 })
 
-    // 6. Verificar si el nuevo FR ya existe en otro equipo
+    // 5. Verificar si el nuevo FR ya existe en otro equipo
     if (updateData.fr_number) {
-      const { data: existingFR } = await supabase
-        .from('equipment_records')
+      const { data: existingFR } = await (supabase
+        .from('equipment_records') as any)
         .select('id')
         .eq('fr_number', updateData.fr_number)
         .neq('id', equipmentId)
@@ -65,6 +114,49 @@ export async function PUT(
           { success: false, error: `Ya existe otro equipo registrado con la Ficha de Recepción ${updateData.fr_number}` },
           { status: 409 }
         )
+      }
+    }
+
+    // 6. Auto-registrar marca y modelo en catálogo si cambiaron y no son S/M
+    const finalBrand = updateData.brand ?? currentEquipment.brand
+    const finalModel = updateData.model ?? currentEquipment.model
+    if (finalBrand && finalBrand !== 'S/M') {
+      try {
+        let brand_id: string | null = null
+        const { data: existingBrand } = await supabase
+          .from('catalog_brands')
+          .select('id')
+          .eq('name', finalBrand)
+          .maybeSingle()
+
+        if (!existingBrand) {
+          const { data: newBrand } = await supabase
+            .from('catalog_brands')
+            .insert({ name: finalBrand })
+            .select('id')
+            .single()
+          brand_id = newBrand?.id ?? null
+        } else {
+          brand_id = existingBrand.id
+        }
+
+        if (brand_id && finalModel && finalModel !== 'S/M') {
+          const { data: existingModel } = await supabase
+            .from('catalog_models')
+            .select('id')
+            .eq('brand_id', brand_id)
+            .eq('name', finalModel)
+            .maybeSingle()
+
+          if (!existingModel) {
+            await supabase.from('catalog_models').insert({
+              brand_id,
+              name: finalModel,
+            })
+          }
+        }
+      } catch (catErr) {
+        console.error('[PUT /api/equipment/[id]/update] Error auto-registering brand/model:', catErr)
       }
     }
 
@@ -79,7 +171,58 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Error al actualizar el equipo en la base de datos: ' + updateError.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    // 8. Reenvío opcional de correo de ingreso si fue solicitado
+    let emailSent = false
+    let mailWarning: string | null = null
+
+    if (body.resend_email === true) {
+      try {
+        const eqForMail = {
+          fr_number: updateData.fr_number ?? currentEquipment.fr_number,
+          brand: updateData.brand ?? currentEquipment.brand,
+          model: updateData.model ?? currentEquipment.model,
+          serial_number: updateData.serial_number ?? currentEquipment.serial_number,
+          service_type: updateData.service_type ?? currentEquipment.service_type,
+          client_report: updateData.client_report ?? currentEquipment.client_report ?? 'SIN REPORTE',
+          accessories: updateData.accessories ?? currentEquipment.accessories ?? 'NINGUNO',
+          is_priority: updateData.is_priority ?? currentEquipment.is_priority ?? false,
+          date_in: updateData.date_in ?? currentEquipment.date_in,
+        }
+
+        const mailResult = await mailer.sendBatchEquipmentEntry({
+          client_name: updateData.client_name ?? currentEquipment.client_name,
+          equipments: [eqForMail],
+        })
+
+        if (mailResult.success) {
+          emailSent = true
+          if (mailResult.messageId) {
+            const updatePayload: Record<string, any> = {
+              email_thread_id: mailResult.messageId,
+            }
+            if (mailResult.subject) {
+              updatePayload.email_thread_subject = mailResult.subject
+            }
+            await (supabase.from('equipment_records') as any)
+              .update(updatePayload)
+              .eq('id', equipmentId)
+          }
+        } else if (mailResult.skipped) {
+          mailWarning = 'Equipo actualizado, pero el correo no se envió porque RESEND_API_KEY no está configurada.'
+        } else if (mailResult.error) {
+          mailWarning = `Equipo actualizado, pero ocurrió un problema al reenviar el correo: ${mailResult.error}`
+        }
+      } catch (mailErr: any) {
+        console.error('[PUT /api/equipment/[id]/update] Error resending entry email:', mailErr)
+        mailWarning = `Equipo actualizado, pero no se pudo reenviar el correo: ${mailErr?.message || 'Error desconocido'}`
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      emailSent,
+      warning: mailWarning,
+    })
 
   } catch (err: any) {
     console.error('[PUT /api/equipment/[id]/update] Unexpected error:', err)

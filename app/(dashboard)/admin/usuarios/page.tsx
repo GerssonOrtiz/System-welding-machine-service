@@ -1,11 +1,12 @@
-﻿// app/(dashboard)/admin/usuarios/page.tsx
+// app/(dashboard)/admin/usuarios/page.tsx
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import { useUser } from '@/hooks/useUser'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { toast } from 'sonner'
-import TechnicianManager from '@/components/admin/TechnicianManager'
+import TechnicianManager from '@/components/admin/TechnicianManager'
+import HolidayCalendarManager from '@/components/admin/HolidayCalendarManager'
 
 export default function AdminUsuariosPage() {
   usePageTitle('Usuarios')
@@ -345,7 +346,8 @@ export default function AdminUsuariosPage() {
       )}
 
       {/*  GESTIÓN DE PERSONAL TÉCNICO */}
-      <TechnicianManager />
+      <TechnicianManager />
+      <HolidayCalendarManager />
 
       {loading ? (
         <div className="text-center py-12 text-sm text-neon-blue font-mono tracking-widest animate-pulse">

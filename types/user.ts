@@ -103,6 +103,11 @@ export function canCreateEquipment(role: UserRole): boolean {
   return ['superadmin', 'admin', 'recepcion'].includes(role)
 }
 
+/** Determina si un rol puede editar equipos en su estado inicial (En espera de diagnóstico) */
+export function canEditInitialEquipment(role: UserRole): boolean {
+  return ['superadmin', 'admin', 'recepcion'].includes(role)
+}
+
 /** Determina si un rol puede eliminar equipos */
 export function canDeleteEquipment(role: UserRole): boolean {
   return ['superadmin', 'admin'].includes(role)
@@ -127,7 +132,7 @@ export function canForceStatus(role: UserRole): boolean {
 export const ROLE_HOME_ROUTE: Record<UserRole, string> = {
   superadmin:   '/admin/usuarios',
   admin:        '/dashboard',
-  operaciones:  '/taller',
+  operaciones:  '/equipos',
   recepcion:    '/equipos',
   almacen:      '/equipos',
   visualizador: '/pizarra',
@@ -137,7 +142,7 @@ export const ROLE_HOME_ROUTE: Record<UserRole, string> = {
 export const SIDEBAR_ITEMS_BY_ROLE: Record<UserRole, string[]> = {
   superadmin:   ['usuarios', 'dashboard', 'pizarra', 'equipos', 'workflow', 'catalogo', 'estadisticas', 'pronostico', 'dna', 'perfil'],
   admin:        ['dashboard', 'pizarra', 'equipos', 'historial', 'estadisticas', 'pronostico', 'dna', 'perfil'],
-  operaciones:  ['taller', 'pizarra', 'buscar', 'pronostico', 'dna', 'perfil'],
+  operaciones:  ['equipos', 'pizarra', 'pronostico', 'dna', 'perfil'],
   recepcion:    ['equipos', 'pizarra', 'buscar', 'pronostico', 'dna', 'perfil'],
   almacen:      ['equipos', 'pizarra', 'buscar', 'dna', 'perfil'],
   visualizador: ['pizarra', 'estadisticas', 'pronostico', 'equipos', 'dna', 'perfil'],

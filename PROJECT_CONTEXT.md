@@ -35,23 +35,26 @@
 ```
 Next.js App Router
 ├── app/                   → Páginas y API Routes (server-side por defecto)
-│   ├── (auth)/            → Rutas públicas: /login, /register
-│   ├── (dashboard)/       → Rutas protegidas con layout compartido
+│   ├── page.tsx           → Raíz dinámica con redirección inteligente según sesión y rol
+│   ├── (auth)/            → Rutas públicas: /login
+│   ├── (dashboard)/       → Rutas protegidas (layout.tsx Server Component con UserProvider)
 │   ├── doc/               → Rutas públicas para escaneo QR de motosoldadoras
 │   │   ├── [serial]/      → /doc/[serial]  — historial completo por número de serie
 │   │   └── fr/[fr]/       → /doc/fr/[fr]   — ficha de ingreso único por FR (equipos sin serie)
 │   ├── admin/             → Páginas de administración (fuera del layout dashboard)
 │   └── api/               → API Routes (REST, server-side)
 │       └── public/        → API Routes públicas sin autenticación (/api/public/equipment/...)
+├── proxy.ts               → Next.js 16 Proxy: protección de rutas, preservación de cookies en redirects y refresh
 ├── components/            → Componentes React reutilizables (client-side)
-│   └── equipment/modals/  → Sub-modales de correo por evento de estado
+│   ├── layout/            → DashboardShell (menú/UI), Navbar, Sidebar
+│   └── equipment/modals/  → Sub-modales de correo y entrega de repuestos
 ├── lib/                   → Lógica de servidor: Supabase, workflow, validaciones, mail
-├── hooks/                 → Custom hooks SWR (client-side data fetching)
+├── hooks/                 → Custom hooks (useUser context provider, useRealtimePizarra, etc.)
 ├── types/                 → Tipos TypeScript derivados del esquema de BD
-└── supabase/migrations/   → Historial SQL del esquema (001–015)
+└── supabase/migrations/   → Historial SQL del esquema (001–019)
 ```
 
-**Patrón de renderizado:** Server Components por defecto en `app/`. Directiva `'use client'` solo donde se necesita estado/interactividad. Las API Routes actúan como capa de acceso a Supabase desde el cliente.
+**Patrón de renderizado:** Server Components por defecto en `app/`. `app/(dashboard)/layout.tsx` valida sesión en el servidor y alimenta `<UserProvider>` y `<DashboardShell>`, eliminando pantallas de carga infinitas en el cliente. Directiva `'use client'` solo donde se necesita interactividad. Las API Routes actúan como capa de acceso a Supabase desde el cliente.
 
 ---
 
@@ -70,11 +73,12 @@ Layout en `layout.tsx` incluye `Sidebar` y `Navbar`. Rutas hijas:
 |---|---|---|
 | `/dashboard` | Métricas globales + tabla paginada de todos los equipos | superadmin, admin |
 | `/pizarra` | Tablero kanban realtime con columnas por estado | todos |
-| `/equipos` | CRUD de equipos con filtros y paginación | superadmin, admin, recepcion, almacen |
-| `/taller` | Vista operativa para técnicos (equipos asignados) | operaciones |
+| `/equipos` | CRUD de equipos con filtros y paginación | superadmin, admin, operaciones, recepcion, almacen |
+| `/taller` | Vista operativa para técnicos (equipos asignados) | superadmin, admin |
 | `/estadisticas` | Analytics: por empresa, marca, modelo, tiempos | superadmin, admin, visualizador |
+| `/auditoria-modelos` | Auditoría y pronóstico predictivo por modelo (tiempos por fase, cálculo de entrega y motivos de retraso) | superadmin, admin, operaciones, visualizador |
 | `/dna` | Historial clínico completo por número de serie | todos |
-| `/buscar` | Buscador instantáneo por FR, cliente, serie | operaciones, recepcion, almacen |
+| `/buscar` | Buscador instantáneo por FR, cliente, serie | recepcion, almacen |
 | `/historial` | Log de cambios de estado (status_history) | admin |
 | `/perfil` | Edición de perfil propio | todos |
 | `/admin/usuarios` | Aprobar/bloquear usuarios, asignar roles | superadmin |
@@ -100,6 +104,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `/api/equipment/import` | POST | Importar desde Excel |
 | `/api/equipment/create` | POST | Creación de equipo (individual o lote/batch). Genera un único correo consolidado, asigna `batch_id`, `email_thread_id` y `email_thread_subject` |
 | `/api/equipment/[id]/update-status` | POST | Cambio de estado. Detecta estado destino y dispara correo-reply específico en el hilo existente (`In-Reply-To` / `References` normalizados). Acepta JSON o FormData (informe ODP con PDF y `report_url`). Usa `supabase.auth.getUser()` |
+| `/api/equipment/[id]/deliver-parts` | POST | **Logística / Almacén**: Entrega total/parcial de repuestos aprobados. Actualiza `approved_parts`, `parts_deliveries`, recalcula `parts_status` ('SIN_REPUESTOS' \| 'PARCIAL' \| 'COMPLETO') e inserta en `status_history`. Despacha correo `sendEntregaLogistica` en el hilo |
 | `/api/equipment/[id]/update` | PUT | Edición completa por superadmin (incluye `report_url`) |
 | `/api/equipment/[id]/force-status` | POST | Override de estado (solo superadmin). Notificación por correo opcional |
 | `/api/workflow/states` | GET/POST | CRUD de estados del workflow |
@@ -112,30 +117,39 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `/api/catalog/models` | GET/POST | CRUD de modelos por marca |
 | `/api/admin/technicians` | GET/POST/PATCH | Gestión de técnicos |
 | `/api/stats` | GET | Métricas del dashboard (totales, atrasados, promedios) |
+| `/api/stats/models` | GET | Listado y ranking de modelos con volumen, tiempos medios y tasa de retraso |
+| `/api/stats/models/[model]` | GET | Detalle analítico profundo de un modelo (tiempos p20/p80 por fase, factores de retraso y NLP de notas) |
 
 ### `/components/`
 | Componente | Responsabilidad |
 |---|---|
 | `layout/Sidebar.tsx` | Navegación lateral. Items visibles según `SIDEBAR_ITEMS_BY_ROLE` del tipo `user.ts` |
 | `layout/Navbar.tsx` | Barra superior con usuario activo y logout |
+| `layout/DashboardShell.tsx` | Envoltorio client-side del layout dashboard (menú móvil, Navbar y Sidebar) desacoplado del server layout |
 | `equipment/EquipmentForm.tsx` | Formulario de creación/edición de equipos |
-| `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Layout reorganizado con secciones colapsables: Tiempos Operativos, Demora por Fases e Historial de Estados (cerradas por defecto). Datos principales en grid 2 columnas (Identificación / Equipo). Cabecera fija con estado y acciones siempre visibles. |
-| `equipment/EquipmentTable.tsx` | Tabla paginada con indicadores VIP, filtros y botón directo de etiqueta QR |
+| `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Layout reorganizado con secciones colapsables: Tiempos Operativos, Demora por Fases, Historial de Estados y Control de Repuestos. Cabecera con badge dual (estado del servicio y `parts_status`). Modal dedicado para registro de entregas de repuestos |
+| `equipment/EquipmentTable.tsx` | Tabla paginada con indicadores VIP, badge de repuestos (`parts_status`), filtros y botón directo de etiqueta QR |
 | `equipment/QRPrintModal.tsx` | Modal con generación de código QR (qrcode.react) e impresión optimizada de etiqueta física |
-| `equipment/StatusChangeModal.tsx` | Modal principal de cambio de estado. Renderiza sub-modales de correo según estado destino |
+| `equipment/StatusChangeModal.tsx` | Modal principal de cambio de estado de servicio taller. Renderiza sub-modales de correo según estado destino |
 | `equipment/StatusBadge.tsx` | Badge de color dinámico según `status_color` de la vista |
 | `equipment/ClientSelector.tsx` | Búsqueda predictiva de clientes existentes + registro de nuevos |
 | `equipment/BrandSelector.tsx` | Búsqueda predictiva de marcas del catálogo. Auto-registra marcas nuevas |
 | `equipment/ModelSelector.tsx` | Selector de modelos filtrado por marca seleccionada |
 | `equipment/modals/ModalInformeODP.tsx` | Sub-modal: diagnóstico técnico + upload PDF (estado "Pendiente de aprobación") |
-| `equipment/modals/ModalAprobacionVentas.tsx` | Sub-modal: tabla dinámica repuestos/servicios aprobados + observaciones (estado "Aprobado") |
-| `equipment/modals/ModalEntregaLogistica.tsx` | Sub-modal: tabla de repuestos entregados con nota de compatibles (estado "En espera de repuesto") |
+| `equipment/modals/ModalAprobacionVentas.tsx` | Sub-modal: tabla dinámica repuestos/servicios aprobados + observaciones (estado "Aprobado", inicializa `approved_parts` y `parts_status = 'SIN_REPUESTOS'`) |
+| `equipment/modals/ModalEntregaLogistica.tsx` | Sub-modal: tabla de repuestos entregados con nota de compatibles |
+| `equipment/modals/ModalEntregaRepuestos.tsx` | Modal dedicado de Almacén/Logística para registro directo de entregas (totales o parciales) de repuestos aprobados |
 | `equipment/modals/ModalCulminadoODP.tsx` | Sub-modal: texto predefinido + observaciones finales (estado "Listo para entrega") |
-| `pizarra/PizarraBoard.tsx` | Tablero kanban realtime. Columnas = estados activos. Usa `useRealtimePizarra` |
-| `pizarra/PizarraCard.tsx` | Tarjeta de equipo con estrellas VIP ⭐ y efecto glow pulsante según `priority_level` |
+| `pizarra/PizarraBoard.tsx` | Tablero kanban realtime con columnas de taller (`Aprobado`, `En mantenimiento`). Usa `useRealtimePizarra` |
+| `pizarra/PizarraCard.tsx` | Tarjeta de equipo con estrellas VIP ⭐, efecto glow pulsante y chip independiente de estado de repuestos (`📦 Parcial`, `📦 Listo`, etc.) |
 | `admin/BrandModelManager.tsx` | CRUD de marcas y modelos del catálogo |
 | `admin/PartManager.tsx` | CRUD de repuestos con asignación de compatibilidad por modelo |
 | `admin/TechnicianManager.tsx` | CRUD de técnicos del taller |
+| `auditoria/ModelSelectorHeader.tsx` | Selector jerárquico Marca ➔ Modelo con badge de tamaño de muestra y nivel de confianza |
+| `auditoria/ModelKpiCards.tsx` | Tarjetas con promedios, medianas, percentiles y tasa de retraso histórico |
+| `auditoria/StageGanttTimeline.tsx` | Diagrama Gantt horizontal de tiempos típicos por etapa (diagnóstico, cotización, repuestos, taller, entrega) |
+| `auditoria/DeliveryForecastCalculator.tsx` | Calculadora interactiva de fecha proyectada de culminación según fecha de ingreso y tipo de servicio |
+| `auditoria/DelayFactorsAudit.tsx` | Matriz de factores de retraso clasificados por NLP y agrupados por rol (`almacen`, `operaciones`) |
 | `ui/ToasterProvider.tsx` | Wrapper de Sonner para notificaciones globales |
 
 ### `/lib/`
@@ -148,6 +162,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `validations/equipment.schema.ts` | Schemas Zod: `createEquipmentSchema`, `updateStatusSchema`, `forceStatusSchema`, + 4 schemas de eventos de correo |
 | `validations/user.schema.ts` | Schema Zod para validar inputs de usuarios |
 | `mail/mailer.ts` | Sistema de correos en hilo con Resend (envíos dirigidos a `ENTRY_TO` y cabeceras normalizadas RFC 2822). Ver sección 11 para detalle completo |
+| `stats/model-forecast.ts` | Motor analítico de pronóstico: cálculo de medianas, p20/p80, lead time y clasificador NLP de motivos de retraso |
 | `env.ts` | Validación de variables de entorno al arrancar |
 | `api/auth.ts` | Helpers centralizados de autenticación server-side (`requireAuth`, `requireSuperadmin`) con validación estricta vía `getUser()` |
 
@@ -156,7 +171,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 |---|---|
 | `useRealtimePizarra.ts` | Suscripción a cambios en `equipment_records` vía WebSocket. Agrupa equipos por estado. Ordena por `priority_level` DESC, luego por `date_in` ASC |
 | `useEquipmentList.ts` | SWR fetch paginado de `/api/equipment` + `/api/stats` para el dashboard |
-| `useUser.ts` | SWR fetch del perfil del usuario autenticado actual |
+| `useUser.tsx` | Contexto `<UserProvider>` y hook `useUser()`. Recibe datos del servidor sin loading asíncrono, escucha `onAuthStateChange` para refrescos/sign-out |
 
 ### `/types/`
 | Archivo | Contenido |
@@ -184,9 +199,12 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `parts_catalog` | `part_number` UNIQUE, `name`, `specifications` |
 | `part_compatibilities` | JOIN table parts ↔ models |
 
-### Columnas de correo y documentación en `equipment_records`
+### Columnas en `equipment_records` destacadas
 | Columna | Tipo | Migración | Descripción |
 |---|---|---|---|
+| `parts_status` | `TEXT` | 019 | Estado logístico de repuestos: `SIN_REPUESTOS`, `PARCIAL` o `COMPLETO` |
+| `approved_parts` | `JSONB` | 019 | Lista de repuestos/insumos aprobados por Ventas con cantidades solicitadas y entregadas |
+| `parts_deliveries` | `JSONB` | 019 | Historial inmutable de entregas realizadas por Logística con fechas, notas y responsable |
 | `email_thread_id` | `TEXT` | 013 | Message-ID devuelto por Resend al enviar el correo de ingreso. Se usa formateado como `<id@domain>` en `In-Reply-To` y `References` en todos los replies del hilo |
 | `email_cc` | `TEXT[]` | 013 | Columna en BD (legacy / sin uso actual: CC fue removido del frontend y backend para simplificar el flujo) |
 | `report_url` | `TEXT` | 015 | Enlace directo al PDF del informe técnico (Google Drive u otro). Se muestra en la página pública por QR `/doc/[serial]` |
@@ -194,33 +212,41 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `email_thread_subject` | `TEXT` | 018 | Asunto original exacto del hilo generado al ingresar el o los equipos. Se usa para prefijar `RE:` idéntico en todos los replies |
 
 ### Vista central: `equipment_with_status`
-JOIN de `equipment_records` + `workflow_states`. Agrega `status_name`, `status_color`, `is_terminal`, `days_elapsed`, `phase_1/2/3_days`, `assigned_technicians[]`, `priority_level`.
+JOIN de `equipment_records` + `workflow_states`. Agrega `status_name`, `status_color`, `is_terminal`, `days_elapsed`, `phase_1/2/3_days`, `assigned_technicians[]`, `priority_level`, `parts_status`, `approved_parts` y `parts_deliveries`.
 
-### Flujo de estados (workflow por defecto)
-```
-En espera de diagnóstico
-  → En diagnóstico
-    → Pendiente de aprobación   ← correo: Informe ODP (con PDF adjunto)
-      → Aprobado                ← correo: Aprobación Ventas (tabla repuestos)
-        → En mantenimiento
-          → En espera de repuesto ← correo: Entrega Logística (tabla repuestos entregados)
-            → En espera de repuesto adicional
-          → Control de calidad
-            → Listo para entrega  ← correo: Culminado ODP (texto predefinido)
-              → Entregado (terminal)
-```
+### Flujo desacoplado: Servicio de Taller vs. Repuestos (Migración 019 / Especificación implementada)
+El sistema opera con **dos líneas de estado completamente desacopladas**:
+1. **Línea de Servicio Taller (Workflow principal)**:
+   ```
+   En espera de diagnóstico
+     → En diagnóstico
+       → Pendiente de aprobación   ← correo: Informe ODP (con PDF adjunto)
+         → Aprobado                ← correo: Aprobación Ventas (tabla repuestos, inicia parts_status = 'SIN_REPUESTOS')
+           → En mantenimiento      (Operaciones inicia trabajo físico sin bloqueo de repuestos)
+             → Control de calidad
+               → Listo para entrega  ← correo: Culminado ODP
+                 → Entregado (terminal)
+   ```
+2. **Línea Logística de Repuestos (Almacén)**:
+   - Funciona en paralelo sin bloquear ni ser bloqueada por el avance del taller.
+   - Estados: `SIN_REPUESTOS` ➔ `PARCIAL` ➔ `COMPLETO`.
+   - Logística registra entregas mediante `/api/equipment/[id]/deliver-parts` o `ModalEntregaRepuestos`, disparando el correo `sendEntregaLogistica` en el hilo sin forzar cambios de estado del taller.
 
 ---
 
 ## 6. AUTENTICACIÓN Y AUTORIZACIÓN
-
-**Login:** Usuario ingresa su `username` → el sistema construye `username@cabelab.local` → Supabase Auth.
-
-**Middleware (`middleware.ts`):**
-1. Rutas públicas (`/login`, `/register`) → redirige al dashboard si ya tiene sesión.
-2. Sin sesión → redirect a `/login`.
-3. `is_active = false` → redirect a `/login?error=no-aprobado` + borra cookies.
-4. Rutas de superadmin → verifica `is_superadmin = true`.
+ 
+ **Login:** Usuario ingresa su `username` → el sistema construye `username@cabelab.local` → Supabase Auth.
+ 
+-**Proxy (`proxy.ts` — convención Next.js 16):**
++1. Rutas públicas (`/login`) → redirige al dashboard correspondiente según rol si ya tiene sesión, transfiriendo cookies actualizadas.
++2. Sin sesión → redirect a `/login`.
++3. `is_active = false` → redirect a `/login?error=no-aprobado` + borra cookies de sesión.
++4. Rutas protegidas (`/` y subrutas) → redirige según `ROLE_HOME_ROUTE` preservando cookies de refresco.
++5. Rutas de superadmin → verifica `is_superadmin = true`.
++
++**Layout Protegido (`app/(dashboard)/layout.tsx`):**  
++Es un **Server Component**. Verifica sesión y perfil en el servidor antes del render y los inyecta en `<UserProvider>`, eliminando estados de espera (`loading: false`) y asegurando render instantáneo sin pantallas de carga infinitas al recargar.
 
 **RLS (Row Level Security):** Activo en todas las tablas. Políticas en migración `005_rls_policies.sql`.
 
@@ -229,7 +255,7 @@ En espera de diagnóstico
 |---|---|
 | `superadmin` | Todo + edición de timestamps, workflow, usuarios |
 | `admin` | Dashboard, equipos, estadísticas, historial |
-| `operaciones` | Taller (equipos asignados), pizarra, búsqueda, DNA |
+| `operaciones` | Equipos, pizarra, pronóstico, DNA |
 | `recepcion` | Equipos (crear/ver), pizarra, búsqueda |
 | `almacen` | Equipos (en espera repuesto), pizarra, búsqueda |
 | `visualizador` | Solo lectura: pizarra, estadísticas, equipos, DNA |
@@ -387,9 +413,22 @@ const ENTRY_TO = [ ... ]
 > Última sesión: 04/10/2026
 
 ### ✅ Implementado y funcional
-
-- Sistema de roles y autenticación por username completo
-- Workflow dinámico configurable por superadmin
+ 
+ - Sistema de roles y autenticación por username completo
++- **Arquitectura de Autenticación Server-First y Persistencia de Sesión (Next.js 16)**:
++  - Migración a convención `proxy.ts` de Next.js 16 (reemplazo de `middleware.ts`).
++  - Propagación obligatoria de cookies de sesión refrescadas en redirecciones HTTP.
++  - Cliente Supabase de servidor adaptado con `getAll()` / `setAll()`.
++  - Layout `app/(dashboard)/layout.tsx` transformado en Server Component que alimenta `<UserProvider>` y `<DashboardShell>`, erradicando bloqueos infinitos de `"Autenticando sesión..."` al recargar el navegador.
++  - Ruta raíz `/` (`app/page.tsx`) dinámica con redirección inteligente según sesión activa y rol.
++- **Desacoplamiento de Estado de Servicio y Repuestos (ESPECIFICACION_REFACTORIZACION_REPUESTOS_SERVICIO.md — 100% Implementado y Funcional)**:
++  - **Migración 019**: columnas `parts_status` (`SIN_REPUESTOS`, `PARCIAL`, `COMPLETO`), `approved_parts` (JSONB) y `parts_deliveries` (JSONB).
++  - Vista `equipment_with_status` actualizada con las nuevas columnas.
++  - Transiciones de workflow liberadas: `Aprobado` ➔ `En mantenimiento` ➔ `Listo para entrega` sin bloqueo por entrega de piezas físicas.
++  - Endpoint `/api/equipment/[id]/deliver-parts` para registro de entregas totales o parciales por Almacén/Logística con auditoría en `status_history` y envío de correo en hilo `sendEntregaLogistica`.
++  - Sub-modal interactivo `ModalEntregaRepuestos.tsx` y botón dedicado en `EquipmentDetail.tsx` con badges duales (servicio y material).
++  - Tarjetas `PizarraCard.tsx` y tabla `EquipmentTable.tsx` con indicadores visuales de repuestos (`📦 Parcial`, `📦 Listo`, etc.).
+ - Workflow dinámico configurable por superadmin
 - Pizarra realtime con agrupación por estados
 - Sistema de prioridad VIP (3 niveles, estrellas ⭐⭐⭐, glow pulsante)
 - CRUD completo de equipos con validación Zod
@@ -479,6 +518,8 @@ const ENTRY_TO = [ ... ]
 | 016 | `016_status_history_role_and_comments.sql` | Columnas `changed_by_role` y `notes` en `status_history`, actualiza trigger para auditoría de roles y comentarios opcionales |
 | 017 | `017_audit_forecast_indexes.sql` | Índices en `equipment_records(model)`, `equipment_records(brand, model)` y `status_history(equipment_id, timestamp)` para optimización de auditoría y pronóstico |
 | 018 | `018_batch_equipment_and_thread_subject.sql` | Columnas `batch_id UUID` y `email_thread_subject TEXT` para soporte de ingreso múltiple y asunto de hilo exacto en replies |
+| 019 | `019_service_and_parts_status_separation.sql` | Desacoplamiento de Servicio de Taller vs Repuestos: columnas `parts_status`, `approved_parts`, `parts_deliveries`, recrea vista `equipment_with_status` y transiciones directas |
+| 020 | `020_non_business_days.sql` | Tabla `non_business_days` con RLS para gestión de feriados y días no hábiles considerados en la calculadora predictiva |
 
 ---
 
@@ -724,9 +765,9 @@ const [isQrOpen, setIsQrOpen] = useState(false)
 
 ---
 
-### 15.7 Configuración del middleware para rutas públicas
+### 15.7 Configuración del proxy para rutas públicas
 
-**Archivo:** `middleware.ts` — línea 18:
+**Archivo:** `proxy.ts` — línea 19:
 
 ```typescript
 if (pathname.startsWith('/doc') || pathname.startsWith('/api/public')) {
@@ -746,3 +787,94 @@ Si se crean nuevas rutas públicas relacionadas al QR (ej. `/doc/id/[id]`), debe
 | `public/cabelab.png` | Header y footer de páginas públicas | Transparente (blanco) | Sobre fondos **oscuros** (UI del sistema) |
 
 > ⚠️ No intercambiar los logos. `cabelab.png` (blanco) es invisible en la etiqueta impresa. `cabelab_negro.png` (negro) es invisible en la UI oscura del sistema.
+
+---
+
+## 16. SISTEMA DE DESACOPLAMIENTO DE SERVICIO Y REPUESTOS (ESPECIFICACIÓN IMPLEMENTADA)
+
+> Estado: **100% Implementado y funcional** (Migración 019).  
+> Reemplaza y consolida `ESPECIFICACION_REFACTORIZACION_REPUESTOS_SERVICIO.md`.
+
+### 16.1 Principio fundamental y reglas de negocio
+Anteriormente, el flujo trataba `En espera de repuesto` como un estado del workflow general, generando bloqueos mutuos entre Operaciones (taller físico) y Logística (almacén). Con la arquitectura actual existen **dos líneas de control totalmente independientes**:
+
+1. **Estado del Servicio (Taller Operativo)**:
+   - Controla exclusivamente el ciclo de trabajo físico:
+     `Pendiente de aprobación` ➔ `Aprobado` ➔ `En mantenimiento` ➔ `Control de calidad` ➔ `Listo para entrega` ➔ `Entregado`.
+   - Operaciones puede iniciar el mantenimiento y avanzar el servicio técnico sin que la falta de entrega física de repuestos congele el sistema.
+
+2. **Estado de Repuestos (Logística / Almacén)**:
+   - Controla la entrega de componentes aprobados por Ventas:
+     - `SIN_REPUESTOS`: No se ha entregado ninguna pieza aprobada.
+     - `PARCIAL`: Se ha entregado al menos un repuesto o fracción de la cantidad requerida.
+     - `COMPLETO`: El 100% de los repuestos aprobados ha sido entregado a taller.
+   - **Regla estricta:** Registrar entregas no altera el estado del servicio, y el avance del servicio no impide que Logística registre entregas en cualquier momento.
+
+### 16.2 Estructura de datos en `equipment_records`
+- `parts_status`: `TEXT` (`'SIN_REPUESTOS'`, `'PARCIAL'`, `'COMPLETO'`).
+- `approved_parts`: `JSONB` — lista estructurada de repuestos aprobados:
+  ```json
+  [
+    {
+      "id": "part-1",
+      "descripcion": "Carbones de repuesto",
+      "cantidad_solicitada": 2,
+      "cantidad_entregada": 1,
+      "precio": "150.00"
+    }
+  ]
+  ```
+- `parts_deliveries`: `JSONB` — registro inmutable de cada entrega realizada:
+  ```json
+  [
+    {
+      "id": "del-123",
+      "fecha": "2026-10-07T15:30:00Z",
+      "entregado_por": "almacen_user",
+      "items": [{ "descripcion": "Carbones de repuesto", "cantidad": 1, "nota": "Entrega parcial" }],
+      "observaciones": "Llega el saldo mañana"
+    }
+  ]
+  ```
+
+### 16.3 Endpoints y componentes vinculados
+- `POST /api/equipment/[id]/update-status`: Inicializa `approved_parts` y `parts_status = 'SIN_REPUESTOS'` cuando pasa a `Aprobado`.
+- `POST /api/equipment/[id]/deliver-parts`: Procesa entregas parciales/totales, actualiza cantidades, recalcula `parts_status`, genera entrada en `status_history` y envía correo `sendEntregaLogistica` en el hilo.
+- `components/equipment/modals/ModalEntregaRepuestos.tsx`: Modal dedicado para Logística/Almacén.
+- `components/equipment/EquipmentDetail.tsx`: Badges duales en cabecera + tabla comparativa "Control de Repuestos".
+- `components/pizarra/PizarraCard.tsx` y `EquipmentTable.tsx`: Chips visuales `📦 Parcial`, `📦 Listo`, etc.
+
+---
+
+## 17. MÓDULO DE AUDITORÍA Y PRONÓSTICO PREDICTIVO POR MODELO (ESPECIFICACIÓN IMPLEMENTADA)
+
+> Estado: **100% Implementado y funcional** (Migración 017).  
+> Reemplaza y consolida `ESPECIFICACION_AUDITORIA_PRONOSTICO_MODELOS.md`.
+
+### 17.1 Objetivo y alcance
+Convierte el histórico de intervenciones y notas en un motor predictivo que permite a Taller, Recepción y Administración:
+1. Conocer de antemano el tiempo proyectado por etapa (diagnóstico, cotización/aprobación, espera de piezas, mantenimiento y entrega) según la marca y modelo.
+2. Identificar cuellos de botella y factores reales de retraso a través de minería de texto (NLP) sobre el campo `notes` de `status_history`.
+
+### 17.2 Motor estadístico (`lib/stats/model-forecast.ts`)
+- **Métricas robustas:** Medianas y percentiles (p20 optimista, p80 pesimista) para amortiguar valores atípicos.
+- **Nivel de confianza estadístico:** Basado en el tamaño de la muestra (`ALTA` ≥ 15 equipos, `MEDIA` 5-14, `BAJA` < 5).
+- **Cálculo de Lead Time:**
+  $$\text{Fecha}_{\text{culm}} = \text{Fecha}_{\text{ingreso}} + \text{Mediana}(\text{diagnóstico}) + \text{Mediana}(\text{aprobación}) + \text{RiesgoRepuestos} + \text{Mediana}(\text{mantenimiento})$$
+- **Clasificador NLP de retrasos por palabras clave:**
+  - *Logística/Repuestos:* `STOCK`, `PROVEEDOR`, `LIMA`, `IMPORTACION`, `REPUESTO`, `TARJETA`, `IGBT`, `MODULO`, `PEDIDO`.
+  - *Técnica/Falla Compleja:* `SULFATADO`, `QUEMADO`, `CORTO`, `REBOBINADO`, `MINA`, `POLVO`, `INTERMITENTE`, `HUMEDAD`.
+  - *Cliente/Aprobación:* `CLIENTE`, `COTIZACION`, `APROBACION`, `COSTO`, `PRESUPUESTO`, `SIN RESPUESTA`.
+  - *Control de Calidad:* `PRUEBA`, `SOLDADURA`, `VOLTAJE`, `AMPERAJE`, `FALLA EN CARGA`, `CALIDAD`.
+  - Cruza el término detectado con `changed_by_role` para atribuir la causa raíz al área correspondiente.
+
+### 17.3 Endpoints y UI
+- `GET /api/stats/models`: Listado con métricas agregadas por modelo (`sample_size`, `avg_total_days`, `delayed_rate`).
+- `GET /api/stats/models/[model]`: Análisis profundo por modelo con percentiles por fase y lista de factores de retraso.
+- **Vista `/auditoria-modelos` (`app/(dashboard)/auditoria-modelos/page.tsx`)**:
+  - `ModelSelectorHeader.tsx`: Selección Marca ➔ Modelo con badge de nivel de confianza.
+  - `ModelKpiCards.tsx`: Métricas clave y porcentaje de retraso (> 5 días).
+  - `StageGanttTimeline.tsx`: Barra Gantt segmentada con tiempos típicos por etapa.
+  - `DeliveryForecastCalculator.tsx`: Calculadora interactiva que proyecta fechas de hito según fecha de ingreso.
+  - `DelayFactorsAudit.tsx`: Análisis de causas frecuentes por rol.
+

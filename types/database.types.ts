@@ -214,6 +214,30 @@ export type Database = {
         }
         Relationships: []
       }
+      non_business_days: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          holiday_date: string
+          id: string
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          holiday_date: string
+          id?: string
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          holiday_date?: string
+          id?: string
+          reason?: string
+        }
+        Relationships: []
+      }
       status_history: {
         Row: {
           changed_by_id: string | null

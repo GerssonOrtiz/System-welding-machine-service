@@ -92,6 +92,19 @@ export const entregaLogisticaSchema = z.object({
   observaciones: z.string().optional().default(''),
 })
 
+export const solicitudRepuestosSchema = z.object({
+  new_status_id: z.number().int(),
+  notes: z.string().optional().nullable(),
+  assigned_technician_ids: z.array(z.number()).optional(),
+  // Campos del correo
+  items: z.array(z.object({
+    descripcion: z.string().min(1, { message: 'La descripción es obligatoria' }),
+    cantidad: z.string().min(1, { message: 'La cantidad es obligatoria' }),
+    nota: z.string().optional().default(''),
+  })).min(1, { message: 'Debe agregar al menos un repuesto o componente solicitado' }),
+  observaciones: z.string().optional().default(''),
+})
+
 export const culminadoODPSchema = z.object({
   new_status_id: z.number().int(),
   notes: z.string().optional().nullable(),
@@ -105,4 +118,5 @@ export type ForceStatusInput = z.infer<typeof forceStatusSchema>
 export type InformeODPInput = z.infer<typeof informeODPSchema>
 export type AprobacionVentasInput = z.infer<typeof aprobacionVentasSchema>
 export type EntregaLogisticaInput = z.infer<typeof entregaLogisticaSchema>
+export type SolicitudRepuestosInput = z.infer<typeof solicitudRepuestosSchema>
 export type CulminadoODPInput = z.infer<typeof culminadoODPSchema>

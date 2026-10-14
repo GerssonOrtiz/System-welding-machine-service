@@ -31,6 +31,24 @@ export function DeliveryForecastCalculator({
   const [useBusinessDays, setUseBusinessDays] = useState(true)
   const [isPriorityVip, setIsPriorityVip] = useState(false)
   const [hasSparePartRisk, setHasSparePartRisk] = useState(false)
+  const [logisticsDelayDays, setLogisticsDelayDays] = useState<number | string>(() => {
+    return Math.round(timings?.waiting_parts.median_days || 4)
+  })
+
+  const [holidays, setHolidays] = useState<string[]>([])
+
+  // Cargar días no hábiles configurados por el superadmin
+  useEffect(() => {
+    fetch('/api/calendar/holidays')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          const dates = json.data.map((item: any) => item.holiday_date)
+          setHolidays(dates)
+        }
+      })
+      .catch((err) => console.error('[DeliveryForecastCalculator] Error cargando feriados:', err))
+  }, [])
 
   // Auto-activar alerta de repuestos si estadísticamente supera el 50%
   const partsOccurPct = timings?.waiting_parts.occurred_in_pct || 0
@@ -41,6 +59,12 @@ export function DeliveryForecastCalculator({
       setHasSparePartRisk(true)
     }
   }, [isHighPartsRisk])
+
+  useEffect(() => {
+    if (timings?.waiting_parts.median_days) {
+      setLogisticsDelayDays(Math.max(1, Math.round(timings.waiting_parts.median_days)))
+    }
+  }, [timings?.waiting_parts.median_days])
 
   // Lógica de cálculo del motor de pronóstico
   const calculateForecast = () => {
@@ -61,16 +85,18 @@ export function DeliveryForecastCalculator({
     const diagDays = Math.max(1, Math.round(m.diagnosis.median_days * vipFactor))
     const apprDays = Math.max(1, Math.round(m.approval.median_days * vipFactor))
     
-    // Días extras por repuestos
+    // Días extras por logística / repuestos (rellenable por el usuario)
+    const rawPartsDays = Number(logisticsDelayDays)
+    const validPartsDays = !isNaN(rawPartsDays) && rawPartsDays > 0 ? rawPartsDays : 0
     const extraPartsDays = hasSparePartRisk
-      ? Math.max(2, Math.round((m.waiting_parts.median_days || 4) * vipFactor))
+      ? Math.max(0, Math.round(validPartsDays * vipFactor))
       : 0
 
     const maintDays = Math.max(1, Math.round(m.maintenance.median_days * vipFactor)) + extraPartsDays
 
     const addDays = (startDate: Date, days: number): Date => {
       if (useBusinessDays) {
-        return addBusinessDays(startDate, days)
+        return addBusinessDays(startDate, days, holidays)
       } else {
         const d = new Date(startDate)
         d.setDate(d.getDate() + days)
@@ -135,7 +161,14 @@ export function DeliveryForecastCalculator({
           <div className="p-3 bg-bg-elevated/40 rounded-lg border border-border-subtle space-y-2.5 text-xs">
             {/* Opción de días hábiles */}
             <div className="flex items-center justify-between">
-              <span className="text-text-secondary">Cálculo de calendario:</span>
+              <div>
+                <span className="text-text-secondary">Cálculo de calendario:</span>
+                {useBusinessDays && holidays.length > 0 && (
+                  <span className="block text-[10px] text-neon-blue">
+                    +{holidays.length} feriado(s) excluidos
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setUseBusinessDays(!useBusinessDays)}
@@ -145,27 +178,52 @@ export function DeliveryForecastCalculator({
                     : 'bg-white/5 border-border-subtle text-text-muted'
                 }`}
               >
-                {useBusinessDays ? 'Días Hábiles (L-V)' : 'Días Calendario'}
+                {useBusinessDays ? 'Días Hábiles (L-V + Feriados)' : 'Días Calendario'}
               </button>
             </div>
 
-            {/* Checkbox de riesgo de repuesto */}
-            <label className="flex items-start gap-2.5 cursor-pointer pt-1">
-              <input
-                type="checkbox"
-                checked={hasSparePartRisk}
-                onChange={(e) => setHasSparePartRisk(e.target.checked)}
-                className="rounded border-border-subtle text-amber-500 focus:ring-0 bg-bg-surface mt-0.5"
-              />
-              <div className="text-text-primary leading-tight">
-                <span>Riesgo de espera de repuestos o importación</span>
-                <span className="block text-[10px] text-amber-400 mt-0.5">
-                  {isHighPartsRisk
-                    ? `⚠️ Este modelo requiere repuestos en el ${partsOccurPct}% de sus ingresos (+${timings?.waiting_parts.median_days || 4}d estimadas)`
-                    : '(+4 días estimados para compras/logística)'}
-                </span>
-              </div>
-            </label>
+            {/* Demora de logística / espera de repuestos rellenable */}
+            <div className="pt-2 border-t border-border-subtle/50 space-y-2">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hasSparePartRisk}
+                  onChange={(e) => setHasSparePartRisk(e.target.checked)}
+                  className="rounded border-border-subtle text-amber-500 focus:ring-0 bg-bg-surface mt-0.5"
+                />
+                <div className="text-text-primary leading-tight">
+                  <span className="font-medium text-xs">Incluir demora estimada de Logística / Repuestos</span>
+                  <span className="block text-[10px] text-amber-400 mt-0.5">
+                    {isHighPartsRisk
+                      ? `⚠️ Este modelo históricamente requiere repuestos en el ${partsOccurPct}% de sus ingresos`
+                      : 'Compras locales, importación o espera de stock'}
+                  </span>
+                </div>
+              </label>
+
+              {hasSparePartRisk && (
+                <div className="pl-6 flex items-center gap-2.5 pt-1">
+                  <span className="text-[11px] text-text-secondary whitespace-nowrap">
+                    Días hábiles estimados de logística:
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min={0}
+                      max={60}
+                      value={logisticsDelayDays}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setLogisticsDelayDays(val === '' ? '' : Math.max(0, parseInt(val) || 0))
+                      }}
+                      className="w-16 bg-bg-elevated border border-amber-500/40 rounded px-2 py-1 text-xs font-mono font-bold text-amber-300 focus:outline-none focus:border-amber-400 text-center"
+                      placeholder="4"
+                    />
+                    <span className="text-[10px] text-text-muted uppercase font-bold">días hábiles</span>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Checkbox Prioridad VIP */}
             <label className="flex items-center gap-2.5 cursor-pointer pt-1">

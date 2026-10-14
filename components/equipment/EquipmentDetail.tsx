@@ -21,9 +21,11 @@ import {
   User,
   Wrench,
   Package,
+  Mail,
 } from 'lucide-react'
 import { useEquipmentDetail } from '@/hooks/useEquipmentList'
 import { useUser } from '@/hooks/useUser'
+import { canEditInitialEquipment } from '@/types/user'
 import StatusBadge from './StatusBadge'
 import StatusChangeModal from './StatusChangeModal'
 import ClientSelector from './ClientSelector'
@@ -115,6 +117,7 @@ export default function EquipmentDetail({
   const [editAccessories, setEditAccessories] = useState('')
   const [editConditionIn, setEditConditionIn] = useState('')
   const [editObservations, setEditObservations] = useState('')
+  const [editResendEmail, setEditResendEmail] = useState(false)
 
   // Operational timestamps states
   const [editStartDiag, setEditStartDiag] = useState('')
@@ -157,6 +160,8 @@ export default function EquipmentDetail({
   }
 
   const isSuperadmin = role === 'superadmin'
+  const isInitialState = equipment?.status_name === 'En espera de diagnóstico' || equipment?.is_initial === true
+  const canEdit = isSuperadmin || role === 'admin' || (role === 'recepcion' && isInitialState)
 
   const startEditMode = () => {
     if (!equipment) return
@@ -185,6 +190,7 @@ export default function EquipmentDetail({
     setEditAccessories(equipment.accessories || '')
     setEditConditionIn(equipment.condition_in || '')
     setEditObservations(equipment.additional_observations || '')
+    setEditResendEmail(false)
     setEditStartDiag(formatToLocalISO(equipment.start_diagnosis_at))
     setEditEndDiag(formatToLocalISO(equipment.end_diagnosis_at))
     setEditPendingAppr(formatToLocalISO(equipment.pending_approval_at))
@@ -217,6 +223,7 @@ export default function EquipmentDetail({
           accessories: editAccessories,
           condition_in: editConditionIn,
           additional_observations: editObservations,
+          resend_email: editResendEmail,
           start_diagnosis_at: editStartDiag ? new Date(editStartDiag).toISOString() : null,
           end_diagnosis_at: editEndDiag ? new Date(editEndDiag).toISOString() : null,
           pending_approval_at: editPendingAppr ? new Date(editPendingAppr).toISOString() : null,
@@ -232,7 +239,14 @@ export default function EquipmentDetail({
         throw new Error(resData.error || 'No se pudo actualizar el equipo')
       }
 
-      toast.success('Información del equipo actualizada con éxito')
+      if (resData.warning) {
+        toast.warning(resData.warning)
+      } else if (resData.emailSent) {
+        toast.success('Equipo actualizado y correo de ingreso reenviado con éxito')
+      } else {
+        toast.success('Información del equipo actualizada con éxito')
+      }
+
       setIsEditing(false)
       mutate()
       if (onStatusUpdated) onStatusUpdated()
@@ -322,7 +336,7 @@ export default function EquipmentDetail({
                       Etiqueta QR
                     </button>
 
-                    {isSuperadmin && (
+                    {canEdit && (
                       <>
                         <button
                           onClick={isEditing ? handleSaveEdit : startEditMode}
@@ -563,6 +577,27 @@ export default function EquipmentDetail({
                           )}
                         </div>
                       </div>
+
+                      {/* Casilla de reenvío de correo de ingreso */}
+                      {isEditing && isInitialState && (
+                        <div className="mt-4 pt-3 border-t border-border-subtle/50 flex items-start gap-3 bg-neon-blue/5 border border-neon-blue/20 rounded-lg p-3">
+                          <input
+                            type="checkbox"
+                            id="edit-resend-email"
+                            checked={editResendEmail}
+                            onChange={(e) => setEditResendEmail(e.target.checked)}
+                            className="mt-0.5 h-4 w-4 rounded border-border-subtle bg-bg-elevated text-neon-blue focus:ring-neon-blue/40 cursor-pointer"
+                          />
+                          <label htmlFor="edit-resend-email" className="text-xs cursor-pointer select-none">
+                            <span className="font-bold text-text-primary flex items-center gap-1.5">
+                              <Mail size={13} className="text-neon-blue" /> Reenviar correo de notificación de ingreso
+                            </span>
+                            <span className="block text-[11px] text-text-secondary mt-0.5">
+                              Envía nuevamente el correo oficial de ingreso a los destinatarios configurados con los datos actualizados del equipo.
+                            </span>
+                          </label>
+                        </div>
+                      )}
                     </CollapsibleSection>
                   )}
 

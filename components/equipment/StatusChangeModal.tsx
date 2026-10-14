@@ -152,7 +152,7 @@ export default function StatusChangeModal({
     }
     if (showEntregaLogistica) {
       const valid = logisticaItems.every(i => i.descripcion.trim() && i.cantidad.trim())
-      if (!valid) { toast.error('Complete descripción y cantidad de cada repuesto'); return }
+      if (!valid) { toast.error('Complete la descripción y cantidad de cada repuesto solicitado'); return }
     }
 
     setIsSubmitting(true)

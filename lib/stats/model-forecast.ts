@@ -104,20 +104,36 @@ export function percentile(arr: number[], p: number): number {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cálculo de días hábiles (excluyendo sábados y domingos)
+// Cálculo de días hábiles (excluyendo sábados, domingos y feriados personalizados)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function addBusinessDays(startDate: Date, businessDays: number): Date {
+export function addBusinessDays(
+  startDate: Date,
+  businessDays: number,
+  nonBusinessDates?: string[] | Set<string>
+): Date {
   const result = new Date(startDate)
   let remaining = Math.round(businessDays)
   
   if (remaining <= 0) return result
 
+  const holidaySet = nonBusinessDates instanceof Set
+    ? nonBusinessDates
+    : new Set(nonBusinessDates || [])
+
   while (remaining > 0) {
     result.setDate(result.getDate() + 1)
     const dayOfWeek = result.getDay()
     // 0 = Domingo, 6 = Sábado
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+    
+    // Formato local YYYY-MM-DD para comparar con el set de feriados
+    const year = result.getFullYear()
+    const month = String(result.getMonth() + 1).padStart(2, '0')
+    const day = String(result.getDate()).padStart(2, '0')
+    const dateStr = `${year}-${month}-${day}`
+
+    if (!isWeekend && !holidaySet.has(dateStr)) {
       remaining--
     }
   }

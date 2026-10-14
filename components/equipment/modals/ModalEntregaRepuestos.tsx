@@ -1,12 +1,14 @@
 // components/equipment/modals/ModalEntregaRepuestos.tsx
 // Modal dedicado para que Logística (almacen, admin, superadmin) registre
 // entregas de repuestos de forma independiente al estado del servicio.
+// Muestra la lista de ítems solicitados como checkboxes y permite agregar
+// ítems adicionales (extra) no contemplados en la solicitud original.
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { toast } from 'sonner'
-import { Package, Plus, Trash2, X, Send } from 'lucide-react'
+import { Package, Plus, Trash2, X, Send, CheckSquare, Square } from 'lucide-react'
 import type { ApprovedPartItem, DeliveryLineItem } from '@/types/equipment'
 
 interface ModalEntregaRepuestosProps {
@@ -14,11 +16,23 @@ interface ModalEntregaRepuestosProps {
   onClose:        () => void
   equipmentId:    string
   frNumber:       string
-  approvedParts:  ApprovedPartItem[]  // ítems aprobados por Ventas
+  approvedParts:  ApprovedPartItem[]  // ítems solicitados/aprobados
   onSuccess:      () => void
 }
 
-interface DeliveryRow {
+// Ítem de la lista de solicitud con su checkbox de entrega
+interface CheckedPart {
+  partId:      string          // corresponde a ApprovedPartItem.id
+  descripcion: string
+  cantSolicitada: number
+  cantEntregada:  number       // ya entregada anteriormente
+  checked:     boolean         // ¿marcar para entregar en esta sesión?
+  cantAEntregar: string        // cantidad a entregar ahora (editable)
+  nota:        string
+}
+
+// Ítem extra (no estaba en la solicitud original)
+interface ExtraRow {
   descripcion: string
   cantidad:    string
   nota:        string
@@ -32,45 +46,94 @@ export default function ModalEntregaRepuestos({
   approvedParts,
   onSuccess,
 }: ModalEntregaRepuestosProps) {
-  const [rows, setRows] = useState<DeliveryRow[]>(() =>
-    approvedParts.length > 0
-      ? approvedParts.map((p) => ({
-          descripcion: p.descripcion,
-          cantidad:    '1',
-          nota:        '',
-        }))
-      : [{ descripcion: '', cantidad: '1', nota: '' }]
+
+  // ── Estado: ítems de la lista solicitada (con checkbox) ──────────────────────
+  const [checkedParts, setCheckedParts] = useState<CheckedPart[]>(() =>
+    approvedParts.map((p) => ({
+      partId:         p.id || crypto.randomUUID(),
+      descripcion:    p.descripcion,
+      cantSolicitada: p.cantidad_solicitada,
+      cantEntregada:  p.cantidad_entregada,
+      checked:        false,
+      cantAEntregar:  String(Math.max(0, p.cantidad_solicitada - p.cantidad_entregada)),
+      nota:           '',
+    }))
   )
+
+  // ── Estado: ítems adicionales (no estaban en la solicitud) ───────────────────
+  const [extraRows, setExtraRows] = useState<ExtraRow[]>([])
+
   const [observaciones, setObservaciones] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const addRow = () => {
-    setRows((prev) => [...prev, { descripcion: '', cantidad: '1', nota: '' }])
-  }
+  // ── Helpers para checkedParts ────────────────────────────────────────────────
+  const toggleCheck = (idx: number) =>
+    setCheckedParts((prev) =>
+      prev.map((p, i) => (i === idx ? { ...p, checked: !p.checked } : p))
+    )
 
-  const removeRow = (idx: number) => {
-    setRows((prev) => prev.filter((_, i) => i !== idx))
-  }
+  const updateCheckedField = (
+    idx: number,
+    field: 'cantAEntregar' | 'nota',
+    value: string
+  ) =>
+    setCheckedParts((prev) =>
+      prev.map((p, i) => (i === idx ? { ...p, [field]: value } : p))
+    )
 
-  const updateRow = (idx: number, field: keyof DeliveryRow, value: string) => {
-    setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)))
-  }
+  // ── Helpers para extraRows ───────────────────────────────────────────────────
+  const addExtraRow = () =>
+    setExtraRows((prev) => [...prev, { descripcion: '', cantidad: '1', nota: '' }])
 
+  const removeExtraRow = (idx: number) =>
+    setExtraRows((prev) => prev.filter((_, i) => i !== idx))
+
+  const updateExtraRow = (idx: number, field: keyof ExtraRow, value: string) =>
+    setExtraRows((prev) =>
+      prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r))
+    )
+
+  // ── Resumen de selección ─────────────────────────────────────────────────────
+  const selectedCount = useMemo(
+    () => checkedParts.filter((p) => p.checked).length,
+    [checkedParts]
+  )
+
+  const pendingCount = useMemo(
+    () =>
+      checkedParts.filter(
+        (p) => p.cantSolicitada - p.cantEntregada > 0
+      ).length,
+    [checkedParts]
+  )
+
+  // ── Submit ───────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    const validRows = rows.filter((r) => r.descripcion.trim() && Number(r.cantidad) > 0)
-    if (validRows.length === 0) {
-      toast.error('Agrega al menos un ítem con descripción y cantidad válida.')
-      return
-    }
+    const fromSolicitud: DeliveryLineItem[] = checkedParts
+      .filter((p) => p.checked && Number(p.cantAEntregar) > 0)
+      .map((p) => ({
+        descripcion: p.descripcion,
+        cantidad:    parseInt(p.cantAEntregar, 10) || 1,
+        nota:        p.nota.trim() || undefined,
+      }))
 
-    setIsSubmitting(true)
-    try {
-      const items: DeliveryLineItem[] = validRows.map((r) => ({
+    const fromExtras: DeliveryLineItem[] = extraRows
+      .filter((r) => r.descripcion.trim() && Number(r.cantidad) > 0)
+      .map((r) => ({
         descripcion: r.descripcion.trim(),
         cantidad:    parseInt(r.cantidad, 10) || 1,
         nota:        r.nota.trim() || undefined,
       }))
 
+    const items = [...fromSolicitud, ...fromExtras]
+
+    if (items.length === 0) {
+      toast.error('Marca al menos un repuesto solicitado o agrega un ítem adicional.')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
       const res = await fetch(`/api/equipment/${equipmentId}/deliver-parts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,16 +157,6 @@ export default function ModalEntregaRepuestos({
     }
   }
 
-  // Saldo pendiente por ítem (solo si hay approved_parts)
-  const getSaldo = (descripcion: string, cantidadEntregando: number): number | null => {
-    if (approvedParts.length === 0) return null
-    const part = approvedParts.find(
-      (p) => p.descripcion.trim().toLowerCase() === descripcion.trim().toLowerCase()
-    )
-    if (!part) return null
-    return Math.max(0, part.cantidad_solicitada - part.cantidad_entregada - cantidadEntregando)
-  }
-
   const inputCls =
     'bg-bg-elevated border border-border-subtle rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:outline-none transition-all'
 
@@ -111,7 +164,8 @@ export default function ModalEntregaRepuestos({
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-bg-elevated/85 backdrop-blur-sm z-50 transition-opacity" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[600px] max-h-[90vh] overflow-y-auto bg-bg-surface border border-neon-blue/20 rounded-xl shadow-neon-blue z-50 font-sans text-text-primary animate-in fade-in zoom-in-95 duration-150 scrollbar-thin">
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[640px] max-h-[90vh] overflow-y-auto bg-bg-surface border border-neon-blue/20 rounded-xl shadow-neon-blue z-50 font-sans text-text-primary animate-in fade-in zoom-in-95 duration-150 scrollbar-thin">
+
           {/* Cabecera */}
           <div className="sticky top-0 z-10 bg-bg-surface border-b border-border-subtle px-5 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -129,111 +183,188 @@ export default function ModalEntregaRepuestos({
             </button>
           </div>
 
-          <div className="px-5 py-5 space-y-5">
+          <div className="px-5 py-5 space-y-6">
 
-            {/* Tabla de repuestos aprobados (referencia) */}
+            {/* ── Sección 1: Repuestos Solicitados (checkboxes) ── */}
             {approvedParts.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
-                  Control de Repuestos Aprobados
-                </p>
-                <div className="rounded-lg border border-border-subtle overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-bg-elevated/40 text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                        <th className="px-3 py-2 text-left">Repuesto / Insumo</th>
-                        <th className="px-3 py-2 text-center">Solicitado</th>
-                        <th className="px-3 py-2 text-center">Entregado</th>
-                        <th className="px-3 py-2 text-center">Saldo</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border-subtle/50">
-                      {approvedParts.map((part, idx) => {
-                        const saldo = part.cantidad_solicitada - part.cantidad_entregada
-                        return (
-                          <tr key={part.id || idx} className="hover:bg-bg-elevated/20">
-                            <td className="px-3 py-2 text-text-primary">{part.descripcion}</td>
-                            <td className="px-3 py-2 text-center text-text-secondary font-mono">
-                              {part.cantidad_solicitada}
-                            </td>
-                            <td className="px-3 py-2 text-center font-mono text-emerald-400">
-                              {part.cantidad_entregada}
-                            </td>
-                            <td className="px-3 py-2 text-center font-mono font-bold">
-                              <span className={saldo > 0 ? 'text-yellow-400' : 'text-emerald-400'}>
-                                {saldo > 0 ? saldo : '✓'}
-                              </span>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckSquare size={11} className="text-neon-blue" />
+                    Repuestos Solicitados — Marcar como Entregado
+                  </p>
+                  {pendingCount > 0 && (
+                    <span className="text-[9px] text-yellow-400 font-semibold">
+                      {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
+
+                <div className="rounded-lg border border-border-subtle overflow-hidden">
+                  {/* Encabezados */}
+                  <div className="grid grid-cols-[24px_1fr_64px_64px_64px_80px_100px] gap-1 px-3 py-2 bg-bg-elevated/40 text-[9px] font-bold text-text-muted uppercase tracking-wider">
+                    <span />
+                    <span>Descripción</span>
+                    <span className="text-center">Solicit.</span>
+                    <span className="text-center">Entregado</span>
+                    <span className="text-center">Saldo</span>
+                    <span className="text-center">A Entregar</span>
+                    <span>Nota</span>
+                  </div>
+
+                  {checkedParts.map((part, idx) => {
+                    const saldo = part.cantSolicitada - part.cantEntregada
+                    const completo = saldo <= 0
+                    return (
+                      <div
+                        key={part.partId}
+                        className={`grid grid-cols-[24px_1fr_64px_64px_64px_80px_100px] gap-1 items-center px-3 py-2.5 border-t border-border-subtle/50 transition-colors ${
+                          part.checked
+                            ? 'bg-neon-blue/5'
+                            : completo
+                            ? 'bg-emerald-400/5 opacity-60'
+                            : 'hover:bg-bg-elevated/20'
+                        }`}
+                      >
+                        {/* Checkbox */}
+                        <button
+                          type="button"
+                          onClick={() => !completo && toggleCheck(idx)}
+                          disabled={completo}
+                          className={`flex items-center justify-center transition-colors ${
+                            completo
+                              ? 'text-emerald-400 cursor-default'
+                              : part.checked
+                              ? 'text-neon-blue'
+                              : 'text-text-muted hover:text-neon-blue'
+                          }`}
+                        >
+                          {completo ? (
+                            <CheckSquare size={14} />
+                          ) : part.checked ? (
+                            <CheckSquare size={14} />
+                          ) : (
+                            <Square size={14} />
+                          )}
+                        </button>
+
+                        {/* Descripción */}
+                        <span className={`text-xs truncate ${completo ? 'line-through text-text-muted' : 'text-text-primary'}`}>
+                          {part.descripcion}
+                        </span>
+
+                        {/* Solicitado */}
+                        <span className="text-xs text-center text-text-secondary font-mono">
+                          {part.cantSolicitada}
+                        </span>
+
+                        {/* Entregado previamente */}
+                        <span className="text-xs text-center font-mono text-emerald-400">
+                          {part.cantEntregada}
+                        </span>
+
+                        {/* Saldo */}
+                        <span className={`text-xs text-center font-mono font-bold ${completo ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                          {completo ? '✓' : saldo}
+                        </span>
+
+                        {/* Cantidad a entregar ahora */}
+                        <input
+                          type="number"
+                          min={1}
+                          max={saldo}
+                          value={part.cantAEntregar}
+                          disabled={!part.checked || completo}
+                          onChange={(e) => updateCheckedField(idx, 'cantAEntregar', e.target.value)}
+                          className={`${inputCls} text-center w-full disabled:opacity-40 disabled:cursor-not-allowed`}
+                        />
+
+                        {/* Nota */}
+                        <input
+                          type="text"
+                          value={part.nota}
+                          disabled={!part.checked || completo}
+                          onChange={(e) => updateCheckedField(idx, 'nota', e.target.value)}
+                          placeholder="Observación"
+                          className={`${inputCls} w-full disabled:opacity-40 disabled:cursor-not-allowed`}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {selectedCount > 0 && (
+                  <p className="text-[10px] text-neon-blue font-semibold">
+                    {selectedCount} ítem{selectedCount !== 1 ? 's' : ''} marcado{selectedCount !== 1 ? 's' : ''} para entrega
+                  </p>
+                )}
               </div>
             )}
 
-            {/* Formulario de entrega */}
+            {/* ── Sección 2: Ítems Adicionales (no estaban en la solicitud) ── */}
             <div className="space-y-3">
               <p className="text-[10px] font-bold text-neon-blue uppercase tracking-wider flex items-center gap-1.5">
-                <Package size={11} /> Ítems a Entregar Ahora *
+                <Plus size={11} /> Ítems Adicionales
+                <span className="text-text-muted font-normal normal-case">(no incluidos en la solicitud)</span>
               </p>
 
-              {/* Headers */}
-              <div className="grid grid-cols-[1fr_70px_120px_32px] gap-1.5 px-1">
-                <span className="text-[9px] font-bold text-text-muted uppercase">Descripción</span>
-                <span className="text-[9px] font-bold text-text-muted uppercase text-center">Cant.</span>
-                <span className="text-[9px] font-bold text-text-muted uppercase">Nota / Compatible</span>
-                <span />
-              </div>
+              {extraRows.length > 0 && (
+                <>
+                  <div className="grid grid-cols-[1fr_70px_120px_32px] gap-1.5 px-1">
+                    <span className="text-[9px] font-bold text-text-muted uppercase">Descripción</span>
+                    <span className="text-[9px] font-bold text-text-muted uppercase text-center">Cant.</span>
+                    <span className="text-[9px] font-bold text-text-muted uppercase">Nota / Compatible</span>
+                    <span />
+                  </div>
 
-              {rows.map((row, idx) => (
-                <div key={idx} className="grid grid-cols-[1fr_70px_120px_32px] gap-1.5 items-center">
-                  <input
-                    type="text"
-                    value={row.descripcion}
-                    onChange={(e) => updateRow(idx, 'descripcion', e.target.value)}
-                    placeholder="Ej: Carbones de repuesto"
-                    className={inputCls}
-                  />
-                  <input
-                    type="number"
-                    value={row.cantidad}
-                    min={1}
-                    onChange={(e) => updateRow(idx, 'cantidad', e.target.value)}
-                    className={`${inputCls} text-center`}
-                  />
-                  <input
-                    type="text"
-                    value={row.nota}
-                    onChange={(e) => updateRow(idx, 'nota', e.target.value)}
-                    placeholder="Compatible / Observación"
-                    className={inputCls}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeRow(idx)}
-                    disabled={rows.length === 1}
-                    className="flex items-center justify-center text-text-muted hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))}
+                  {extraRows.map((row, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_70px_120px_32px] gap-1.5 items-center">
+                      <input
+                        type="text"
+                        value={row.descripcion}
+                        onChange={(e) => updateExtraRow(idx, 'descripcion', e.target.value)}
+                        placeholder="Ej: Carbones de repuesto"
+                        className={inputCls}
+                      />
+                      <input
+                        type="number"
+                        value={row.cantidad}
+                        min={1}
+                        onChange={(e) => updateExtraRow(idx, 'cantidad', e.target.value)}
+                        className={`${inputCls} text-center`}
+                      />
+                      <input
+                        type="text"
+                        value={row.nota}
+                        onChange={(e) => updateExtraRow(idx, 'nota', e.target.value)}
+                        placeholder="Compatible / Observación"
+                        className={inputCls}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeExtraRow(idx)}
+                        className="flex items-center justify-center text-text-muted hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
 
               <button
                 type="button"
-                onClick={addRow}
+                onClick={addExtraRow}
                 className="flex items-center gap-1.5 text-[10px] text-neon-blue hover:text-neon-blue/80 font-semibold transition-colors"
               >
-                <Plus size={12} /> Agregar ítem
+                <Plus size={12} /> Agregar ítem adicional
               </button>
             </div>
 
-            {/* Observaciones */}
+            {/* ── Observaciones ── */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                Observaciones
+                Observaciones Generales
               </label>
               <textarea
                 value={observaciones}
@@ -244,7 +375,7 @@ export default function ModalEntregaRepuestos({
               />
             </div>
 
-            {/* Acciones */}
+            {/* ── Acciones ── */}
             <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
               <button
                 type="button"
