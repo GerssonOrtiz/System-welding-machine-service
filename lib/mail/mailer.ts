@@ -156,6 +156,11 @@ export interface CulminadoODPData extends ThreadBaseData {
   observaciones: string
 }
 
+export interface CoordinacionClienteData extends ThreadBaseData {
+  cuerpo_correo: string
+  observaciones?: string
+}
+
 // ─────────────────────────────────────────
 // BUILDERS HTML
 // ─────────────────────────────────────────
@@ -449,6 +454,55 @@ function buildCulminadoODPHtml(data: CulminadoODPData): string {
       ${data.observaciones ? `
       <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
         <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones:</p>
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
+      </div>` : ''}
+
+      ${buildSignature()}
+    </div>
+  `
+}
+
+function buildCoordinacionClienteHtml(data: CoordinacionClienteData): string {
+  const formattedBody = data.cuerpo_correo
+    ? data.cuerpo_correo.replace(/\n/g, '<br/>')
+    : 'Se ha establecido coordinación técnica/operativa con el cliente respecto al equipo.'
+
+  return `
+    <div style="font-family: Calibri, sans-serif; color: #1f375f; line-height: 1.5;">
+      <p>Estimados,</p>
+      <p>Se ha registrado un hito de <strong>Coordinación con el cliente</strong> para el siguiente equipo:</p>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px;">
+        <tbody>
+          <tr style="background-color: #F8FAFC;">
+            <td style="${tableCellStyle} font-weight: bold; width: 180px;">Ficha (FR):</td>
+            <td style="${tableCellStyle} font-weight: bold;">${data.fr_number}</td>
+          </tr>
+          <tr>
+            <td style="${tableCellStyle} font-weight: bold;">Cliente:</td>
+            <td style="${tableCellStyle}">${data.client_name}</td>
+          </tr>
+          <tr style="background-color: #F8FAFC;">
+            <td style="${tableCellStyle} font-weight: bold;">Equipo:</td>
+            <td style="${tableCellStyle}">${data.brand} ${data.model}</td>
+          </tr>
+          <tr>
+            <td style="${tableCellStyle} font-weight: bold;">Fecha:</td>
+            <td style="${tableCellStyle} font-size: 9px; color: #6B7280;">${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })} (Hora Lima)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="border-left: 4px solid #F59E0B; background-color: #FFFBEB; padding: 14px 16px; border-radius: 4px; margin-bottom: 20px;">
+        <span style="font-size: 13px; font-weight: bold; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px;">Detalle de la Coordinación:</span>
+        <p style="margin: 8px 0 0 0; font-size: 12px; color: #1f375f; line-height: 1.6;">
+          ${formattedBody}
+        </p>
+      </div>
+
+      ${data.observaciones ? `
+      <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
+        <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones adicionales:</p>
         <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
       </div>` : ''}
 
@@ -825,6 +879,38 @@ export const mailer = {
     } catch (error: any) {
       console.error('[Mailer] sendCulminadoODP error:', error)
       return { success: false, error: error?.message || 'Error al enviar correo de culminado' }
+    }
+  },
+
+  /**
+   * Envía una notificación en hilo con el cuerpo redactado de la coordinación con el cliente.
+   * Estado: "Coordinación con el cliente"
+   */
+  async sendCoordinacionCliente(data: CoordinacionClienteData): Promise<MailerResult> {
+    if (!resend) {
+      console.warn('[Mailer] sendCoordinacionCliente — RESEND_API_KEY no configurada, correo omitido.')
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
+    }
+    try {
+      const subject = data.thread_subject
+        ? `RE: ${data.thread_subject.replace(/^RE:\s*/i, '')}`
+        : `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
+
+      const res = await resend.emails.send({
+        from: FROM_ADDRESS,
+        to: ENTRY_TO,
+        subject,
+        html: buildCoordinacionClienteHtml(data),
+        headers: threadHeaders(data.thread_id),
+      })
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendCoordinacionCliente Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error de envío de coordinación con el cliente' }
+      }
+      return { success: true, messageId: (res as any)?.data?.id }
+    } catch (error: any) {
+      console.error('[Mailer] sendCoordinacionCliente error:', error)
+      return { success: false, error: error?.message || 'Error al enviar correo de coordinación con el cliente' }
     }
   },
 

@@ -5,7 +5,7 @@
 // ítems adicionales (extra) no contemplados en la solicitud original.
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { toast } from 'sonner'
 import { Package, Plus, Trash2, X, Send, CheckSquare, Square } from 'lucide-react'
@@ -48,23 +48,32 @@ export default function ModalEntregaRepuestos({
 }: ModalEntregaRepuestosProps) {
 
   // ── Estado: ítems de la lista solicitada (con checkbox) ──────────────────────
-  const [checkedParts, setCheckedParts] = useState<CheckedPart[]>(() =>
-    approvedParts.map((p) => ({
-      partId:         p.id || crypto.randomUUID(),
-      descripcion:    p.descripcion,
-      cantSolicitada: p.cantidad_solicitada,
-      cantEntregada:  p.cantidad_entregada,
-      checked:        false,
-      cantAEntregar:  String(Math.max(0, p.cantidad_solicitada - p.cantidad_entregada)),
-      nota:           '',
-    }))
-  )
+  const [checkedParts, setCheckedParts] = useState<CheckedPart[]>([])
 
   // ── Estado: ítems adicionales (no estaban en la solicitud) ───────────────────
   const [extraRows, setExtraRows] = useState<ExtraRow[]>([])
 
   const [observaciones, setObservaciones] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Sincronizar y resetear estado cada vez que se abre el modal o cambian los approvedParts
+  useEffect(() => {
+    if (isOpen) {
+      setCheckedParts(
+        (approvedParts || []).map((p) => ({
+          partId:         p.id || crypto.randomUUID(),
+          descripcion:    p.descripcion,
+          cantSolicitada: p.cantidad_solicitada,
+          cantEntregada:  p.cantidad_entregada || 0,
+          checked:        false,
+          cantAEntregar:  String(Math.max(0, p.cantidad_solicitada - (p.cantidad_entregada || 0))),
+          nota:           '',
+        }))
+      )
+      setExtraRows([])
+      setObservaciones('')
+    }
+  }, [isOpen, approvedParts])
 
   // ── Helpers para checkedParts ────────────────────────────────────────────────
   const toggleCheck = (idx: number) =>

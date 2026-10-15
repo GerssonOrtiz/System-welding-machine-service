@@ -8,14 +8,16 @@ import {
   aprobacionVentasSchema,
   solicitudRepuestosSchema,
   culminadoODPSchema,
+  coordinacionClienteSchema,
 } from '@/lib/validations/equipment.schema'
 import type { ApprovedPartItem } from '@/types/equipment'
 
 // Estados que disparan correos específicos (en minúsculas para comparación)
-const ESTADO_INFORME_ODP        = 'pendiente de aprobación'
-const ESTADO_APROBACION_VENTAS  = 'aprobado'
-const ESTADO_ESPERA_REPUESTO    = 'en espera de repuesto'
-const ESTADO_CULMINADO_ODP      = 'listo para entrega'
+const ESTADO_INFORME_ODP            = 'pendiente de aprobación'
+const ESTADO_APROBACION_VENTAS      = 'aprobado'
+const ESTADO_ESPERA_REPUESTO        = 'en espera de repuesto'
+const ESTADO_CULMINADO_ODP          = 'listo para entrega'
+const ESTADO_COORDINACION_CLIENTE   = 'coordinación con el cliente'
 
 export async function POST(
   request: NextRequest,
@@ -158,6 +160,16 @@ export async function POST(
       }
     }
 
+    if (targetNameLower === ESTADO_COORDINACION_CLIENTE) {
+      const parsed = coordinacionClienteSchema.safeParse(rawBody)
+      if (!parsed.success) {
+        return NextResponse.json({ success: false, error: 'Datos de coordinación con el cliente inválidos', details: parsed.error.flatten() }, { status: 400 })
+      }
+      if (parsed.data.send_email && !parsed.data.email_body?.trim()) {
+        return NextResponse.json({ success: false, error: 'Debe ingresar el cuerpo del correo a enviar' }, { status: 400 })
+      }
+    }
+
     // 11. Construir payload de actualización
     const updateData: Record<string, any> = {
       current_status_id: new_status_id,
@@ -232,11 +244,15 @@ export async function POST(
     }
 
     let mailWarning: string | null = null
+    const shouldSendCoordinationEmail =
+      targetNameLower === ESTADO_COORDINACION_CLIENTE && Boolean(rawBody.send_email)
+
     const requiresEmail =
       targetNameLower === ESTADO_INFORME_ODP ||
       targetNameLower === ESTADO_APROBACION_VENTAS ||
       targetNameLower === ESTADO_ESPERA_REPUESTO ||
-      targetNameLower === ESTADO_CULMINADO_ODP
+      targetNameLower === ESTADO_CULMINADO_ODP ||
+      shouldSendCoordinationEmail
 
     if (requiresEmail) {
       if (!eq.email_thread_id) {
@@ -277,6 +293,13 @@ export async function POST(
             mailResult = await mailer.sendCulminadoODP({
               ...threadBase,
               observaciones: parsed.observaciones,
+            })
+          } else if (shouldSendCoordinationEmail) {
+            const parsed = coordinacionClienteSchema.parse(rawBody)
+            mailResult = await mailer.sendCoordinacionCliente({
+              ...threadBase,
+              cuerpo_correo: parsed.email_body,
+              observaciones: rawBody.notes?.trim() || undefined,
             })
           }
 

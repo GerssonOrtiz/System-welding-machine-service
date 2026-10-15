@@ -7,8 +7,10 @@ import { useUser } from '@/hooks/useUser'
 import StatusBadge from './StatusBadge'
 import EquipmentDetail from './EquipmentDetail'
 import QRPrintModal from './QRPrintModal'
+import ModalEntregaRepuestos from './modals/ModalEntregaRepuestos'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Package, QrCode, Eye, Trash2 } from 'lucide-react'
+import type { ApprovedPartItem } from '@/types/equipment'
 
 interface EquipmentTableProps {
   equipments: any[]
@@ -32,6 +34,7 @@ export default function EquipmentTable({
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [qrModalEq, setQrModalEq] = useState<any | null>(null)
+  const [partsModalEq, setPartsModalEq] = useState<any | null>(null)
 
   const handleOpenDetail = (id: string) => {
     setSelectedEqId(id)
@@ -160,6 +163,18 @@ export default function EquipmentTable({
                       </td>
                     )}
                     <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
+                      {['almacen', 'admin', 'superadmin'].includes(role || '') &&
+                        eq.approved_parts &&
+                        eq.approved_parts.length > 0 && (
+                          <button
+                            onClick={() => setPartsModalEq(eq)}
+                            title="Registrar entrega de repuestos (Almacén / Logística)"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-neon-blue/50 text-neon-blue hover:bg-neon-blue/10 bg-neon-blue/5 transition-all font-semibold uppercase text-[10px]"
+                          >
+                            <Package size={12} />
+                            <span>Repuestos</span>
+                          </button>
+                        )}
                       <button
                         onClick={() => setQrModalEq(eq)}
                         title="Generar e imprimir etiqueta con código QR"
@@ -230,6 +245,20 @@ export default function EquipmentTable({
           }}
           equipmentId={selectedEqId}
           onStatusUpdated={onUpdateSuccess}
+        />
+      )}
+
+      {/* Modal de entrega de repuestos directo desde la tabla */}
+      {partsModalEq && (
+        <ModalEntregaRepuestos
+          isOpen={Boolean(partsModalEq)}
+          onClose={() => setPartsModalEq(null)}
+          equipmentId={partsModalEq.id}
+          frNumber={partsModalEq.fr_number || ''}
+          approvedParts={(partsModalEq.approved_parts || []) as ApprovedPartItem[]}
+          onSuccess={() => {
+            if (onUpdateSuccess) onUpdateSuccess()
+          }}
         />
       )}
 

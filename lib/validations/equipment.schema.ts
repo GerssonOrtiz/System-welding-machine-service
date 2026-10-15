@@ -112,6 +112,13 @@ export const culminadoODPSchema = z.object({
   observaciones: z.string().optional().default(''),
 })
 
+export const coordinacionClienteSchema = z.object({
+  new_status_id: z.number().int(),
+  notes: z.string().optional().nullable(),
+  send_email: z.boolean().optional().default(false),
+  email_body: z.string().optional().default(''),
+})
+
 export type CreateEquipmentInput = z.infer<typeof createEquipmentSchema>
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>
 export type ForceStatusInput = z.infer<typeof forceStatusSchema>
@@ -120,3 +127,4 @@ export type AprobacionVentasInput = z.infer<typeof aprobacionVentasSchema>
 export type EntregaLogisticaInput = z.infer<typeof entregaLogisticaSchema>
 export type SolicitudRepuestosInput = z.infer<typeof solicitudRepuestosSchema>
 export type CulminadoODPInput = z.infer<typeof culminadoODPSchema>
+export type CoordinacionClienteInput = z.infer<typeof coordinacionClienteSchema>

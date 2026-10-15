@@ -10,12 +10,14 @@ import ModalInformeODP from './modals/ModalInformeODP'
 import ModalAprobacionVentas, { VentasItem } from './modals/ModalAprobacionVentas'
 import ModalEntregaLogistica, { LogisticaItem } from './modals/ModalEntregaLogistica'
 import ModalCulminadoODP from './modals/ModalCulminadoODP'
+import ModalCoordinacionCliente from './modals/ModalCoordinacionCliente'
 
 // Estados que muestran un sub-modal de correo (en minúsculas)
-const ESTADO_INFORME_ODP       = 'pendiente de aprobación'
-const ESTADO_APROBACION_VENTAS = 'aprobado'
-const ESTADO_ENTREGA_LOGISTICA = 'en espera de repuesto'
-const ESTADO_CULMINADO_ODP     = 'listo para entrega'
+const ESTADO_INFORME_ODP            = 'pendiente de aprobación'
+const ESTADO_APROBACION_VENTAS      = 'aprobado'
+const ESTADO_ENTREGA_LOGISTICA      = 'en espera de repuesto'
+const ESTADO_CULMINADO_ODP          = 'listo para entrega'
+const ESTADO_COORDINACION_CLIENTE   = 'coordinación con el cliente'
 
 interface StatusChangeModalProps {
   isOpen: boolean
@@ -69,6 +71,9 @@ export default function StatusChangeModal({
   const [logisticaObservaciones, setLogisticaObs] = useState('')
   // Culminado ODP
   const [culminadoObs, setCulminadoObs]         = useState('')
+  // Coordinación con el cliente
+  const [coordinacionSendEmail, setCoordinacionSendEmail] = useState(false)
+  const [coordinacionEmailBody, setCoordinacionEmailBody] = useState('')
 
   // ── Estado destino seleccionado ──────────────────────────────────────────
   const selectedStateObj = isOverride
@@ -80,10 +85,11 @@ export default function StatusChangeModal({
   const isTargetMaintenance = targetNameLower === 'en mantenimiento'
   const requiresTech        = isTargetDiagnosis || isTargetMaintenance
 
-  const showInformeODP       = !isOverride && targetNameLower === ESTADO_INFORME_ODP
-  const showAprobacionVentas = !isOverride && targetNameLower === ESTADO_APROBACION_VENTAS
-  const showEntregaLogistica = !isOverride && targetNameLower === ESTADO_ENTREGA_LOGISTICA
-  const showCulminadoODP     = !isOverride && targetNameLower === ESTADO_CULMINADO_ODP
+  const showInformeODP          = !isOverride && targetNameLower === ESTADO_INFORME_ODP
+  const showAprobacionVentas    = !isOverride && targetNameLower === ESTADO_APROBACION_VENTAS
+  const showEntregaLogistica    = !isOverride && targetNameLower === ESTADO_ENTREGA_LOGISTICA
+  const showCulminadoODP        = !isOverride && targetNameLower === ESTADO_CULMINADO_ODP
+  const showCoordinacionCliente = !isOverride && targetNameLower === ESTADO_COORDINACION_CLIENTE
 
   // ── Fetch técnicos ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -127,6 +133,8 @@ export default function StatusChangeModal({
       setLogisticaItems([{ descripcion: '', cantidad: '1', nota: '' }])
       setLogisticaObs('')
       setCulminadoObs('')
+      setCoordinacionSendEmail(false)
+      setCoordinacionEmailBody('')
     }
   }, [isOpen])
 
@@ -153,6 +161,10 @@ export default function StatusChangeModal({
     if (showEntregaLogistica) {
       const valid = logisticaItems.every(i => i.descripcion.trim() && i.cantidad.trim())
       if (!valid) { toast.error('Complete la descripción y cantidad de cada repuesto solicitado'); return }
+    }
+    if (showCoordinacionCliente && coordinacionSendEmail && !coordinacionEmailBody.trim()) {
+      toast.error('Debe ingresar el cuerpo del correo si activó el envío de notificación')
+      return
     }
 
     setIsSubmitting(true)
@@ -206,6 +218,9 @@ export default function StatusChangeModal({
           payload.observaciones = logisticaObservaciones
         } else if (showCulminadoODP) {
           payload.observaciones = culminadoObs
+        } else if (showCoordinacionCliente) {
+          payload.send_email = coordinacionSendEmail
+          payload.email_body = coordinacionEmailBody.trim()
         }
 
         response = await fetch(endpoint, {
@@ -364,6 +379,15 @@ export default function StatusChangeModal({
               <ModalCulminadoODP
                 observaciones={culminadoObs}
                 onObservacionesChange={setCulminadoObs}
+              />
+            )}
+
+            {showCoordinacionCliente && (
+              <ModalCoordinacionCliente
+                sendEmail={coordinacionSendEmail}
+                onSendEmailChange={setCoordinacionSendEmail}
+                emailBody={coordinacionEmailBody}
+                onEmailBodyChange={setCoordinacionEmailBody}
               />
             )}
 
