@@ -19,7 +19,8 @@ export default function EquiposPage() {
   const [isSearching, setIsSearching] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
   const [serviceFilter, setServiceFilter] = useState('')
-  const includeDelivered = role === 'visualizador'
+  const isViewingDelivered = statusFilter.trim().toLowerCase() === 'entregado'
+  const includeDelivered = role === 'visualizador' || isViewingDelivered
   const { equipments, total, totalPages, isLoading, mutate } = useEquipmentList(currentPage, includeDelivered, statusFilter || undefined, serviceFilter || undefined)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeletingAll, setIsDeletingAll] = useState(false)
@@ -214,11 +215,14 @@ export default function EquiposPage() {
               <option value="">TODOS LOS ESTADOS</option>
               <option value="En espera de diagnóstico">ESPERA DIAGNÓSTICO</option>
               <option value="En diagnóstico">EN DIAGNÓSTICO</option>
+              <option value="Coordinación con el cliente">COORDINACIÓN CON CLIENTE</option>
               <option value="Pendiente de aprobación">PENDIENTE APROBACIÓN</option>
               <option value="Aprobado">APROBADO</option>
               <option value="En espera de repuesto">ESPERA REPUESTO</option>
+              <option value="En espera de repuesto adicional">ESPERA REPUESTO ADICIONAL</option>
               <option value="En mantenimiento">EN MANTENIMIENTO</option>
-              <option value="Listo para control de calidad">LISTO QC</option>
+              <option value="Control de calidad">CONTROL DE CALIDAD</option>
+              <option value="Listo para entrega">LISTO PARA ENTREGA</option>
               <option value="Entregado">ENTREGADO</option>
               <option value="REVISION">REVISIÓN (ADMIN)</option>
               <option value="PRESTAMO">PRÉSTAMO (ADMIN)</option>

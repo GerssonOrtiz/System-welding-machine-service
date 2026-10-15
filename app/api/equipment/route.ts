@@ -31,7 +31,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Filtrar equipos entregados (terminales) si no se solicita incluirlos
-    if (!includeDelivered) {
+    // NOTA: Si el usuario selecciona explícitamente un filtro de estado como "Entregado",
+    // no debemos excluir los terminales con is_terminal=false porque anularía la consulta.
+    const isExplicitTerminalFilter = statusFilter?.trim().toLowerCase() === 'entregado'
+    if (!includeDelivered && !isExplicitTerminalFilter) {
       query = query.eq('is_terminal', false)
     }
 

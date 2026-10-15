@@ -71,6 +71,7 @@ export default function DashboardPage() {
   const statusOptions = [
     'En espera de diagnóstico', 
     'En diagnóstico', 
+    'Coordinación con el cliente',
     'Pendiente de aprobación', 
     'Aprobado', 
     'En mantenimiento', 
