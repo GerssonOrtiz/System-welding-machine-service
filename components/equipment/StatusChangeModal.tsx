@@ -260,16 +260,16 @@ export default function StatusChangeModal({
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-bg-base/85 backdrop-blur-sm z-50 transition-opacity" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[540px] max-h-[90vh] overflow-y-auto bg-bg-surface border border-neon-blue/30 rounded-xl shadow-neon-blue p-6 md:p-8 z-50 font-sans text-text-primary animate-in fade-in zoom-in-95 duration-150">
-          <Dialog.Title className="text-xl font-bold text-neon-blue mb-4 flex items-center gap-2">
+        <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 transition-opacity" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[540px] max-h-[90vh] overflow-y-auto glass-modal border border-amber-border/40 rounded-xl shadow-glass p-6 md:p-8 z-50 font-sans text-text-forge animate-glass-in">
+          <Dialog.Title className="text-xl font-bold text-amber-glow mb-4 flex items-center gap-2">
             ⚙️ Actualizar Estado
           </Dialog.Title>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Estado Actual */}
-            <div className="flex justify-between items-center bg-bg-elevated p-3 rounded-lg border border-border-subtle">
-              <span className="text-xs font-semibold text-text-secondary uppercase">Estado Actual</span>
+            <div className="flex justify-between items-center glass-card p-3 rounded-lg border border-amber-border/25">
+              <span className="text-xs font-semibold text-text-forge-mid uppercase">Estado Actual</span>
               <StatusBadge status={currentStatusName} color={currentStatusColor} />
             </div>
 

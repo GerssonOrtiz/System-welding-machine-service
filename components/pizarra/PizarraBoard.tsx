@@ -65,10 +65,10 @@ export default function PizarraBoard() {
   return (
     <div className="space-y-6 h-[calc(100vh-200px)] flex flex-col min-w-full">
       {/* Sección Diagnósticos */}
-      <div className="flex-1 flex flex-col min-h-0 bg-bg-surface/10 border border-border-subtle/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 glass-card border border-amber-border/25 rounded-2xl p-4 shadow-glass relative overflow-hidden">
         <div className="flex items-center gap-3 mb-3 select-none">
-          <div className="w-1.5 h-5 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]" />
-          <h2 className="text-xs font-extrabold uppercase tracking-widest text-neon-blue">
+          <div className="w-1.5 h-5 rounded-full bg-amber-core shadow-[0_0_10px_rgba(245,158,11,0.6)]" />
+          <h2 className="text-xs font-extrabold uppercase tracking-widest text-amber-glow">
             🔎 Módulo de Diagnósticos
           </h2>
         </div>
@@ -79,18 +79,18 @@ export default function PizarraBoard() {
             return (
               <div
                 key={col.id}
-                className="flex-1 min-w-[280px] bg-bg-surface/30 border border-border-subtle/80 rounded-xl p-4 flex flex-col max-h-full"
+                className="flex-1 min-w-[280px] glass-card border border-amber-border/20 rounded-xl p-4 flex flex-col max-h-full hover:border-amber-border/35 transition-all"
               >
                 {/* Column Header */}
-                <div className="flex justify-between items-center pb-2 border-b border-border-subtle/60 mb-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-text-primary flex items-center gap-2">
+                <div className="flex justify-between items-center pb-2 border-b border-amber-border/20 mb-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-text-forge flex items-center gap-2">
                     <span
                       className="w-2.5 h-2.5 rounded-full inline-block"
                       style={{ backgroundColor: col.color, boxShadow: `0 0 8px ${col.color}` }}
                     />
                     {col.name}
                   </h3>
-                  <span className="text-[10px] font-mono font-bold bg-bg-base border border-border-subtle text-text-secondary px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-mono font-bold bg-amber-ghost border border-amber-border/40 text-amber-glow px-2 py-0.5 rounded-full shadow-amber-sm">
                     {equipmentsInCol.length}
                   </span>
                 </div>
@@ -98,7 +98,7 @@ export default function PizarraBoard() {
                 {/* Cards Area */}
                 <div className="space-y-1 overflow-y-auto flex-1 pr-1 scrollbar-thin min-h-[80px]">
                   {equipmentsInCol.length === 0 ? (
-                    <div className="text-center py-6 text-[10px] text-text-muted italic">
+                    <div className="text-center py-6 text-[10px] text-text-forge-dim italic">
                       Sin equipos
                     </div>
                   ) : (
@@ -179,10 +179,10 @@ export default function PizarraBoard() {
       </div>
 
       {/* Sección Servicio */}
-      <div className="flex-1 flex flex-col min-h-0 bg-bg-surface/10 border border-border-subtle/40 rounded-2xl p-4 shadow-sm">
+      <div className="flex-1 flex flex-col min-h-0 glass-card border border-amber-border/25 rounded-2xl p-4 shadow-glass">
         <div className="flex items-center gap-3 mb-3 select-none">
-          <div className="w-1.5 h-5 rounded-full bg-neon-purple shadow-[0_0_10px_rgba(157,78,221,0.5)]" />
-          <h2 className="text-xs font-extrabold uppercase tracking-widest text-neon-purple">
+          <div className="w-1.5 h-5 rounded-full bg-forge-bright shadow-[0_0_10px_rgba(249,115,22,0.6)]" />
+          <h2 className="text-xs font-extrabold uppercase tracking-widest text-amber-glow">
             ⚙️ Servicio de Taller (Mantenimiento)
           </h2>
         </div>
@@ -192,18 +192,18 @@ export default function PizarraBoard() {
             return (
               <div
                 key={col.id}
-                className="flex-1 min-w-[280px] bg-bg-surface/30 border border-border-subtle/80 rounded-xl p-4 flex flex-col max-h-full"
+                className="flex-1 min-w-[280px] glass-card border border-amber-border/20 rounded-xl p-4 flex flex-col max-h-full hover:border-amber-border/35 transition-all"
               >
                 {/* Column Header */}
-                <div className="flex justify-between items-center pb-2 border-b border-border-subtle/60 mb-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-text-primary flex items-center gap-2">
+                <div className="flex justify-between items-center pb-2 border-b border-amber-border/20 mb-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-text-forge flex items-center gap-2">
                     <span
                       className="w-2.5 h-2.5 rounded-full inline-block"
                       style={{ backgroundColor: col.color, boxShadow: `0 0 8px ${col.color}` }}
                     />
                     {col.name}
                   </h3>
-                  <span className="text-[10px] font-mono font-bold bg-bg-base border border-border-subtle text-text-secondary px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-mono font-bold bg-amber-ghost border border-amber-border/40 text-amber-glow px-2 py-0.5 rounded-full shadow-amber-sm">
                     {equipmentsInCol.length}
                   </span>
                 </div>
@@ -211,7 +211,7 @@ export default function PizarraBoard() {
                 {/* Cards Area */}
                 <div className="space-y-1 overflow-y-auto flex-1 pr-1 scrollbar-thin min-h-[80px]">
                   {equipmentsInCol.length === 0 ? (
-                    <div className="text-center py-6 text-[10px] text-text-muted italic">
+                    <div className="text-center py-6 text-[10px] text-text-forge-dim italic">
                       Sin equipos
                     </div>
                   ) : (

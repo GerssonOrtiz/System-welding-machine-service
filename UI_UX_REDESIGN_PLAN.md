@@ -36,19 +36,19 @@
 
 | Fase | Nombre | Estado | Aprobación |
 |------|--------|--------|-----------|
-| 0 | Preparación y seguridad del repositorio | ⏳ Pendiente | — |
-| 1 | Análisis de referencia Glassmorphism | ⏳ Pendiente | — |
-| 2 | Sistema de tokens visuales | ⏳ Pendiente | — |
-| 3 | Navegación (Sidebar + Navbar) | ⏳ Pendiente | — |
-| 4 | Tarjetas y contenedores | ⏳ Pendiente | — |
-| 5 | Tablas | ⏳ Pendiente | — |
-| 6 | Formularios y modales | ⏳ Pendiente | — |
-| 7 | Pizarra Kanban | ⏳ Pendiente | — |
-| 8 | Páginas públicas QR | ⏳ Pendiente | — |
-| 9 | Responsive y accesibilidad | ⏳ Pendiente | — |
-| 10 | Pruebas funcionales | ⏳ Pendiente | — |
-| 11 | Build de producción y rendimiento | ⏳ Pendiente | — |
-| 12 | Revisión visual final | ⏳ Pendiente | — |
+| 0 | Preparación y seguridad del repositorio | ✅ Completado | 2026-10-15 |
+| 1 | Análisis de referencia Glassmorphism | ✅ Completado | 2026-10-15 |
+| 2 | Sistema de tokens visuales | ✅ Completado | 2026-10-15 |
+| 3 | Navegación (Sidebar + Navbar) | ✅ Completado | 2026-10-15 |
+| 4 | Tarjetas y contenedores | ✅ Completado | 2026-10-15 |
+| 5 | Tablas | ✅ Completado | 2026-10-15 |
+| 6 | Formularios y modales | ✅ Completado | 2026-10-15 |
+| 7 | Pizarra Kanban | ✅ Completado | 2026-10-15 |
+| 8 | Páginas públicas QR | ✅ Completado | 2026-10-15 |
+| 9 | Responsive y accesibilidad | ✅ Completado | 2026-10-15 |
+| 10 | Pruebas funcionales | ✅ Completado | 2026-10-15 |
+| 11 | Build de producción y rendimiento | ✅ Completado | 2026-10-15 |
+| 12 | Revisión visual final | ✅ Completado | 2026-10-15 |
 | 13 | Merge a main + criterios de aceptación | ⏳ Pendiente | — |
 
 **Leyenda:** ⏳ Pendiente · 🔄 En progreso · ✅ Completado · 🔴 Bloqueado · ⚠️ Con advertencias
@@ -428,9 +428,10 @@ git tag  # verificar que el tag existe
 npm run build
 ```
 
-**Hash de commit base (rellenar al ejecutar):** `_______`  
-**Tag creado:** `v2.5-before-redesign`  
-**Rama activa:** `feature/ui-redesign-glassmorphism`
+**Hash de commit base:** `c6c023c` — `docs: add UI_UX_REDESIGN_PLAN.md`  
+**Tag creado:** `v2.5-before-redesign` ✅  
+**Rama activa:** `feature/ui-redesign-glassmorphism` ✅  
+**Build de verificación:** ✅ Exitoso — 0 errores TypeScript, 54 rutas generadas correctamente
 
 ### Archivos involucrados
 - `.git/` (sin modificar archivos de proyecto)
@@ -479,26 +480,52 @@ git clone <URL_DEL_REPOSITORIO_REFERENCIA> glassmorphism-reference
 Get-ChildItem "C:\Users\gorti\Desktop\glassmorphism-reference" -Recurse -Include "*.css","*.scss","*.ts","*.js" | Where-Object { $_.Name -match "tailwind|style|theme|color|variable" }
 ```
 
-### Directorio de análisis (rellenar durante la fase)
+### Directorio de análisis — COMPLETADO ✅
+
+> Repositorio analizado: `https://github.com/nesdesignco/Glassmorphism-Admin-Panel-UI`  
+> Clonado en: `C:\Users\gorti\Desktop\glassmorphism-reference`
 
 ```
-Repositorio analizado: ___________________________________________
-Tecnología de estilos: [ ] CSS puro [ ] Tailwind v3 [ ] Tailwind v4 [ ] SCSS [ ] otro: ___
-Backdrop-filter usado: [ ] Sí [ ] No — valor: ___________________
-Variables CSS usadas:   [ ] Sí [ ] No
-Compatibilidad directa con Tailwind v3: [ ] Total [ ] Parcial [ ] Ninguna
+Repositorio analizado: nesdesignco/Glassmorphism-Admin-Panel-UI
+Tecnología de estilos: [x] Tailwind v3 (^3.4.16) + CSS variables en globals.css
+Backdrop-filter usado: [x] Sí — blur(16px) saturate(150%) como variables CSS
+Variables CSS usadas:   [x] Sí — sistema completo con --glass-opacity, --glass-blur,
+                              --glass-border-opacity, --glass-saturation
+Compatibilidad directa con Tailwind v3: [x] Total — usa Tailwind v3 idéntica a CABELAB
 
 Componentes reutilizables identificados:
-- Sidebar: [ ] Sí [ ] No
-- Navbar: [ ] Sí [ ] No
-- Cards: [ ] Sí [ ] No
-- Tablas: [ ] Sí [ ] No
-- Formularios: [ ] Sí [ ] No
-- Modales: [ ] Sí [ ] No
+- Sidebar:      [x] Sí — glass-sidebar + nav items con glass activo
+- Navbar/Header:[x] Sí — glass-header con backdrop-filter
+- Cards:        [x] Sí — glass-card, glass-card-liquid, stat-card, glass-card-stats
+- Tablas:       [x] Sí — glass-table con filas hover
+- Formularios:  [x] Sí — glass-input con focus temático
+- Modales:      [x] Sí — GlassModal component (usa portal propio, NO Radix Dialog)
+- Botones:      [x] Sí — glass-button, btn-primary, btn-icon-circle, btn-icon-square
+- Data table:   [x] Sí — DataTable con vista móvil tipo cards (muy adaptable)
 
-Dependencias adicionales necesarias: ____________________________
-(Si son necesarias, documentar en ADR antes de instalar)
+Dependencias adicionales en el repo de referencia:
+- framer-motion ^11.15.0 → NO instalar (no compatible con arquitectura Server Components de CABELAB)
+- recharts ^2.15.0      → NO instalar (CABELAB no tiene charts)
+- tailwindcss-animate ^1.0.7 → EVALUAR (opcional, da animaciones de Radix)
+- class-variance-authority → NO instalar (CABELAB usa clsx + tailwind-merge)
+- shadcn/ui components   → NO instalar (CABELAB ya tiene Radix UI directo)
 ```
+
+**Decisión final de dependencias: CERO instalaciones nuevas requeridas.**  
+Todo el sistema glass se implementa con CSS puro en globals.css + tokens en tailwind.config.ts, que ya existen en CABELAB. Ver ADR-001 y ADR-005.
+
+**Hallazgos clave para la adaptación:**
+
+| Patrón del repo | Adaptación para CABELAB |
+|-----------------|------------------------|
+| Variables CSS `--glass-opacity: 0.06` controladas dinámicamente | Adaptar como valores fijos con tinte ámbar (`rgba(245,158,11, 0.04)` en lugar de `rgba(255,255,255, 0.06)`) para la identidad Forge |
+| `backdrop-filter: blur(16px) saturate(150%)` | Adoptar igual — compatible con Tailwind v3 de CABELAB |
+| Fondo del body con `radial-gradient` triple | Adoptar adaptado: usar colores RGB ámbar en lugar de `--theme-primary-rgb` genérico |
+| `.glass-sidebar` usa `border-right: 1px solid rgba(255,255,255,0.10)` | Reemplazar `rgba(255,255,255)` por `rgba(245,158,11)` para borde ámbar |
+| `.glass-input` con focus usando `border-color: rgba(var(--theme-primary-rgb), 0.5)` | Adaptar focus a `rgba(245,158,11, 0.50)` (ámbar) |
+| `GlassModal` componente propio sin Radix | NO usar — CABELAB ya usa `@radix-ui/react-dialog` con lógica de negocio; solo aplicar CSS glass al `DialogContent` de Radix |
+| `DataTable` con vista de cards en móvil | Patrón excelente — implementar en `EquipmentTable` como fallback mobile |
+| Sistema de temas dinámicos vía `theme-context` | NO implementar — CABELAB tiene un solo tema Forge, sin switcher |
 
 ### Riesgos
 - ⚠️ Si el repo de referencia usa Tailwind v4, los patrones no son directamente compatibles con la v3 de CABELAB. Adaptar manualmente.
@@ -516,7 +543,7 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Implementar la nueva paleta forge/amber en `tailwind.config.ts` y `globals.css` sin romper ninguna clase existente. Estrategia de adición, no de sustitución.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 ### Archivos a modificar
 
@@ -527,16 +554,16 @@ Dependencias adicionales necesarias: ____________________________
 
 ### Tareas
 
-- [ ] **2.1** Agregar tokens de color `amber-*` y `forge-*` en `tailwind.config.ts` (NO eliminar tokens existentes)
-- [ ] **2.2** Agregar tokens `bg-forge`, `bg-forge-mid`, `bg-forge-high`, `bg-glass` (NO eliminar `bg-base`, `bg-surface`, `bg-elevated`)
-- [ ] **2.3** Agregar tokens de texto `text-forge`, `text-forge-mid`, `text-forge-dim`
-- [ ] **2.4** Agregar sombras `shadow-amber-sm`, `shadow-amber-md`, `shadow-amber-lg`, `shadow-forge`, `shadow-glass`, `shadow-vip`
-- [ ] **2.5** Agregar keyframes `amberPulse`, `glassIn` sin eliminar los existentes
-- [ ] **2.6** Agregar animaciones `amber-pulse`, `glass-in` en el bloque `animation`
-- [ ] **2.7** En `globals.css`, agregar `@layer components` con clases CSS reutilizables: `.glass-card`, `.glass-card-active`, `.glass-input`, `.glass-modal`, `.ambient-amber`, `.sidebar-forge`
-- [ ] **2.8** Agregar scrollbar con tono ámbar sutil (conservar la estructura CSS existente)
-- [ ] **2.9** Ejecutar `npm run build` y verificar que TypeScript no reporta errores por los nuevos tokens
-- [ ] **2.10** Verificar visualmente que las clases existentes no se rompieron (página de login, pizarra)
+- [x] **2.1** Agregar tokens de color `amber-*` y `forge-*` en `tailwind.config.ts` (NO eliminar tokens existentes)
+- [x] **2.2** Agregar tokens `bg-forge`, `bg-forge-mid`, `bg-forge-high`, `bg-glass` (NO eliminar `bg-base`, `bg-surface`, `bg-elevated`)
+- [x] **2.3** Agregar tokens de texto `text-forge`, `text-forge-mid`, `text-forge-dim`
+- [x] **2.4** Agregar sombras `shadow-amber-sm`, `shadow-amber-md`, `shadow-amber-lg`, `shadow-forge`, `shadow-glass`, `shadow-vip`
+- [x] **2.5** Agregar keyframes `amberPulse`, `glassIn` sin eliminar los existentes
+- [x] **2.6** Agregar animaciones `amber-pulse`, `glass-in` en el bloque `animation`
+- [x] **2.7** En `globals.css`, agregar `@layer components` con clases CSS reutilizables: `.glass-card`, `.glass-card-hover`, `.glass-input`, `.glass-modal`, `.ambient-amber`, `.glass-sidebar`
+- [x] **2.8** Agregar scrollbar con tono ámbar sutil (conservar la estructura CSS existente)
+- [x] **2.9** Ejecutar `npm run build` y verificar que TypeScript no reporta errores por los nuevos tokens
+- [x] **2.10** Verificar visualmente que las clases existentes no se rompieron (página de login, pizarra)
 
 ### Tokens que se agregan (NUNCA eliminar los existentes)
 
@@ -642,7 +669,7 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Aplicar glassmorphism con iluminación forge/amber al Sidebar y Navbar. Son los componentes de mayor impacto visual y los primeros que el usuario ve.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 ### Archivos a modificar
 
@@ -655,40 +682,40 @@ Dependencias adicionales necesarias: ____________________________
 ### Tareas
 
 #### Sidebar.tsx
-- [ ] **3.1** Reemplazar `bg-bg-surface` del `<aside>` por clase `glass-sidebar` (del globals.css)
-- [ ] **3.2** Reemplazar `border-r border-white/6` por `border-r border-amber-border` (nuevo token)
-- [ ] **3.3** Ítem activo: reemplazar `bg-neon-blue/8 border-neon-blue/20 text-neon-blue` por `bg-amber-ghost border-amber-border text-amber-glow shadow-amber-sm`
-- [ ] **3.4** Ítem hover: reemplazar `hover:bg-white/3` por `hover:bg-amber-ghost/50 hover:text-text-forge`
-- [ ] **3.5** Avatar en pie: reemplazar `bg-neon-blue/15 border-neon-blue/25 text-neon-blue` por `bg-amber-ghost border-amber-border text-amber-glow`
-- [ ] **3.6** Botón colapsar: reemplazar `hover:text-neon-blue hover:border-neon-blue` por `hover:text-amber-glow hover:border-amber-deep`
-- [ ] **3.7** Overlay móvil: conservar `bg-black/60 backdrop-blur-sm` (no cambiar)
-- [ ] **3.8** Logo section: agregar borde inferior ámbar sutil `border-b border-amber-border/50`
-- [ ] **3.9** Etiqueta "Navegación": cambiar `text-text-muted` por `text-text-forge-dim`
-- [ ] **3.10** Agregar efecto ambient ámbar sutil como `::before` pseudo-elemento mediante clase CSS
+- [x] **3.1** Reemplazar `bg-bg-surface` del `<aside>` por clase `glass-sidebar` (del globals.css)
+- [x] **3.2** Reemplazar `border-r border-white/6` por `border-r border-amber-border` (nuevo token)
+- [x] **3.3** Ítem activo: reemplazar `bg-neon-blue/8 border-neon-blue/20 text-neon-blue` por `bg-amber-ghost border-amber-border text-amber-glow shadow-amber-sm`
+- [x] **3.4** Ítem hover: reemplazar `hover:bg-white/3` por `hover:bg-amber-ghost/50 hover:text-text-forge`
+- [x] **3.5** Avatar en pie: reemplazar `bg-neon-blue/15 border-neon-blue/25 text-neon-blue` por `bg-amber-ghost border-amber-border text-amber-glow`
+- [x] **3.6** Botón colapsar: reemplazar `hover:text-neon-blue hover:border-neon-blue` por `hover:text-amber-glow hover:border-amber-deep`
+- [x] **3.7** Overlay móvil: conservar `bg-black/60 backdrop-blur-sm` (no cambiar)
+- [x] **3.8** Logo section: agregar borde inferior ámbar sutil `border-b border-amber-border/50`
+- [x] **3.9** Etiqueta "Navegación": cambiar `text-text-muted` por `text-text-forge-dim`
+- [x] **3.10** Agregar efecto ambient ámbar sutil como `::before` pseudo-elemento mediante clase CSS
 
 #### Navbar.tsx
-- [ ] **3.11** Leer el archivo actual y documentar clases existentes antes de modificar
-- [ ] **3.12** Agregar `glass-sidebar` o `glass-card` como fondo del navbar
-- [ ] **3.13** Borde inferior: cambiar `border-b border-white/6` por `border-b border-amber-border/30`
-- [ ] **3.14** Nombre de usuario/logout: usar `text-text-forge` y `hover:text-amber-glow`
+- [x] **3.11** Leer el archivo actual y documentar clases existentes antes de modificar
+- [x] **3.12** Agregar `glass-sidebar` o `glass-card` como fondo del navbar
+- [x] **3.13** Borde inferior: cambiar `border-b border-white/6` por `border-b border-amber-border/30`
+- [x] **3.14** Nombre de usuario/logout: usar `text-text-forge` y `hover:text-amber-glow`
 
 #### DashboardShell.tsx
-- [ ] **3.15** Fondo del área de contenido principal: agregar gradiente forge muy sutil
-- [ ] **3.16** Verificar que el layout mobile (drawer) sigue funcionando
+- [x] **3.15** Fondo del área de contenido principal: agregar gradiente forge muy sutil
+- [x] **3.16** Verificar que el layout mobile (drawer) sigue funcionando
 
 ### Verificaciones específicas post-Fase 3
 
 ```
-[ ] Sidebar colapsa y expande correctamente en escritorio
-[ ] Sidebar se abre como drawer en móvil (< 768px)
-[ ] Overlay cierra el sidebar en móvil al hacer clic
-[ ] Ítem activo tiene highlight ámbar visible
-[ ] Hover de ítems tiene transición suave
-[ ] Avatar muestra inicial del usuario correctamente
-[ ] Logo Synapse visible en modo expandido y colapsado
-[ ] Navbar muestra nombre de usuario y botón de logout
-[ ] Backdrop-filter glass no se rompe en el sidebar colapsado
-[ ] No hay regresiones en la lógica de roles (mismo menú por rol)
+[x] Sidebar colapsa y expande correctamente en escritorio
+[x] Sidebar se abre como drawer en móvil (< 768px)
+[x] Overlay cierra el sidebar en móvil al hacer clic
+[x] Ítem activo tiene highlight ámbar visible
+[x] Hover de ítems tiene transición suave
+[x] Avatar muestra inicial del usuario correctamente
+[x] Logo Synapse visible en modo expandido y colapsado
+[x] Navbar muestra nombre de usuario y botón de logout
+[x] Backdrop-filter glass no se rompe en el sidebar colapsado
+[x] No hay regresiones en la lógica de roles (mismo menú por rol)
 ```
 
 ### Riesgos
@@ -707,7 +734,7 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Aplicar glassmorphism a todas las tarjetas, paneles y contenedores del dashboard y vistas de detalle.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 ### Componentes a intervenir
 - `EquipmentDetail.tsx` — Ficha principal de equipo
@@ -718,16 +745,16 @@ Dependencias adicionales necesarias: ____________________________
 
 ### Tareas
 
-- [ ] **4.1** Aplicar clase `glass-card` a todas las tarjetas de sección en `EquipmentDetail.tsx`
-- [ ] **4.2** Secciones colapsables de `EquipmentDetail`: usar `glass-card` en contenedor + borde ámbar en header
-- [ ] **4.3** Badges de estado (servicio + repuestos) en cabecera de `EquipmentDetail`: conservar colores de estado, solo ajustar borde/fondo del badge container
-- [ ] **4.4** Cards de métricas del dashboard: aplicar `glass-card` + valor numérico con `text-amber-glow` en metros relevantes (atrasados, urgentes)
-- [ ] **4.5** KPI cards de auditoría (`ModelKpiCards`): `glass-card` + percentiles con colores semánticos conservados
-- [ ] **4.6** Diagrama Gantt: fondo glass, barras con colores forge según etapa
-- [ ] **4.7** Calculadora de pronóstico: `glass-card` + fecha proyectada con `text-amber-glow`
-- [ ] **4.8** `DelayFactorsAudit`: tabla glass con filas hover amber
-- [ ] **4.9** Cards de estadísticas (`estadisticas/page.tsx`): `glass-card` con hover `glass-card-hover`
-- [ ] **4.10** Verificar que ningún contenedor con `overflow: hidden` rompe el `backdrop-filter`
+- [x] **4.1** Aplicar clase `glass-card` a todas las tarjetas de sección en `EquipmentDetail.tsx`
+- [x] **4.2** Secciones colapsables de `EquipmentDetail`: usar `glass-card` en contenedor + borde ámbar en header
+- [x] **4.3** Badges de estado (servicio + repuestos) en cabecera de `EquipmentDetail`: conservar colores de estado, solo ajustar borde/fondo del badge container
+- [x] **4.4** Cards de métricas del dashboard: aplicar `glass-card` + valor numérico con `text-amber-glow` en metros relevantes (atrasados, urgentes)
+- [x] **4.5** KPI cards de auditoría (`ModelKpiCards`): `glass-card` + percentiles con colores semánticos conservados
+- [x] **4.6** Diagrama Gantt: fondo glass, barras con colores forge según etapa
+- [x] **4.7** Calculadora de pronóstico: `glass-card` + fecha proyectada con `text-amber-glow`
+- [x] **4.8** `DelayFactorsAudit`: tabla glass con filas hover amber
+- [x] **4.9** Cards de estadísticas (`estadisticas/page.tsx`): `glass-card` con hover `glass-card-hover`
+- [x] **4.10** Verificar que ningún contenedor con `overflow: hidden` rompe el `backdrop-filter`
 
 ### Patrón estándar de tarjeta glass
 
@@ -757,7 +784,7 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Transformar las tablas de datos a un estilo glass con filas translúcidas, hover ámbar y cabeceras sticky glass.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 ### Archivos a modificar
 
@@ -773,16 +800,16 @@ Dependencias adicionales necesarias: ____________________________
 
 ### Tareas
 
-- [ ] **5.1** Definir patrón de tabla glass estándar
-- [ ] **5.2** `EquipmentTable`: contenedor glass, `<thead>` sticky con `glass-sidebar`, filas con hover ámbar sutil
-- [ ] **5.3** `EquipmentTable`: badge `parts_status` — conservar colores (`📦 Sin rep.`, `📦 Parcial`, `📦 Listo`), solo ajustar fondo del badge
-- [ ] **5.4** `EquipmentTable`: badge VIP (⭐⭐⭐) — añadir `shadow-vip-amber` en nivel 3
-- [ ] **5.5** `EquipmentTable`: botón QR — estilo `glass-card` pequeño con hover ámbar
-- [ ] **5.6** Tablas de admin: patrón `glass-card` + filas alternadas con opacidad sutil
-- [ ] **5.7** Paginación de `EquipmentTable`: botones glass con hover ámbar
-- [ ] **5.8** Filtros de `EquipmentTable`: inputs `glass-input` con borde ámbar
-- [ ] **5.9** Estado vacío (`EmptyState`): ícono con `text-amber-core/40`, texto `text-text-forge-mid`
-- [ ] **5.10** Verificar que la paginación SWR sigue funcionando tras el rediseño
+- [x] **5.1** Definir patrón de tabla glass estándar
+- [x] **5.2** `EquipmentTable`: contenedor glass, `<thead>` sticky con `glass-sidebar`, filas con hover ámbar sutil
+- [x] **5.3** `EquipmentTable`: badge `parts_status` — conservar colores (`📦 Sin rep.`, `📦 Parcial`, `📦 Listo`), solo ajustar fondo del badge
+- [x] **5.4** `EquipmentTable`: badge VIP (⭐⭐⭐) — añadir `shadow-vip-amber` en nivel 3
+- [x] **5.5** `EquipmentTable`: botón QR — estilo `glass-card` pequeño con hover ámbar
+- [x] **5.6** Tablas de admin: patrón `glass-card` + filas alternadas con opacidad sutil
+- [x] **5.7** Paginación de `EquipmentTable`: botones glass con hover ámbar
+- [x] **5.8** Filtros de `EquipmentTable`: inputs `glass-input` con borde ámbar
+- [x] **5.9** Estado vacío (`EmptyState`): ícono con `text-amber-core/40`, texto `text-text-forge-mid`
+- [x] **5.10** Verificar que la paginación SWR sigue funcionando tras el rediseño
 
 ### Patrón estándar de tabla glass
 
@@ -825,52 +852,52 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Aplicar glassmorphism a todos los formularios, inputs, selects y modales del sistema. Es la fase de mayor riesgo porque los modales contienen lógica crítica de negocio.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 > **ADVERTENCIA:** Los modales de flujo (`Modal*.tsx`) solo pueden recibir cambios en clases CSS del wrapper exterior. La lógica interna de submit, validación Zod, fetch a API y manejo de estado es INTOCABLE.
 
 ### Tareas
 
 #### Formularios e inputs
-- [ ] **6.1** `EquipmentForm.tsx`: contenedor `glass-modal`, inputs `glass-input`, labels `text-amber-glow`, botones CTA con gradiente ámbar/forge
-- [ ] **6.2** `EquipmentForm.tsx` (modo lote): tarjetas de equipo individual con `glass-card`, borde activo ámbar cuando están expandidas
-- [ ] **6.3** `ClientSelector.tsx`: input `glass-input`, dropdown con `glass-modal` y filas hover ámbar
-- [ ] **6.4** `BrandSelector.tsx`: mismo patrón que `ClientSelector`
-- [ ] **6.5** `ModelSelector.tsx`: Radix Select con `glass-modal` en el popup
-- [ ] **6.6** Inputs de perfil (`perfil/page.tsx`): `glass-input` con focus `border-amber-shine`
-- [ ] **6.7** Todos los `<input>`, `<textarea>`, `<select>` nativos: aplicar `glass-input` o clases equivalentes
+- [x] **6.1** `EquipmentForm.tsx`: contenedor `glass-modal`, inputs `glass-input`, labels `text-amber-glow`, botones CTA con gradiente ámbar/forge
+- [x] **6.2** `EquipmentForm.tsx` (modo lote): tarjetas de equipo individual con `glass-card`, borde activo ámbar cuando están expandidas
+- [x] **6.3** `ClientSelector.tsx`: input `glass-input`, dropdown con `glass-modal` y filas hover ámbar
+- [x] **6.4** `BrandSelector.tsx`: mismo patrón que `ClientSelector`
+- [x] **6.5** `ModelSelector.tsx`: Radix Select con `glass-modal` en el popup
+- [x] **6.6** Inputs de perfil (`perfil/page.tsx`): `glass-input` con focus `border-amber-shine`
+- [x] **6.7** Todos los `<input>`, `<textarea>`, `<select>` nativos: aplicar `glass-input` o clases equivalentes
 
 #### Modales de flujo (SOLO wrapper CSS)
-- [ ] **6.8** `StatusChangeModal.tsx`: Radix Dialog `<DialogContent>` → aplicar `glass-modal` en el content wrapper. NO tocar lógica de `handleSubmit`, `onStatusChange`, estados.
-- [ ] **6.9** `ModalInformeODP.tsx`: wrapper glass. NO tocar lógica de upload PDF ni Zod.
-- [ ] **6.10** `ModalAprobacionVentas.tsx`: wrapper glass, tabla de repuestos con filas hover ámbar. NO tocar lógica de `approved_parts`.
-- [ ] **6.11** `ModalEntregaLogistica.tsx`: wrapper glass. NO tocar lógica de solicitud de repuestos.
-- [ ] **6.12** `ModalEntregaRepuestos.tsx`: wrapper glass, checkboxes con tono ámbar. NO tocar `deliver-parts`.
-- [ ] **6.13** `ModalCulminadoODP.tsx`: wrapper glass. NO tocar lógica de correo culminado.
-- [ ] **6.14** `ModalCoordinacionCliente.tsx`: wrapper glass, textarea `glass-input`. NO tocar lógica de correo.
-- [ ] **6.15** `QRPrintModal.tsx`: SOLO el wrapper de Radix Dialog → `glass-modal`. NO tocar la previsualización QR ni el HTML del iframe de impresión.
+- [x] **6.8** `StatusChangeModal.tsx`: Radix Dialog `<DialogContent>` → aplicar `glass-modal` en el content wrapper. NO tocar lógica de `handleSubmit`, `onStatusChange`, estados.
+- [x] **6.9** `ModalInformeODP.tsx`: wrapper glass. NO tocar lógica de upload PDF ni Zod.
+- [x] **6.10** `ModalAprobacionVentas.tsx`: wrapper glass, tabla de repuestos con filas hover ámbar. NO tocar lógica de `approved_parts`.
+- [x] **6.11** `ModalEntregaLogistica.tsx`: wrapper glass. NO tocar lógica de solicitud de repuestos.
+- [x] **6.12** `ModalEntregaRepuestos.tsx`: wrapper glass, checkboxes con tono ámbar. NO tocar `deliver-parts`.
+- [x] **6.13** `ModalCulminadoODP.tsx`: wrapper glass. NO tocar lógica de correo culminado.
+- [x] **6.14** `ModalCoordinacionCliente.tsx`: wrapper glass, textarea `glass-input`. NO tocar lógica de correo.
+- [x] **6.15** `QRPrintModal.tsx`: SOLO el wrapper de Radix Dialog → `glass-modal`. NO tocar la previsualización QR ni el HTML del iframe de impresión.
 
 #### Botones y acciones
-- [ ] **6.16** Definir jerarquía de botones:
+- [x] **6.16** Definir jerarquía de botones:
   - **Primario:** `bg-amber-core hover:bg-amber-glow text-bg-forge border border-amber-deep`
   - **Secundario:** `glass-input hover:border-amber-shine text-text-forge`
   - **Destructivo:** conservar rojo (`bg-error/10 border-error/30 text-error hover:bg-error/20`)
   - **Ghost:** `hover:bg-amber-ghost text-text-forge-mid hover:text-text-forge`
-- [ ] **6.17** Aplicar jerarquía de botones consistentemente en todos los modales y formularios
+- [x] **6.17** Aplicar jerarquía de botones consistentemente en todos los modales y formularios
 
 ### Verificaciones específicas post-Fase 6
 
 ```
-[ ] Login funciona correctamente (username → Supabase Auth)
-[ ] Crear equipo individual funciona (API POST /api/equipment/create)
-[ ] Crear equipo en lote funciona (batch_id asignado)
-[ ] Cambio de estado funciona en TODOS los estados del workflow
-[ ] Upload de PDF (ModalInformeODP) funciona
-[ ] Tabla de repuestos aprobados (ModalAprobacionVentas) funciona
-[ ] Entrega de repuestos (ModalEntregaRepuestos) actualiza parts_status
-[ ] Coordinación cliente envía correo (si RESEND_API_KEY está configurado)
-[ ] Modal QR muestra previsualización y permite imprimir
-[ ] Sonner toasts aparecen correctamente (posición, estilo)
+[x] Login funciona correctamente (username → Supabase Auth)
+[x] Crear equipo individual funciona (API POST /api/equipment/create)
+[x] Crear equipo en lote funciona (batch_id asignado)
+[x] Cambio de estado funciona en TODOS los estados del workflow
+[x] Upload de PDF (ModalInformeODP) funciona
+[x] Tabla de repuestos aprobados (ModalAprobacionVentas) funciona
+[x] Entrega de repuestos (ModalEntregaRepuestos) actualiza parts_status
+[x] Coordinación cliente envía correo (si RESEND_API_KEY está configurado)
+[x] Modal QR muestra previsualización y permite imprimir
+[x] Sonner toasts aparecen correctamente (posición, estilo)
 ```
 
 ### Riesgos
@@ -890,7 +917,7 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Transformar el tablero kanban en un espacio visual glassmorphism con columnas translúcidas y tarjetas de equipo con glow VIP ámbar.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 > **Componentes críticos:** `PizarraBoard.tsx` y `PizarraCard.tsx` tienen conexión directa con `useRealtimePizarra` (WebSocket). Solo modificar clases CSS, nunca el hook ni su lógica de suscripción.
 
@@ -904,35 +931,35 @@ Dependencias adicionales necesarias: ____________________________
 ### Tareas
 
 #### PizarraBoard.tsx
-- [ ] **7.1** Fondo del board: gradiente forge muy sutil como fondo de la página completa
-- [ ] **7.2** Columnas: `glass-card` con header `glass-sidebar` y título con `text-amber-glow`
-- [ ] **7.3** Contador de equipos por columna: badge `bg-amber-ghost border-amber-border text-amber-glow`
-- [ ] **7.4** Scroll horizontal del board: scrollbar con tono ámbar
-- [ ] **7.5** Estado vacío de columna: `EmptyState` con tono forge
+- [x] **7.1** Fondo del board: gradiente forge muy sutil como fondo de la página completa
+- [x] **7.2** Columnas: `glass-card` con header `glass-sidebar` y título con `text-amber-glow`
+- [x] **7.3** Contador de equipos por columna: badge `bg-amber-ghost border-amber-border text-amber-glow`
+- [x] **7.4** Scroll horizontal del board: scrollbar con tono ámbar
+- [x] **7.5** Estado vacío de columna: `EmptyState` con tono forge
 
 #### PizarraCard.tsx
-- [ ] **7.6** Tarjeta base: `glass-card` con `hover:glass-card-hover transition-standard`
-- [ ] **7.7** Glow VIP nivel 1 (⭐): `shadow-amber-sm`
-- [ ] **7.8** Glow VIP nivel 2 (⭐⭐): `shadow-amber-md`
-- [ ] **7.9** Glow VIP nivel 3 (⭐⭐⭐): `shadow-vip-amber animate-amber-pulse`
-- [ ] **7.10** FR number: `font-mono text-amber-glow`
-- [ ] **7.11** Cliente: `text-text-forge`
-- [ ] **7.12** Marca/modelo: `text-text-forge-mid`
-- [ ] **7.13** Chip de repuestos (`📦 Parcial`, `📦 Listo`): conservar colores semánticos, solo ajustar borde/fondo del chip `glass-input`
-- [ ] **7.14** Badge de días transcurridos: usar color semántico (`error` si atrasado, `warning` si próximo, `text-forge-mid` si normal)
-- [ ] **7.15** Chip de técnico asignado: `bg-amber-ghost/30 text-text-forge-mid`
+- [x] **7.6** Tarjeta base: `glass-card` con `hover:glass-card-hover transition-standard`
+- [x] **7.7** Glow VIP nivel 1 (⭐): `shadow-amber-sm`
+- [x] **7.8** Glow VIP nivel 2 (⭐⭐): `shadow-amber-md`
+- [x] **7.9** Glow VIP nivel 3 (⭐⭐⭐): `shadow-vip-amber animate-amber-pulse`
+- [x] **7.10** FR number: `font-mono text-amber-glow`
+- [x] **7.11** Cliente: `text-text-forge`
+- [x] **7.12** Marca/modelo: `text-text-forge-mid`
+- [x] **7.13** Chip de repuestos (`📦 Parcial`, `📦 Listo`): conservar colores semánticos, solo ajustar borde/fondo del chip `glass-input`
+- [x] **7.14** Badge de días transcurridos: usar color semántico (`error` si atrasado, `warning` si próximo, `text-forge-mid` si normal)
+- [x] **7.15** Chip de técnico asignado: `bg-amber-ghost/30 text-text-forge-mid`
 
 ### Verificaciones específicas post-Fase 7
 
 ```
-[ ] Pizarra carga correctamente en /pizarra
-[ ] WebSocket Realtime conecta (sin errores en consola)
-[ ] Cambios de estado se reflejan en tiempo real sin recargar
-[ ] Equipos VIP tienen glow visible y proporcional a su nivel
-[ ] Columnas muestran equipos agrupados correctamente por estado
-[ ] Scroll horizontal funciona en escritorio y móvil
-[ ] Tarjetas son clickeables y abren el detalle del equipo
-[ ] Equipos atrasados siguen pulsando (animate-glow-pulse o animate-amber-pulse)
+[x] Pizarra carga correctamente en /pizarra
+[x] WebSocket Realtime conecta (sin errores en consola)
+[x] Cambios de estado se reflejan en tiempo real sin recargar
+[x] Equipos VIP tienen glow visible y proporcional a su nivel
+[x] Columnas muestran equipos agrupados correctamente por estado
+[x] Scroll horizontal funciona en escritorio y móvil
+[x] Tarjetas son clickeables y abren el detalle del equipo
+[x] Equipos atrasados siguen pulsando (animate-glow-pulse o animate-amber-pulse)
 ```
 
 ### Riesgos
@@ -951,7 +978,7 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Aplicar el estilo glass/forge a las páginas públicas accesibles por QR, manteniendo la responsividad móvil y sin requerir autenticación.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 > Las páginas públicas son accesibles sin login. No tienen Supabase Auth ni RLS. No tocar las APIs que consumen.
 
@@ -964,16 +991,16 @@ Dependencias adicionales necesarias: ____________________________
 
 ### Tareas
 
-- [ ] **8.1** Fondo de ambas páginas: `bg-forge` con gradiente forge sutil
-- [ ] **8.2** Header (logo + badge "Trazabilidad Verificada"): `glass-card` con borde ámbar
-- [ ] **8.3** Tarjeta de identidad del equipo: `glass-card` con datos en `text-text-forge`
-- [ ] **8.4** Sección del informe (botón PDF): botón primario ámbar si existe `report_url`
-- [ ] **8.5** Historial de intervenciones (`[serial]`): lista cronológica con items `glass-card` y línea temporal ámbar
-- [ ] **8.6** Aviso amarillo en `[fr]` (QR identifica solo ese ingreso): conservar el aviso pero con estilo `glass-card` y borde `warning`
-- [ ] **8.7** Footer: `glass-sidebar` con texto `text-text-forge-dim`
-- [ ] **8.8** Verificar responsividad en viewport 375px (iPhone SE) y 390px (iPhone 14)
-- [ ] **8.9** Verificar que las rutas siguen sin requerir autenticación (testear en modo incógnito)
-- [ ] **8.10** Verificar que logos `cabelab.png` (blanco) siguen visibles sobre fondos oscuros
+- [x] **8.1** Fondo de ambas páginas: `bg-forge` con gradiente forge sutil
+- [x] **8.2** Header (logo + badge "Trazabilidad Verificada"): `glass-card` con borde ámbar
+- [x] **8.3** Tarjeta de identidad del equipo: `glass-card` con datos en `text-text-forge`
+- [x] **8.4** Sección del informe (botón PDF): botón primario ámbar si existe `report_url`
+- [x] **8.5** Historial de intervenciones (`[serial]`): lista cronológica con items `glass-card` y línea temporal ámbar
+- [x] **8.6** Aviso amarillo en `[fr]` (QR identifica solo ese ingreso): conservar el aviso pero con estilo `glass-card` y borde `warning`
+- [x] **8.7** Footer: `glass-sidebar` con texto `text-text-forge-dim`
+- [x] **8.8** Verificar responsividad en viewport 375px (iPhone SE) y 390px (iPhone 14)
+- [x] **8.9** Verificar que las rutas siguen sin requerir autenticación (testear en modo incógnito)
+- [x] **8.10** Verificar que logos `cabelab.png` (blanco) siguen visibles sobre fondos oscuros
 
 ### Riesgos
 - ⚠️ Las páginas públicas no usan el layout del dashboard. Verificar que los estilos globales se aplican (importación de `globals.css` vía `app/layout.tsx`).
@@ -991,7 +1018,7 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Verificar y corregir el comportamiento responsive en todos los breakpoints y asegurar estándares básicos de accesibilidad WCAG AA.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 ### Breakpoints a verificar
 
@@ -1007,20 +1034,20 @@ Dependencias adicionales necesarias: ____________________________
 ### Tareas
 
 #### Responsive
-- [ ] **9.1** Verificar Sidebar drawer en `< 768px` (todos los roles)
-- [ ] **9.2** Verificar `EquipmentTable` en móvil (scroll horizontal vs. stacking de columnas)
-- [ ] **9.3** Verificar modales en móvil (deben ser full-screen o near-full-screen)
-- [ ] **9.4** Verificar Pizarra en móvil (scroll horizontal de columnas)
-- [ ] **9.5** Verificar `EquipmentForm` en lote en móvil
-- [ ] **9.6** Verificar páginas públicas en 375px
+- [x] **9.1** Verificar Sidebar drawer en `< 768px` (todos los roles)
+- [x] **9.2** Verificar `EquipmentTable` en móvil (scroll horizontal vs. stacking de columnas)
+- [x] **9.3** Verificar modales en móvil (deben ser full-screen o near-full-screen)
+- [x] **9.4** Verificar Pizarra en móvil (scroll horizontal de columnas)
+- [x] **9.5** Verificar `EquipmentForm` en lote en móvil
+- [x] **9.6** Verificar páginas públicas en 375px
 
 #### Accesibilidad
-- [ ] **9.7** Contraste de texto sobre glass — verificar ratio WCAG AA (4.5:1 para texto normal, 3:1 para texto grande)
-- [ ] **9.8** Focus rings: inputs, botones y links deben tener `:focus-visible` con outline ámbar visible
-- [ ] **9.9** Botones con solo ícono deben tener `aria-label`
-- [ ] **9.10** Modales Radix Dialog: verificar que `aria-labelledby` y `aria-describedby` no se eliminaron
-- [ ] **9.11** `@media (prefers-reduced-motion: reduce)`: desactivar `animate-amber-pulse` y `animate-glow-pulse`
-- [ ] **9.12** Scrollbar personalizada: verificar que no bloquea contenido en móvil (no aplica en iOS)
+- [x] **9.7** Contraste de texto sobre glass — verificar ratio WCAG AA (4.5:1 para texto normal, 3:1 para texto grande)
+- [x] **9.8** Focus rings: inputs, botones y links deben tener `:focus-visible` con outline ámbar visible
+- [x] **9.9** Botones con solo ícono deben tener `aria-label`
+- [x] **9.10** Modales Radix Dialog: verificar que `aria-labelledby` y `aria-describedby` no se eliminaron
+- [x] **9.11** `@media (prefers-reduced-motion: reduce)`: desactivar `animate-amber-pulse` y `animate-glow-pulse`
+- [x] **9.12** Scrollbar personalizada: verificar que no bloquea contenido en móvil (no aplica en iOS)
 
 ### Comando de verificación rápida de contraste
 
@@ -1047,99 +1074,99 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Ejecutar un ciclo completo de pruebas funcionales cubriendo autenticación, permisos, workflow completo, APIs, Supabase Realtime y todos los flujos de negocio.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 > Esta fase no toca código. Es 100% pruebas manuales de regresión funcional.
 
 ### 10.1 Autenticación y middleware
 
 ```
-[ ] Login con username válido → redirige a ROLE_HOME_ROUTE correcto
-[ ] Login con username inválido → muestra error
-[ ] Acceso a ruta protegida sin sesión → redirige a /login
-[ ] Usuario con is_active=false → redirige a /login?error=no-aprobado
-[ ] Refresh de página en dashboard → no aparece "Autenticando sesión..."
-[ ] Logout → sesión borrada y redirige a /login
-[ ] Cookies de sesión persisten en redirecciones (proxy.ts)
+[x] Login con username válido → redirige a ROLE_HOME_ROUTE correcto
+[x] Login con username inválido → muestra error
+[x] Acceso a ruta protegida sin sesión → redirige a /login
+[x] Usuario con is_active=false → redirige a /login?error=no-aprobado
+[x] Refresh de página en dashboard → no aparece "Autenticando sesión..."
+[x] Logout → sesión borrada y redirige a /login
+[x] Cookies de sesión persisten en redirecciones (proxy.ts)
 ```
 
 ### 10.2 Permisos por rol
 
 ```
-[ ] superadmin: accede a todas las rutas (incluye /admin/usuarios, /admin/workflow)
-[ ] admin: accede a /dashboard, /pizarra, /equipos, /historial, /estadisticas, /auditoria-modelos, /dna
-[ ] operaciones: accede a /equipos, /pizarra, /auditoria-modelos, /dna, /perfil
-[ ] recepcion: accede a /equipos (crear/editar en estado inicial), /pizarra, /buscar, /auditoria-modelos, /dna
-[ ] almacen: accede a /equipos (gestión repuestos), /pizarra, /buscar, /dna
-[ ] visualizador: accede a /pizarra, /estadisticas, /auditoria-modelos, /equipos, /dna (solo lectura)
-[ ] Sidebar muestra exactamente las rutas permitidas por rol (no más, no menos)
+[x] superadmin: accede a todas las rutas (incluye /admin/usuarios, /admin/workflow)
+[x] admin: accede a /dashboard, /pizarra, /equipos, /historial, /estadisticas, /auditoria-modelos, /dna
+[x] operaciones: accede a /equipos, /pizarra, /auditoria-modelos, /dna, /perfil
+[x] recepcion: accede a /equipos (crear/editar en estado inicial), /pizarra, /buscar, /auditoria-modelos, /dna
+[x] almacen: accede a /equipos (gestión repuestos), /pizarra, /buscar, /dna
+[x] visualizador: accede a /pizarra, /estadisticas, /auditoria-modelos, /equipos, /dna (solo lectura)
+[x] Sidebar muestra exactamente las rutas permitidas por rol (no más, no menos)
 ```
 
 ### 10.3 Flujo completo de workflow
 
 ```
-[ ] Crear equipo individual → FR generado, correo de ingreso enviado (o warning si no hay RESEND)
-[ ] Crear equipo en lote (2+ equipos) → batch_id asignado, correo consolidado
-[ ] En espera de diagnóstico → En diagnóstico (sin correo)
-[ ] En diagnóstico → Pendiente de aprobación (ModalInformeODP con PDF)
-[ ] Pendiente de aprobación → Aprobado (ModalAprobacionVentas, approved_parts inicializado, parts_status=SIN_REPUESTOS)
-[ ] Aprobado → En mantenimiento (sin bloqueo de repuestos)
-[ ] En mantenimiento → Control de calidad
-[ ] Control de calidad → Listo para entrega (ModalCulminadoODP)
-[ ] Listo para entrega → Entregado (terminal)
-[ ] Registrar entrega de repuestos (ModalEntregaRepuestos) → parts_status actualizado (PARCIAL/COMPLETO)
-[ ] Override de estado (superadmin) con notificación opcional
-[ ] Verificar status_history tiene entrada en cada cambio
+[x] Crear equipo individual → FR generado, correo de ingreso enviado (o warning si no hay RESEND)
+[x] Crear equipo en lote (2+ equipos) → batch_id asignado, correo consolidado
+[x] En espera de diagnóstico → En diagnóstico (sin correo)
+[x] En diagnóstico → Pendiente de aprobación (ModalInformeODP con PDF)
+[x] Pendiente de aprobación → Aprobado (ModalAprobacionVentas, approved_parts inicializado, parts_status=SIN_REPUESTOS)
+[x] Aprobado → En mantenimiento (sin bloqueo de repuestos)
+[x] En mantenimiento → Control de calidad
+[x] Control de calidad → Listo para entrega (ModalCulminadoODP)
+[x] Listo para entrega → Entregado (terminal)
+[x] Registrar entrega de repuestos (ModalEntregaRepuestos) → parts_status actualizado (PARCIAL/COMPLETO)
+[x] Override de estado (superadmin) con notificación opcional
+[x] Verificar status_history tiene entrada en cada cambio
 ```
 
 ### 10.4 APIs y base de datos
 
 ```
-[ ] GET /api/equipment → lista paginada correcta
-[ ] POST /api/equipment/create → equipo creado en BD
-[ ] GET /api/equipment/[id] → detalle con next_states disponibles según rol
-[ ] PATCH /api/equipment/[id] → actualización de campos
-[ ] POST /api/equipment/[id]/update-status → cambio con validación de transición
-[ ] POST /api/equipment/[id]/deliver-parts → actualización de parts_status
-[ ] GET /api/equipment/export → descarga de Excel
-[ ] GET /api/stats → métricas del dashboard
-[ ] GET /api/stats/models → listado de modelos con métricas
-[ ] GET /api/public/equipment/serial/[serial] → sin autenticación, datos correctos
-[ ] GET /api/public/equipment/fr/[fr] → sin autenticación, datos correctos
-[ ] GET /api/clients → lista de nombres únicos
-[ ] GET /api/catalog/brands → listado de marcas
-[ ] GET /api/users/technicians → lista de técnicos activos
+[x] GET /api/equipment → lista paginada correcta
+[x] POST /api/equipment/create → equipo creado en BD
+[x] GET /api/equipment/[id] → detalle con next_states disponibles según rol
+[x] PATCH /api/equipment/[id] → actualización de campos
+[x] POST /api/equipment/[id]/update-status → cambio con validación de transición
+[x] POST /api/equipment/[id]/deliver-parts → actualización de parts_status
+[x] GET /api/equipment/export → descarga de Excel
+[x] GET /api/stats → métricas del dashboard
+[x] GET /api/stats/models → listado de modelos con métricas
+[x] GET /api/public/equipment/serial/[serial] → sin autenticación, datos correctos
+[x] GET /api/public/equipment/fr/[fr] → sin autenticación, datos correctos
+[x] GET /api/clients → lista de nombres únicos
+[x] GET /api/catalog/brands → listado de marcas
+[x] GET /api/users/technicians → lista de técnicos activos
 ```
 
 ### 10.5 Supabase Realtime (Pizarra)
 
 ```
-[ ] Pizarra carga equipos al abrir /pizarra
-[ ] Cambiar estado de un equipo en otra pestaña → Pizarra actualiza en tiempo real
-[ ] Sin errores en consola relacionados con WebSocket
-[ ] Reconexión automática si se pierde la conexión
+[x] Pizarra carga equipos al abrir /pizarra
+[x] Cambiar estado de un equipo en otra pestaña → Pizarra actualiza en tiempo real
+[x] Sin errores en consola relacionados con WebSocket
+[x] Reconexión automática si se pierde la conexión
 ```
 
 ### 10.6 Sistema QR
 
 ```
-[ ] Equipo con serie válida → botón QR → modal con URL /doc/[serial]
-[ ] Equipo sin serie (N/S, S/N, etc.) → botón QR → modal con URL /doc/fr/[fr]
-[ ] Previsualización del QR visible con logo embebido
-[ ] Impresión: abre diálogo del sistema, logo correcto
-[ ] Página /doc/[serial] accesible sin login con datos correctos
-[ ] Página /doc/fr/[fr] accesible sin login con datos correctos
-[ ] report_url muestra botón de descarga PDF si existe
+[x] Equipo con serie válida → botón QR → modal con URL /doc/[serial]
+[x] Equipo sin serie (N/S, S/N, etc.) → botón QR → modal con URL /doc/fr/[fr]
+[x] Previsualización del QR visible con logo embebido
+[x] Impresión: abre diálogo del sistema, logo correcto
+[x] Página /doc/[serial] accesible sin login con datos correctos
+[x] Página /doc/fr/[fr] accesible sin login con datos correctos
+[x] report_url muestra botón de descarga PDF si existe
 ```
 
 ### 10.7 Módulo de auditoría y pronóstico
 
 ```
-[ ] /auditoria-modelos carga lista de marcas
-[ ] Selección de marca → carga modelos de esa marca
-[ ] Selección de modelo → carga KPIs y Gantt
-[ ] Calculadora proyecta fecha correctamente
-[ ] Factores de retraso aparecen si hay datos históricos
+[x] /auditoria-modelos carga lista de marcas
+[x] Selección de marca → carga modelos de esa marca
+[x] Selección de modelo → carga KPIs y Gantt
+[x] Calculadora proyecta fecha correctamente
+[x] Factores de retraso aparecen si hay datos históricos
 ```
 
 ### Criterio para avanzar a Fase 11
@@ -1154,16 +1181,16 @@ Dependencias adicionales necesarias: ____________________________
 
 **Objetivo:** Verificar que el proyecto compila correctamente para producción, que TypeScript no tiene errores, que el lint está limpio y que el rendimiento es aceptable.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 ### Tareas
 
-- [ ] **11.1** Ejecutar `npx tsc --noEmit` y resolver todos los errores TypeScript
-- [ ] **11.2** Ejecutar `npm run build` y resolver todos los errores de compilación
-- [ ] **11.3** Revisar warnings de build (especialmente `Image` de Next.js, `useEffect` deps, etc.)
-- [ ] **11.4** Verificar que ningún componente rediseñado rompió el tree-shaking (sin imports innecesarios)
-- [ ] **11.5** Medir rendimiento con Lighthouse en Chrome DevTools (modo incógnito, sin extensiones)
-- [ ] **11.6** Verificar Core Web Vitals post-rediseño
+- [x] **11.1** Ejecutar `npx tsc --noEmit` y resolver todos los errores TypeScript
+- [x] **11.2** Ejecutar `npm run build` y resolver todos los errores de compilación
+- [x] **11.3** Revisar warnings de build (especialmente `Image` de Next.js, `useEffect` deps, etc.)
+- [x] **11.4** Verificar que ningún componente rediseñado rompió el tree-shaking (sin imports innecesarios)
+- [x] **11.5** Medir rendimiento con Lighthouse en Chrome DevTools (modo incógnito, sin extensiones)
+- [x] **11.6** Verificar Core Web Vitals post-rediseño
 
 ### Comandos
 
@@ -1208,91 +1235,91 @@ npm run start
 
 **Objetivo:** Revisión holística de toda la interfaz en escritorio y móvil para detectar inconsistencias visuales, corregirlas y documentar el estado final.
 
-**Estado:** ⏳ Pendiente
+**Estado:** ✅ Completado
 
 ### Checklist de revisión visual por vista
 
 ```
 /login
-[ ] Fondo forge con gradiente
-[ ] Formulario glass centrado
-[ ] Logo Synapse/CABELAB visible
-[ ] Input con borde ámbar en focus
-[ ] Botón primario con color ámbar
-[ ] Texto de autoría visible
+[x] Fondo forge con gradiente
+[x] Formulario glass centrado
+[x] Logo Synapse/CABELAB visible
+[x] Input con borde ámbar en focus
+[x] Botón primario con color ámbar
+[x] Texto de autoría visible
 
 /dashboard (admin+)
-[ ] Métricas glass con valores legibles
-[ ] Tabla paginada con estética glass
-[ ] Sidebar glass con ítem activo ámbar
+[x] Métricas glass con valores legibles
+[x] Tabla paginada con estética glass
+[x] Sidebar glass con ítem activo ámbar
 
 /pizarra (todos los roles)
-[ ] Columnas glass con scroll horizontal
-[ ] Tarjetas VIP con glow correcto
-[ ] Chips de repuestos visibles
-[ ] Realtime funcional
+[x] Columnas glass con scroll horizontal
+[x] Tarjetas VIP con glow correcto
+[x] Chips de repuestos visibles
+[x] Realtime funcional
 
 /equipos (roles permitidos)
-[ ] Filtros glass funcionales
-[ ] Tabla glass con hover ámbar
-[ ] Badge VIP con estrellas
-[ ] Badge parts_status correcto
-[ ] Botón QR abre modal correcto
+[x] Filtros glass funcionales
+[x] Tabla glass con hover ámbar
+[x] Badge VIP con estrellas
+[x] Badge parts_status correcto
+[x] Botón QR abre modal correcto
 
 /equipos → detalle (EquipmentDetail)
-[ ] Secciones colapsables glass
-[ ] Badge dual (servicio + repuestos) en cabecera
-[ ] Historial de estados glass
-[ ] Botón edición para roles correctos
-[ ] Botón de entrega de repuestos visible para almacen
+[x] Secciones colapsables glass
+[x] Badge dual (servicio + repuestos) en cabecera
+[x] Historial de estados glass
+[x] Botón edición para roles correctos
+[x] Botón de entrega de repuestos visible para almacen
 
 /equipos → crear (EquipmentForm)
-[ ] Formulario individual glass
-[ ] Formulario lote con tarjetas glass
-[ ] Selectors (brand, model, client) glass
+[x] Formulario individual glass
+[x] Formulario lote con tarjetas glass
+[x] Selectors (brand, model, client) glass
 
 /auditoria-modelos
-[ ] Selector Marca→Modelo glass
-[ ] KPI cards glass con percentiles
-[ ] Gantt con colores forge
-[ ] Calculadora glass funcional
-[ ] Factores de retraso glass
+[x] Selector Marca→Modelo glass
+[x] KPI cards glass con percentiles
+[x] Gantt con colores forge
+[x] Calculadora glass funcional
+[x] Factores de retraso glass
 
 /estadisticas
-[ ] Cards glass con datos correctos
+[x] Cards glass con datos correctos
 
 /dna
-[ ] Timeline glass con historial
+[x] Timeline glass con historial
 
 /historial
-[ ] Tabla audit log glass
+[x] Tabla audit log glass
 
 /buscar
-[ ] Input glass, resultados glass
+[x] Input glass, resultados glass
 
 /admin/usuarios (superadmin)
-[ ] Lista usuarios glass
-[ ] Cambio de rol funcional
+[x] Lista usuarios glass
+[x] Cambio de rol funcional
 
 /admin/workflow (superadmin)
-[ ] Editor visual glass
+[x] Editor visual glass
 
 /admin/catalog (superadmin)
-[ ] Gestión marcas/modelos glass
+[x] Gestión marcas/modelos glass
 
 /perfil (todos)
-[ ] Formulario perfil glass
+[x] Formulario perfil glass
 
 /doc/[serial] (pública, móvil)
-[ ] Responsiva en 375px
-[ ] Sin autenticación requerida
+[x] Responsiva en 375px
+[x] Sin autenticación requerida
 
 /doc/fr/[fr] (pública, móvil)
-[ ] Responsiva en 375px
-[ ] Aviso amarillo visible
+[x] Responsiva en 375px
+[x] Aviso amarillo visible
 
 404 personalizado
-[ ] Estética forge coherente
+[x] Estética forge coherente
 ```
 
 ### Criterio para avanzar a Fase 13

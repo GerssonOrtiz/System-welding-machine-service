@@ -31,21 +31,21 @@ export function EmptyState({
       }`}
     >
       {/* Ícono con halo sutil */}
-      <div className={`rounded-full bg-white/3 border border-white/6 flex items-center justify-center ${compact ? 'w-10 h-10' : 'w-14 h-14'}`}>
+      <div className={`rounded-full bg-amber-ghost border border-amber-border/30 flex items-center justify-center shadow-glass ${compact ? 'w-10 h-10' : 'w-14 h-14'}`}>
         <Icon
           size={compact ? 18 : 24}
-          className="text-text-muted"
+          className="text-amber-core/60"
           strokeWidth={1.5}
         />
       </div>
 
       {/* Textos */}
       <div className="space-y-1">
-        <p className={`font-semibold text-text-secondary ${compact ? 'text-xs' : 'text-sm'}`}>
+        <p className={`font-semibold text-text-forge ${compact ? 'text-xs' : 'text-sm'}`}>
           {title}
         </p>
         {description && (
-          <p className={`text-text-muted ${compact ? 'text-[10px]' : 'text-xs'}`}>
+          <p className={`text-text-forge-mid ${compact ? 'text-[10px]' : 'text-xs'}`}>
             {description}
           </p>
         )}

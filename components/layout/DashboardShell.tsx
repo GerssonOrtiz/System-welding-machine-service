@@ -22,7 +22,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }, [pathname])
 
   return (
-    <div className="min-h-screen flex flex-col bg-bg-base text-text-primary font-sans antialiased">
+    <div className="min-h-screen flex flex-col bg-bg-forge text-text-forge font-sans antialiased selection:bg-amber-core selection:text-bg-forge">
       {/* Navbar superior */}
       <Navbar
         onMenuToggle={() => setIsMobileMenuOpen((prev) => !prev)}
@@ -37,8 +37,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
           onMobileClose={() => setIsMobileMenuOpen(false)}
         />
 
-        {/* Contenido principal — padding optimizado para móvil */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-bg-base">
+        {/* Contenido principal — padding optimizado para móvil con fondo forge */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-gradient-to-b from-bg-forge to-bg-forge-mid">
           {children}
         </main>
       </div>

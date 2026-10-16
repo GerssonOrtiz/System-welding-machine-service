@@ -98,42 +98,42 @@ export default function DashboardPage() {
       {loadingStats ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="bg-bg-surface border border-border-subtle rounded-xl p-4 h-24 animate-pulse" />
+            <div key={i} className="glass-card rounded-xl p-4 h-24 animate-pulse" />
           ))}
         </div>
       ) : stats ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Total Registrados */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-white/20 transition-all flex flex-col justify-between group shadow-sm">
-            <div className="flex items-center justify-between text-text-secondary">
+          <div className="glass-card rounded-xl p-4 hover:glass-card-hover transition-all flex flex-col justify-between group shadow-glass">
+            <div className="flex items-center justify-between text-text-forge-mid">
               <span className="text-[10px] font-bold uppercase tracking-wider">Total Base Datos</span>
-              <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-text-secondary group-hover:text-text-primary transition-colors">
+              <div className="w-7 h-7 rounded-lg bg-amber-ghost border border-amber-border/30 flex items-center justify-center text-amber-glow group-hover:scale-105 transition-all">
                 <Database size={14} />
               </div>
             </div>
-            <div className="text-2xl font-black text-text-primary font-mono mt-2 tracking-tight">
+            <div className="text-2xl font-black text-text-forge font-mono mt-2 tracking-tight">
               {stats.total_registered}
             </div>
           </div>
 
           {/* Activos */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-neon-blue/40 transition-all flex flex-col justify-between group shadow-sm">
-            <div className="flex items-center justify-between text-text-secondary">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neon-blue">Equipos Activos</span>
-              <div className="w-7 h-7 rounded-lg bg-neon-blue/10 flex items-center justify-center text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]">
+          <div className="glass-card rounded-xl p-4 hover:glass-card-hover transition-all flex flex-col justify-between group shadow-glass">
+            <div className="flex items-center justify-between text-text-forge-mid">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-glow">Equipos Activos</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-ghost border border-amber-border/40 flex items-center justify-center text-amber-glow shadow-amber-sm">
                 <Activity size={14} />
               </div>
             </div>
-            <div className="text-2xl font-black text-neon-blue font-mono mt-2 tracking-tight">
+            <div className="text-2xl font-black text-amber-glow font-mono mt-2 tracking-tight">
               {stats.total_active}
             </div>
           </div>
 
           {/* Atrasados */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-red-500/40 transition-all flex flex-col justify-between group shadow-sm">
-            <div className="flex items-center justify-between text-text-secondary">
+          <div className="glass-card rounded-xl p-4 hover:border-red-500/50 transition-all flex flex-col justify-between group shadow-glass">
+            <div className="flex items-center justify-between text-text-forge-mid">
               <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">Atrasados (+5 Días)</span>
-              <div className="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+              <div className="w-7 h-7 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 shadow-[0_0_12px_rgba(239,68,68,0.25)]">
                 <AlertTriangle size={14} />
               </div>
             </div>
@@ -143,10 +143,10 @@ export default function DashboardPage() {
           </div>
 
           {/* Entregados este mes */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-emerald-500/40 transition-all flex flex-col justify-between group shadow-sm">
-            <div className="flex items-center justify-between text-text-secondary">
+          <div className="glass-card rounded-xl p-4 hover:border-emerald-500/50 transition-all flex flex-col justify-between group shadow-glass">
+            <div className="flex items-center justify-between text-text-forge-mid">
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Entregados este Mes</span>
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
                 <CheckCircle size={14} />
               </div>
             </div>
@@ -156,14 +156,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Tiempo promedio */}
-          <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 hover:border-neon-purple/40 transition-all flex flex-col justify-between group shadow-sm">
-            <div className="flex items-center justify-between text-text-secondary">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neon-purple">Promedio Entrega</span>
-              <div className="w-7 h-7 rounded-lg bg-neon-purple/10 flex items-center justify-center text-neon-purple shadow-[0_0_10px_rgba(157,78,221,0.2)]">
+          <div className="glass-card rounded-xl p-4 hover:glass-card-hover transition-all flex flex-col justify-between group shadow-glass">
+            <div className="flex items-center justify-between text-text-forge-mid">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-glow">Promedio Entrega</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-ghost border border-amber-border/40 flex items-center justify-center text-amber-glow shadow-amber-sm">
                 <Clock size={14} />
               </div>
             </div>
-            <div className="text-2xl font-black text-neon-purple font-mono mt-2 tracking-tight">
+            <div className="text-2xl font-black text-amber-core font-mono mt-2 tracking-tight">
               {stats.avg_days_to_delivery}d
             </div>
           </div>
@@ -171,11 +171,11 @@ export default function DashboardPage() {
       ) : null}
 
       {/* Main Global Equipment Section */}
-      <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 space-y-4 shadow-sm">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border-subtle/30 pb-4">
+      <div className="glass-card rounded-xl p-5 space-y-4 shadow-glass">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-amber-border/20 pb-4">
           <div className="space-y-1">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-neon-blue"> Registro General de Equipos ({displayTotal})</h2>
-            <p className="text-[10px] text-text-muted">Filtrando en toda la base de datos. Ordenado por FR más reciente.</p>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-amber-glow"> Registro General de Equipos ({displayTotal})</h2>
+            <p className="text-[10px] text-text-forge-dim">Filtrando en toda la base de datos. Ordenado por FR más reciente.</p>
           </div>
           
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">

@@ -13,37 +13,37 @@ interface ModelKpiCardsProps {
 
 export function ModelKpiCards({ timings, brand, modelName }: ModelKpiCardsProps) {
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
-      <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-        <h3 className="text-xs font-bold text-neon-blue uppercase tracking-wider flex items-center gap-1.5">
+    <div className="glass-card rounded-xl p-5 shadow-glass space-y-4">
+      <div className="flex items-center justify-between border-b border-amber-border/20 pb-3">
+        <h3 className="text-xs font-bold text-amber-glow uppercase tracking-wider flex items-center gap-1.5">
           <Clock size={15} /> Métricas Clave de Rendimiento ({brand} {modelName})
         </h3>
-        <span className="text-[11px] text-text-muted font-mono">
+        <span className="text-[11px] text-text-forge-dim font-mono">
           Valores en días hábiles / calendario
         </span>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {/* Diagnóstico */}
-        <div className="bg-bg-elevated/60 p-3.5 rounded-lg border border-border-subtle flex flex-col justify-between">
+        <div className="glass-card p-3.5 rounded-lg border border-amber-border/20 flex flex-col justify-between hover:border-amber-border/40 transition-all">
           <div>
-            <div className="flex items-center justify-between text-neon-blue mb-1">
+            <div className="flex items-center justify-between text-amber-glow mb-1">
               <span className="text-[11px] uppercase font-bold tracking-wider">Diagnóstico</span>
               <Layers size={14} />
             </div>
-            <div className="text-2xl font-mono font-bold text-text-primary">
+            <div className="text-2xl font-mono font-bold text-text-forge">
               {timings.diagnosis.median_days}
-              <span className="text-xs font-normal text-text-muted ml-1">días</span>
+              <span className="text-xs font-normal text-text-forge-dim ml-1">días</span>
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-border-subtle/50 text-[10px] text-text-muted space-y-0.5">
+          <div className="mt-3 pt-2 border-t border-amber-border/15 text-[10px] text-text-forge-dim space-y-0.5">
             <div className="flex justify-between">
               <span>Promedio:</span>
-              <strong className="text-text-secondary font-mono">{timings.diagnosis.avg_days}d</strong>
+              <strong className="text-text-forge-mid font-mono">{timings.diagnosis.avg_days}d</strong>
             </div>
             <div className="flex justify-between">
               <span>Rango (p20-p80):</span>
-              <span className="text-neon-blue font-mono">
+              <span className="text-amber-glow font-mono">
                 {timings.diagnosis.optimistic_days}d - {timings.diagnosis.pessimistic_days}d
               </span>
             </div>

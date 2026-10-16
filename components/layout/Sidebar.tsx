@@ -135,13 +135,13 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   // ── Skeleton de carga ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <aside className="w-[220px] bg-bg-surface border-r border-white/6 p-4 hidden md:flex flex-col gap-4 font-sans select-none animate-pulse">
-        <div className="h-8 bg-white/5 rounded w-3/4 mb-4" />
+      <aside className="w-[220px] glass-sidebar border-r border-amber-border/20 p-4 hidden md:flex flex-col gap-4 font-sans select-none animate-pulse">
+        <div className="h-8 bg-amber-core/5 rounded w-3/4 mb-4" />
         <div className="space-y-3">
-          <div className="h-8 bg-white/5 rounded" />
-          <div className="h-8 bg-white/5 rounded" />
-          <div className="h-8 bg-white/5 rounded" />
-          <div className="h-8 bg-white/5 rounded" />
+          <div className="h-8 bg-amber-core/5 rounded" />
+          <div className="h-8 bg-amber-core/5 rounded" />
+          <div className="h-8 bg-amber-core/5 rounded" />
+          <div className="h-8 bg-amber-core/5 rounded" />
         </div>
       </aside>
     )
@@ -170,7 +170,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       )}
 
       <aside
-        className={`bg-bg-surface border-r border-white/6 flex flex-col justify-between font-sans selection:bg-neon-blue selection:text-bg-base select-none shrink-0 transition-all duration-300
+        className={`glass-sidebar border-r border-amber-border/25 ambient-amber flex flex-col justify-between font-sans selection:bg-amber-core selection:text-bg-forge select-none shrink-0 transition-all duration-300
           /* En móvil: posición fija deslizable tipo drawer */
           fixed inset-y-0 left-0 z-50 md:static md:translate-x-0
           ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
@@ -182,7 +182,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-          className="hidden md:flex absolute -right-3 top-10 w-6 h-6 bg-bg-surface border border-white/10 rounded-full items-center justify-center text-text-secondary hover:text-neon-blue hover:border-neon-blue transition-all z-10 shadow-lg"
+          className="hidden md:flex absolute -right-3 top-10 w-6 h-6 glass-card border border-amber-border/40 rounded-full items-center justify-center text-text-forge-mid hover:text-amber-glow hover:border-amber-glow transition-all z-10 shadow-lg shadow-black/40"
         >
           {isCollapsed
             ? <ChevronRight size={12} />
@@ -191,9 +191,9 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         </button>
 
       {/* ── Cuerpo superior: logo + navegación ───────────────────────────── */}
-      <div className="flex flex-col overflow-hidden">
+      <div className="flex flex-col overflow-hidden relative z-10">
         {/* Logo Synapse */}
-        <div className={`flex flex-col items-center px-3 py-4 border-b border-white/6 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}>
+        <div className={`flex flex-col items-center px-3 py-4 border-b border-amber-border/20 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}>
           {isCollapsed ? (
             <div className="relative w-8 h-8 flex items-center justify-center">
               <Image
@@ -220,9 +220,9 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         </div>
 
         {/* Lista de navegación */}
-        <nav className="p-3 space-y-0.5 overflow-hidden">
+        <nav className="p-3 space-y-1 overflow-hidden">
           <div className={`px-2 mb-3 mt-1 transition-opacity duration-200 ${isCollapsed ? 'opacity-0 h-0 mb-0' : 'opacity-100'}`}>
-            <span className="text-[9px] text-text-muted font-bold tracking-widest uppercase font-mono whitespace-nowrap">
+            <span className="text-[9px] text-text-forge-dim font-bold tracking-widest uppercase font-mono whitespace-nowrap">
               Navegación
             </span>
           </div>
@@ -240,13 +240,13 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
                 title={isCollapsed ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-standard ${
                   isActive
-                    ? 'bg-neon-blue/8 border border-neon-blue/20 text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.05)]'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-white/3 border border-transparent'
+                    ? 'bg-amber-ghost border border-amber-border/60 text-amber-glow shadow-amber-sm'
+                    : 'text-text-forge-mid hover:text-text-forge hover:bg-amber-ghost/40 border border-transparent'
                 }`}
               >
                 <Icon
                   size={16}
-                  className="shrink-0"
+                  className={`shrink-0 ${isActive ? 'text-amber-glow' : 'text-text-forge-mid'}`}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 <span
@@ -263,13 +263,13 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       </div>
 
       {/* ── Pie: avatar + nombre + rol del usuario ───────────────────────── */}
-      <div className={`border-t border-white/6 transition-all duration-200 ${isCollapsed ? 'p-2' : 'p-3'}`}>
+      <div className={`border-t border-amber-border/20 transition-all duration-200 relative z-10 ${isCollapsed ? 'p-2' : 'p-3'}`}>
         {isCollapsed ? (
           /* Modo colapsado: solo el avatar */
           <div className="flex justify-center">
             <div
               title={displayName}
-              className="w-8 h-8 rounded-full bg-neon-blue/15 border border-neon-blue/25 flex items-center justify-center text-xs font-bold text-neon-blue"
+              className="w-8 h-8 rounded-full bg-amber-ghost border border-amber-border text-amber-glow flex items-center justify-center text-xs font-bold shadow-amber-sm"
             >
               {initial}
             </div>
@@ -277,14 +277,14 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         ) : (
           /* Modo expandido: avatar + info */
           <div className="flex items-center gap-2.5 px-1">
-            <div className="w-8 h-8 rounded-full bg-neon-blue/15 border border-neon-blue/25 flex items-center justify-center text-xs font-bold text-neon-blue shrink-0">
+            <div className="w-8 h-8 rounded-full bg-amber-ghost border border-amber-border text-amber-glow flex items-center justify-center text-xs font-bold shrink-0 shadow-amber-sm">
               {initial}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-text-primary truncate leading-tight">
+              <p className="text-xs font-semibold text-text-forge truncate leading-tight">
                 {displayName}
               </p>
-              <p className="text-[10px] text-text-muted truncate leading-tight mt-0.5 font-mono">
+              <p className="text-[10px] text-text-forge-mid truncate leading-tight mt-0.5 font-mono">
                 {displayRole}
               </p>
             </div>

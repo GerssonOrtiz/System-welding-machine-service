@@ -14,7 +14,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar personalizada — estilo oscuro coherente */
+/* Scrollbar personalizada — estilo oscuro forja coherente */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -23,11 +23,66 @@ body {
   background: #0B0F1A;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 229, 255, 0.2);
+  background: rgba(245, 158, 11, 0.2);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.4);
+  background: rgba(245, 158, 11, 0.45);
+}
+
+/* ─── Clases Glassmorphism y utilidades Forge ───────────────── */
+@layer components {
+  .glass-card {
+    background: rgba(14, 17, 32, 0.60);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(245, 158, 11, 0.20);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(245, 158, 11, 0.08);
+  }
+
+  .glass-card-hover {
+    border-color: rgba(245, 158, 11, 0.40);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.40), 0 0 20px rgba(245, 158, 11, 0.12), inset 0 1px 0 rgba(245, 158, 11, 0.15);
+  }
+
+  .glass-input {
+    background: rgba(14, 17, 32, 0.50);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+  }
+
+  .glass-input:focus {
+    border-color: rgba(245, 158, 11, 0.50);
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.30);
+    outline: none;
+  }
+
+  .glass-modal {
+    background: rgba(10, 12, 23, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(245, 158, 11, 0.20);
+  }
+
+  .glass-sidebar {
+    background: linear-gradient(180deg, rgba(10, 12, 23, 0.97) 0%, rgba(15, 10, 5, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .ambient-amber {
+    position: relative;
+  }
+
+  .ambient-amber::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(245, 158, 11, 0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
 }
 
 /* Transición estándar para hover en botones y tarjetas */
@@ -63,5 +118,17 @@ body {
   }
   .animate-slide-out {
     animation: slideOut 200ms ease-in;
+  }
+}
+
+/* ─── Accesibilidad: Reducción de movimiento ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -1,4 +1,4 @@
-﻿// app/(dashboard)/historial/page.tsx
+// app/(dashboard)/historial/page.tsx
 'use client'
 
 import React, { useState } from 'react'
@@ -23,10 +23,10 @@ export default function HistorialPage() {
       </div>
 
       {/* Main Table Container */}
-      <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-sm">
+      <div className="glass-card border border-amber-border/25 rounded-xl p-5 shadow-glass">
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
-            <span className="text-neon-blue animate-pulse font-mono text-xs uppercase tracking-widest">
+            <span className="text-amber-glow animate-pulse font-mono text-xs uppercase tracking-widest">
               Cargando historial...
             </span>
           </div>

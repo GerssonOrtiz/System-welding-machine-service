@@ -1,4 +1,4 @@
-﻿// app/(dashboard)/estadisticas/page.tsx
+// app/(dashboard)/estadisticas/page.tsx
 'use client'
 
 import React, { useEffect, useState } from 'react'
@@ -101,51 +101,51 @@ export default function EstadisticasPage() {
       {/*  5 CARDS DE MÉTRICAS RÁPIDAS  */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Registrados */}
-        <div className="bg-bg-surface/50 border border-border-subtle rounded-xl p-5 hover:border-text-primary/20 transition-all">
-          <span className="text-[10px] text-text-secondary uppercase tracking-widest font-mono">Histórico Total</span>
-          <div className="text-3xl font-extrabold text-text-primary mt-2 font-mono">
+        <div className="glass-card rounded-xl p-5 hover:glass-card-hover transition-all shadow-glass">
+          <span className="text-[10px] text-text-forge-mid uppercase tracking-widest font-mono">Histórico Total</span>
+          <div className="text-3xl font-extrabold text-text-forge mt-2 font-mono">
             {stats.total_registered}
           </div>
-          <div className="text-[10px] text-text-muted mt-1 uppercase">Equipos en el sistema</div>
+          <div className="text-[10px] text-text-forge-dim mt-1 uppercase">Equipos en el sistema</div>
         </div>
 
         {/* Activos */}
-        <div className="bg-bg-surface/50 border border-border-subtle rounded-xl p-5 hover:border-neon-blue/20 transition-all">
-          <span className="text-[10px] text-text-secondary uppercase tracking-widest font-mono">Activos en Taller</span>
-          <div className="text-3xl font-extrabold text-neon-blue mt-2 font-mono">
+        <div className="glass-card rounded-xl p-5 hover:glass-card-hover transition-all shadow-glass">
+          <span className="text-[10px] text-text-forge-mid uppercase tracking-widest font-mono">Activos en Taller</span>
+          <div className="text-3xl font-extrabold text-amber-glow mt-2 font-mono">
             {stats.total_active}
           </div>
-          <div className="text-[10px] text-text-muted mt-1 uppercase">En proceso actual</div>
+          <div className="text-[10px] text-text-forge-dim mt-1 uppercase">En proceso actual</div>
         </div>
 
         {/* Atrasados */}
-        <div className="bg-bg-surface/50 border border-border-subtle rounded-xl p-5 hover:border-red-500/20 transition-all">
-          <span className="text-[10px] text-text-secondary uppercase tracking-widest font-mono">Equipos Atrasados</span>
+        <div className="glass-card rounded-xl p-5 hover:border-red-500/50 transition-all shadow-glass">
+          <span className="text-[10px] text-text-forge-mid uppercase tracking-widest font-mono">Equipos Atrasados</span>
           <div className="text-3xl font-extrabold text-red-500 mt-2 font-mono flex items-center gap-2">
             {stats.total_delayed}
             {stats.total_delayed > 0 && (
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
             )}
           </div>
-          <div className="text-[10px] text-text-muted mt-1 uppercase">Con más de 5 días</div>
+          <div className="text-[10px] text-text-forge-dim mt-1 uppercase">Con más de 5 días</div>
         </div>
 
         {/* Entregas del mes */}
-        <div className="bg-bg-surface/50 border border-border-subtle rounded-xl p-5 hover:border-emerald-500/20 transition-all">
-          <span className="text-[10px] text-text-secondary uppercase tracking-widest font-mono">Entregados del Mes</span>
+        <div className="glass-card rounded-xl p-5 hover:border-emerald-500/50 transition-all shadow-glass">
+          <span className="text-[10px] text-text-forge-mid uppercase tracking-widest font-mono">Entregados del Mes</span>
           <div className="text-3xl font-extrabold text-emerald-400 mt-2 font-mono">
             {stats.delivered_this_month}
           </div>
-          <div className="text-[10px] text-text-muted mt-1 uppercase">Culminados este mes</div>
+          <div className="text-[10px] text-text-forge-dim mt-1 uppercase">Culminados este mes</div>
         </div>
 
         {/* Promedio de días */}
-        <div className="bg-bg-surface/50 border border-border-subtle rounded-xl p-5 hover:border-purple-500/20 transition-all">
-          <span className="text-[10px] text-text-secondary uppercase tracking-widest font-mono">Promedio de Entrega</span>
-          <div className="text-3xl font-extrabold text-purple-400 mt-2 font-mono">
+        <div className="glass-card rounded-xl p-5 hover:glass-card-hover transition-all shadow-glass">
+          <span className="text-[10px] text-text-forge-mid uppercase tracking-widest font-mono">Promedio de Entrega</span>
+          <div className="text-3xl font-extrabold text-amber-core mt-2 font-mono">
             {stats.avg_days_to_delivery} <span className="text-sm font-normal">d</span>
           </div>
-          <div className="text-[10px] text-text-muted mt-1 uppercase">Últimos 30 días</div>
+          <div className="text-[10px] text-text-forge-dim mt-1 uppercase">Últimos 30 días</div>
         </div>
       </div>
 

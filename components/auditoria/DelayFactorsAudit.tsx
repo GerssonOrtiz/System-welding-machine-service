@@ -71,17 +71,17 @@ export function DelayFactorsAudit({
   }
 
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-sm space-y-5">
-      <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+    <div className="glass-card rounded-xl p-5 shadow-glass space-y-5">
+      <div className="flex items-center justify-between border-b border-amber-border/20 pb-3">
         <div>
-          <h3 className="text-xs font-bold text-neon-blue uppercase tracking-wider flex items-center gap-1.5">
-            <AlertTriangle size={15} className="text-amber-400" /> Auditoría de Factores de Retraso y Cuellos de Botella
+          <h3 className="text-xs font-bold text-amber-glow uppercase tracking-wider flex items-center gap-1.5">
+            <AlertTriangle size={15} className="text-amber-core" /> Auditoría de Factores de Retraso y Cuellos de Botella
           </h3>
-          <p className="text-[11px] text-text-muted mt-0.5">
+          <p className="text-[11px] text-text-forge-dim mt-0.5">
             Patrones detectados automáticamente a partir de observaciones y notas de roles en taller
           </p>
         </div>
-        <span className="text-[11px] text-text-secondary font-mono">
+        <span className="text-[11px] text-text-forge-mid font-mono">
           {delayFactors.length} factores identificados
         </span>
       </div>
@@ -92,7 +92,7 @@ export function DelayFactorsAudit({
           {delayFactors.map((factor, idx) => (
             <div
               key={idx}
-              className="bg-bg-elevated/40 border border-border-subtle rounded-lg p-4 space-y-3 flex flex-col justify-between"
+              className="glass-card border border-amber-border/20 rounded-lg p-4 space-y-3 flex flex-col justify-between hover:border-amber-border/40 transition-all"
             >
               <div>
                 <div className="flex items-start justify-between gap-2">

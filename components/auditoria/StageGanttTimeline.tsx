@@ -31,19 +31,19 @@ export function StageGanttTimeline({
   const qualityPct = 100 - (diagPct + apprPct + partsPct + maintPct)
 
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-subtle pb-3">
+    <div className="glass-card rounded-xl p-5 shadow-glass space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-border/20 pb-3">
         <div>
-          <h3 className="text-xs font-bold text-neon-blue uppercase tracking-wider flex items-center gap-1.5">
+          <h3 className="text-xs font-bold text-amber-glow uppercase tracking-wider flex items-center gap-1.5">
             <GitCommit size={15} /> Flujo Típico de Atención (Gantt Proporcional)
           </h3>
-          <p className="text-[11px] text-text-muted mt-0.5">
+          <p className="text-[11px] text-text-forge-dim mt-0.5">
             Distribución proporcional del ciclo de vida del servicio en taller
           </p>
         </div>
         <div className="text-right">
-          <span className="text-[11px] text-text-secondary font-mono">
-            Ciclo estimado: <strong className="text-neon-blue font-bold">~{Math.round(sumDays * 10) / 10} días</strong>
+          <span className="text-[11px] text-text-forge-mid font-mono">
+            Ciclo estimado: <strong className="text-amber-glow font-bold">~{Math.round(sumDays * 10) / 10} días</strong>
           </span>
         </div>
       </div>

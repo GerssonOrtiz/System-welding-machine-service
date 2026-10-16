@@ -133,13 +133,13 @@ export function DeliveryForecastCalculator({
   const forecast = calculateForecast()
 
   return (
-    <div className="bg-bg-surface border border-neon-blue/30 rounded-xl p-5 shadow-neon-blue/5 space-y-5 flex flex-col justify-between">
+    <div className="glass-card rounded-xl p-5 shadow-glass space-y-5 flex flex-col justify-between">
       <div>
-        <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-          <span className="text-xs font-bold text-neon-blue uppercase tracking-wider flex items-center gap-1.5">
+        <div className="flex items-center justify-between border-b border-amber-border/20 pb-3">
+          <span className="text-xs font-bold text-amber-glow uppercase tracking-wider flex items-center gap-1.5">
             <Zap size={15} /> Calculadora de Entrega Predictiva
           </span>
-          <span className="text-[11px] font-mono text-text-muted">
+          <span className="text-[11px] font-mono text-text-forge-dim">
             {brand} {modelName}
           </span>
         </div>

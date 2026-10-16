@@ -187,17 +187,17 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
   const isMultiple = equipments.length > 1
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 font-sans text-text-primary" autoComplete="off">
+    <form onSubmit={handleSubmit} className="space-y-6 font-sans text-text-forge" autoComplete="off">
       {/* ── CABECERA GENERAL DEL INGRESO (CLIENTE & SERVICIO GENERAL) ── */}
-      <div className="bg-bg-elevated/40 border border-border-subtle rounded-xl p-4 sm:p-5 space-y-4">
-        <div className="flex items-center justify-between border-b border-border-subtle/50 pb-2.5">
+      <div className="glass-card border border-amber-border/30 rounded-xl p-4 sm:p-5 space-y-4 shadow-glass">
+        <div className="flex items-center justify-between border-b border-amber-border/20 pb-2.5">
           <div className="flex items-center gap-2">
-            <Layers className="text-neon-blue" size={18} />
-            <span className="text-xs font-bold uppercase tracking-wider text-text-primary">
+            <Layers className="text-amber-glow" size={18} />
+            <span className="text-xs font-bold uppercase tracking-wider text-text-forge">
               Información General del Ingreso
             </span>
           </div>
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-neon-blue/10 text-neon-blue border border-neon-blue/20">
+          <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-ghost text-amber-glow border border-amber-border/40">
             {equipments.length} {equipments.length === 1 ? 'equipo a ingresar' : 'equipos en este lote'}
           </span>
         </div>
@@ -218,7 +218,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
 
           {/* Tipo de Servicio Predeterminado */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+            <label className="text-xs font-bold text-text-forge-mid uppercase tracking-wider">
               Tipo de Servicio Principal
             </label>
             <select
@@ -231,13 +231,13 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
                   handleUpdateItem(equipments[0].id, 'service_type', val)
                 }
               }}
-              className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue rounded-lg px-3.5 py-2.5 text-sm focus:outline-none transition-all text-text-primary"
+              className="w-full glass-input rounded-lg px-3.5 py-2.5 text-sm transition-all text-text-forge"
             >
-              <option value="REVISION_GENERAL">REVISIÓN GENERAL</option>
-              <option value="GARANTIA_CABELAB">GARANTÍA CABELAB</option>
-              <option value="GARANTIA_ESAB">GARANTÍA ESAB</option>
+              <option value="REVISION_GENERAL" className="bg-bg-forge-high">REVISIÓN GENERAL</option>
+              <option value="GARANTIA_CABELAB" className="bg-bg-forge-high">GARANTÍA CABELAB</option>
+              <option value="GARANTIA_ESAB" className="bg-bg-forge-high">GARANTÍA ESAB</option>
             </select>
-            <p className="text-[10px] text-text-muted mt-0.5">
+            <p className="text-[10px] text-text-forge-dim mt-0.5">
               Aplica por defecto a los equipos agregados. Puedes personalizar cada uno abajo.
             </p>
           </div>
@@ -247,13 +247,13 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
       {/* ── LISTA MODULAR DE EQUIPOS ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
-          <label className="text-xs font-bold text-neon-blue uppercase tracking-wider flex items-center gap-2">
+          <label className="text-xs font-bold text-amber-glow uppercase tracking-wider flex items-center gap-2">
             <Wrench size={14} /> Detalle de Equipos ({equipments.length})
           </label>
           <button
             type="button"
             onClick={handleAddEquipment}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-neon-blue/15 hover:bg-neon-blue/25 text-neon-blue border border-neon-blue/30 transition-all shadow-sm active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-ghost hover:bg-amber-ghost/70 text-amber-glow border border-amber-border/40 transition-all shadow-amber-sm active:scale-95"
           >
             <Plus size={14} />
             <span>Agregar otro equipo</span>
@@ -267,18 +267,18 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
             return (
               <div
                 key={eq.id}
-                className="bg-bg-surface border border-border-subtle hover:border-neon-blue/40 rounded-xl p-4 sm:p-5 transition-all shadow-sm space-y-4 relative"
+                className="glass-card border border-amber-border/25 hover:border-amber-border/50 rounded-xl p-4 sm:p-5 transition-all shadow-glass space-y-4 relative"
               >
                 {/* Cabecera de la tarjeta del equipo */}
-                <div className="flex items-center justify-between pb-3 border-b border-border-subtle/40">
+                <div className="flex items-center justify-between pb-3 border-b border-amber-border/20">
                   <div className="flex items-center gap-2.5">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-neon-blue/20 text-neon-blue text-xs font-bold font-mono">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-ghost text-amber-glow border border-amber-border/40 text-xs font-bold font-mono">
                       {index + 1}
                     </span>
-                    <span className="text-xs font-bold uppercase text-text-secondary tracking-wider">
+                    <span className="text-xs font-bold uppercase text-text-forge-mid tracking-wider">
                       Equipo {index + 1}
                       {eq.fr_number.trim() && (
-                        <span className="text-text-primary font-mono ml-1.5 text-xs text-neon-blue font-bold">
+                        <span className="text-amber-glow font-mono ml-1.5 text-xs font-bold">
                           [{eq.fr_number.toUpperCase()}]
                         </span>
                       )}
@@ -291,7 +291,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
                       type="button"
                       title="Duplicar marca y servicio en nuevo equipo"
                       onClick={() => handleDuplicateItem(eq)}
-                      className="p-1.5 text-text-muted hover:text-neon-blue hover:bg-neon-blue/10 rounded-lg transition-all"
+                      className="p-1.5 text-text-forge-mid hover:text-amber-glow hover:bg-amber-ghost rounded-lg transition-all"
                     >
                       <Copy size={14} />
                     </button>
@@ -302,7 +302,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
                         type="button"
                         title="Eliminar este equipo"
                         onClick={() => handleRemoveEquipment(eq.id)}
-                        className="p-1.5 text-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                        className="p-1.5 text-text-forge-mid hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -315,18 +315,18 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
                   {/* FR Number + Prioridad */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                      <label className="text-xs font-bold text-text-forge-mid uppercase tracking-wider">
                         Ficha FR *
                       </label>
                       <select
                         value={eq.priority_level}
                         onChange={(e) => handleUpdateItem(eq.id, 'priority_level', parseInt(e.target.value, 10))}
-                        className="text-[10px] font-bold bg-bg-elevated border border-neon-purple/20 rounded px-1.5 py-0.5 text-neon-purple uppercase outline-none focus:border-neon-purple cursor-pointer"
+                        className="text-[10px] font-bold bg-amber-ghost border border-amber-border/40 rounded px-1.5 py-0.5 text-amber-glow uppercase outline-none focus:border-amber-glow cursor-pointer"
                       >
-                        <option value={0}>Regular</option>
-                        <option value={1}>⭐ VIP 1</option>
-                        <option value={2}>⭐⭐ VIP 2</option>
-                        <option value={3}>⭐⭐⭐ VIP 3</option>
+                        <option value={0} className="bg-bg-forge-high">Regular</option>
+                        <option value={1} className="bg-bg-forge-high">⭐ VIP 1</option>
+                        <option value={2} className="bg-bg-forge-high">⭐⭐ VIP 2</option>
+                        <option value={3} className="bg-bg-forge-high">⭐⭐⭐ VIP 3</option>
                       </select>
                     </div>
                     <input
@@ -334,7 +334,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
                       value={eq.fr_number}
                       onChange={(e) => handleUpdateItem(eq.id, 'fr_number', e.target.value)}
                       placeholder="ej: 1201-1"
-                      className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none transition-all font-mono"
+                      className="w-full glass-input rounded-lg px-3 py-2 text-sm text-text-forge placeholder:text-text-forge-dim transition-all font-mono"
                       required
                     />
                   </div>
@@ -360,7 +360,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
 
                   {/* Número de Serie */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                    <label className="text-xs font-bold text-text-forge-mid uppercase tracking-wider">
                       N° de Serie
                     </label>
                     <input
@@ -450,11 +450,11 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
       </div>
 
       {/* ── BOTONES DE ACCIÓN ── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border-subtle">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-amber-border/20">
         <button
           type="button"
           onClick={handleAddEquipment}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-neon-blue border border-neon-blue/30 rounded-lg hover:bg-neon-blue/10 transition-all uppercase tracking-wider"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-amber-glow border border-amber-border/40 rounded-lg bg-amber-ghost/30 hover:bg-amber-ghost transition-all uppercase tracking-wider"
         >
           <Plus size={14} />
           <span>+ Agregar otro equipo a este cliente</span>
@@ -465,7 +465,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
             <button
               type="button"
               onClick={onCancel}
-              className="px-5 py-2.5 text-xs font-bold border border-border-subtle text-text-secondary rounded-lg hover:bg-bg-elevated transition-all uppercase tracking-wider"
+              className="px-5 py-2.5 text-xs font-bold border border-amber-border/30 text-text-forge-mid rounded-lg glass-card hover:bg-amber-ghost/40 transition-all uppercase tracking-wider"
             >
               Cancelar
             </button>
@@ -473,7 +473,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full sm:w-auto px-7 py-2.5 text-xs font-bold rounded-lg bg-electric text-white shadow-neon-blue hover:brightness-110 transition-all uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-7 py-2.5 text-xs font-bold rounded-lg bg-amber-core hover:bg-amber-glow text-bg-forge border border-amber-deep shadow-amber-md transition-all uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isSubmitting
               ? 'Registrando...'

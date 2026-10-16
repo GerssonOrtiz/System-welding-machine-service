@@ -31,14 +31,14 @@ export default function PizarraCard({ equipment }: PizarraCardProps) {
   const priorityLevel = equipment.priority_level || (equipment.is_priority ? 1 : 0)
   const isPriority = priorityLevel > 0
 
-  const cardClasses = `bg-bg-surface/60 border rounded-lg px-3 py-2 flex items-center gap-3 transition-all duration-150 group cursor-pointer shadow-sm mb-1.5 ${
+  const cardClasses = `glass-card border rounded-lg px-3 py-2 flex items-center gap-3 transition-standard group cursor-pointer shadow-glass mb-1.5 ${
     priorityLevel === 3
-      ? 'border-neon-purple shadow-[0_0_15px_rgba(157,78,221,0.4)] hover:bg-neon-purple/10 animate-glow-pulse' 
+      ? 'border-amber-core/80 shadow-vip-amber hover:bg-amber-ghost/40 animate-amber-pulse' 
       : priorityLevel === 2
-      ? 'border-neon-purple/70 shadow-[0_0_10px_rgba(157,78,221,0.2)] hover:bg-neon-purple/5'
+      ? 'border-amber-glow/70 shadow-amber-md hover:bg-amber-ghost/30'
       : priorityLevel === 1
-      ? 'border-neon-purple/40 hover:bg-neon-purple/5'
-      : 'border-border-subtle hover:bg-bg-surface hover:border-neon-blue/40'
+      ? 'border-amber-border hover:bg-amber-ghost/20 shadow-amber-sm'
+      : 'border-amber-border/20 hover:border-amber-border/50 hover:bg-amber-ghost/15'
   }`
 
   const priorityStars = () => {
@@ -57,36 +57,36 @@ export default function PizarraCard({ equipment }: PizarraCardProps) {
         {/* Identificador FR - Color en base a estado para referencia rápida */}
         <div 
           className="w-1.5 h-6 rounded-full shrink-0" 
-          style={{ backgroundColor: equipment.status_color || '#00E5FF', boxShadow: `0 0 8px ${equipment.status_color}40` }}
+          style={{ backgroundColor: equipment.status_color || '#F59E0B', boxShadow: `0 0 8px ${equipment.status_color}50` }}
         />
         
         {/* FR y Cliente - Información Primaria */}
         <div className="flex-1 min-w-0 flex items-center gap-4">
           <div className="flex flex-col items-start shrink-0 w-16">
-            <span className="font-mono text-sm font-bold text-neon-blue uppercase tracking-wider">
+            <span className="font-mono text-sm font-bold text-amber-glow uppercase tracking-wider">
               {equipment.fr_number.replace('FR-', '')}
             </span>
             {isPriority && (
-              <span className={`text-[8px] font-black text-neon-purple leading-none mt-0.5 ${priorityLevel === 3 ? 'animate-pulse' : ''}`}>
+              <span className={`text-[8px] font-black text-amber-core leading-none mt-0.5 ${priorityLevel === 3 ? 'animate-pulse' : ''}`}>
                 {priorityStars()} VIP {priorityLevel}
               </span>
             )}
           </div>
           
           <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-semibold text-text-primary truncate block uppercase leading-none mb-0.5">
+            <span className="text-[11px] font-semibold text-text-forge truncate block uppercase leading-none mb-0.5">
               {equipment.client_name}
             </span>
             <div className="flex items-center gap-2 overflow-hidden flex-wrap">
-              <span className="text-[9px] text-text-muted truncate shrink-0 uppercase tracking-tight">
+              <span className="text-[9px] text-text-forge-dim truncate shrink-0 uppercase tracking-tight">
                 {equipment.brand} {equipment.model}
               </span>
               {equipment.assigned_technicians && equipment.assigned_technicians.length > 0 && (
                 <div className="flex items-center gap-1 overflow-hidden">
-                  <span className="text-[8px] text-text-muted">•</span>
+                  <span className="text-[8px] text-text-forge-dim">•</span>
                   <div className="flex gap-1 overflow-hidden">
                     {equipment.assigned_technicians.map((tech, idx) => (
-                      <span key={idx} className="text-[8px] font-bold text-neon-blue/80 bg-neon-blue/5 px-1 rounded border border-neon-blue/10 whitespace-nowrap">
+                      <span key={idx} className="text-[8px] font-bold text-amber-glow bg-amber-ghost/40 px-1 rounded border border-amber-border/30 whitespace-nowrap">
                         {tech.toUpperCase()}
                       </span>
                     ))}
@@ -97,7 +97,7 @@ export default function PizarraCard({ equipment }: PizarraCardProps) {
               {equipment.approved_parts && equipment.approved_parts.length > 0 && (() => {
                 const ps = (equipment.parts_status ?? 'SIN_REPUESTOS') as PartsStatus
                 const chipConfig: Record<PartsStatus, { cls: string; icon: string }> = {
-                  SIN_REPUESTOS: { cls: 'text-red-400/70 border-red-500/20 bg-red-500/5',    icon: '📦' },
+                  SIN_REPUESTOS: { cls: 'text-red-400/80 border-red-500/20 bg-red-500/5',    icon: '📦' },
                   PARCIAL:       { cls: 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10', icon: '📦' },
                   COMPLETO:      { cls: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10', icon: '📦' },
                 }

@@ -36,14 +36,14 @@ export function Navbar({ onMenuToggle, isMobileMenuOpen }: NavbarProps) {
   }
 
   return (
-    <header className="h-14 bg-bg-surface border-b border-white/6 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 selection:bg-neon-blue selection:text-bg-base font-sans">
+    <header className="h-14 glass-sidebar border-b border-amber-border/30 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 selection:bg-amber-core selection:text-bg-forge font-sans">
       {/* Sección Izquierda: Botón hamburguesa móvil + Logo Synapse y autoría */}
       <div className="flex items-center gap-3 md:gap-4">
         {/* Botón toggle para celulares */}
         <button
           onClick={onMenuToggle}
           aria-label={isMobileMenuOpen ? 'Cerrar navegación' : 'Abrir navegación'}
-          className="md:hidden p-2 -ml-1 text-text-secondary hover:text-neon-blue hover:bg-white/5 rounded-lg border border-white/10 transition-colors flex items-center justify-center"
+          className="md:hidden p-2 -ml-1 text-text-forge-mid hover:text-amber-glow hover:bg-amber-ghost/50 rounded-lg border border-amber-border/30 transition-colors flex items-center justify-center"
         >
           {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -59,8 +59,8 @@ export function Navbar({ onMenuToggle, isMobileMenuOpen }: NavbarProps) {
               className="object-contain max-h-8 w-auto"
             />
           </div>
-          <span className="text-[9px] text-text-muted font-mono hidden lg:inline border-l border-white/10 pl-2.5">
-            por <strong className="text-text-secondary font-medium">Br. Gersson Ortiz</strong>
+          <span className="text-[9px] text-text-forge-dim font-mono hidden lg:inline border-l border-amber-border/30 pl-2.5">
+            por <strong className="text-text-forge-mid font-medium">Br. Gersson Ortiz</strong>
           </span>
         </div>
       </div>
@@ -69,21 +69,21 @@ export function Navbar({ onMenuToggle, isMobileMenuOpen }: NavbarProps) {
       <div className="flex items-center gap-4">
         {/* Info del usuario actual */}
         <div className="hidden sm:flex flex-col text-right">
-          <span className="text-xs font-semibold text-text-primary font-sans leading-none mb-0.5">
+          <span className="text-xs font-semibold text-text-forge font-sans leading-none mb-0.5">
             {profile?.full_name || profile?.username || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Cargando...'}
           </span>
-          <span className="text-[10px] text-text-secondary uppercase tracking-widest leading-none font-semibold">
+          <span className="text-[10px] text-text-forge-mid uppercase tracking-widest leading-none font-semibold">
             {role ? ROLE_LABELS[role] : 'Invitado'}
           </span>
         </div>
 
         {/* Separador */}
-        <div className="h-6 w-[1px] bg-white/6 hidden sm:block" />
+        <div className="h-6 w-[1px] bg-amber-border/30 hidden sm:block" />
 
         {/* Botón Logout */}
         <button
           onClick={handleLogout}
-          className="bg-transparent border border-red-500/30 hover:border-red-500 text-red-500 hover:bg-red-500/10 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded transition-standard hover:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+          className="bg-transparent border border-red-500/30 hover:border-red-500 text-red-400 hover:bg-red-500/10 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded transition-standard hover:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
         >
           SALIR
         </button>

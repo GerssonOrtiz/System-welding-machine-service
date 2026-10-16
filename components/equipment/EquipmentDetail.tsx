@@ -62,28 +62,28 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div className="rounded-lg border border-border-subtle overflow-hidden">
+    <div className="rounded-lg border border-amber-border/25 overflow-hidden glass-card">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-bg-elevated/30 hover:bg-bg-elevated/60 transition-colors text-left group"
+        className="w-full flex items-center justify-between px-4 py-3 bg-amber-ghost/30 hover:bg-amber-ghost/60 transition-colors text-left group"
       >
-        <span className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider group-hover:text-text-primary transition-colors">
+        <span className="flex items-center gap-2 text-xs font-bold text-text-forge-mid uppercase tracking-wider group-hover:text-text-forge transition-colors">
           {icon}
           {title}
           {badge !== undefined && (
-            <span className="px-1.5 py-0.5 rounded-full bg-neon-blue/10 text-neon-blue text-[9px] font-bold border border-neon-blue/20">
+            <span className="px-1.5 py-0.5 rounded-full bg-amber-ghost text-amber-glow text-[9px] font-bold border border-amber-border">
               {badge}
             </span>
           )}
         </span>
         {open ? (
-          <ChevronUp size={14} className="text-text-secondary shrink-0" />
+          <ChevronUp size={14} className="text-amber-glow shrink-0" />
         ) : (
-          <ChevronDown size={14} className="text-text-secondary shrink-0" />
+          <ChevronDown size={14} className="text-text-forge-mid shrink-0" />
         )}
       </button>
-      {open && <div className="px-4 py-4 bg-bg-elevated/10">{children}</div>}
+      {open && <div className="px-4 py-4 border-t border-amber-border/15 bg-black/20">{children}</div>}
     </div>
   )
 }
@@ -272,18 +272,18 @@ export default function EquipmentDetail({
     <>
       <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-bg-elevated/85 backdrop-blur-sm z-40 transition-opacity" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[840px] max-h-[92vh] overflow-y-auto bg-bg-surface border border-neon-blue/20 rounded-xl shadow-neon-blue z-40 font-sans text-text-primary animate-in fade-in zoom-in-95 duration-150 scrollbar-thin">
+          <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-md z-40 transition-opacity" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[840px] max-h-[92vh] overflow-y-auto glass-modal border border-amber-border/40 rounded-xl shadow-glass z-40 font-sans text-text-forge animate-glass-in scrollbar-thin">
 
             {/* ── Cabecera fija ── */}
-            <div className="sticky top-0 z-10 bg-bg-surface border-b border-border-subtle px-6 py-4 flex items-center justify-between gap-3">
+            <div className="sticky top-0 z-10 glass-sidebar border-b border-amber-border/30 px-6 py-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <FileText size={16} className="text-neon-blue shrink-0" />
-                <Dialog.Title className="text-base font-bold text-neon-blue truncate">
+                <FileText size={16} className="text-amber-glow shrink-0" />
+                <Dialog.Title className="text-base font-bold text-amber-glow truncate">
                   {equipment?.fr_number || 'Cargando...'}
                 </Dialog.Title>
                 {priorityLevel > 0 && (
-                  <span className="shrink-0 bg-neon-purple/20 border border-neon-purple/50 text-neon-purple text-[10px] font-bold px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(157,78,221,0.3)] animate-pulse">
+                  <span className="shrink-0 bg-amber-ghost border border-amber-border text-amber-glow text-[10px] font-bold px-2 py-0.5 rounded-full shadow-vip-amber animate-amber-pulse">
                     {Array(priorityLevel).fill('⭐').join('')} VIP {priorityLevel}
                   </span>
                 )}
@@ -303,7 +303,7 @@ export default function EquipmentDetail({
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors shrink-0"
+                className="p-1.5 rounded-lg text-text-forge-mid hover:text-text-forge hover:bg-amber-ghost/40 transition-colors shrink-0"
                 aria-label="Cerrar"
               >
                 <X size={16} />
@@ -314,7 +314,7 @@ export default function EquipmentDetail({
             <div className="px-6 py-5">
               {isLoading ? (
                 <div className="flex justify-center items-center py-16">
-                  <span className="text-neon-blue animate-pulse font-mono tracking-widest uppercase text-sm">
+                  <span className="text-amber-glow animate-pulse font-mono tracking-widest uppercase text-sm">
                     Cargando detalles...
                   </span>
                 </div>
