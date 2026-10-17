@@ -30,45 +30,89 @@ body {
   background: rgba(245, 158, 11, 0.45);
 }
 
-/* ─── Clases Glassmorphism y utilidades Forge ───────────────── */
+/* ─── Clases Glassmorphism y utilidades Linux / Forge ───────────────── */
 @layer components {
+  /* Fondo con micro-malla / dot grid sutil estilo terminal / Linux tiling WM */
+  .linux-grid-bg {
+    background-image: 
+      radial-gradient(rgba(245, 158, 11, 0.07) 1px, transparent 1px),
+      radial-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px, 48px 48px;
+    background-position: 0 0, 12px 12px;
+  }
+
+  /* Tarjeta de Vidrio Traslúcido Real (Glassmorphism con saturación y bisel de luz) */
   .glass-card {
-    background: rgba(14, 17, 32, 0.60);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(245, 158, 11, 0.20);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(245, 158, 11, 0.08);
+    background: rgba(13, 17, 30, 0.45);
+    backdrop-filter: blur(20px) saturate(190%);
+    -webkit-backdrop-filter: blur(20px) saturate(190%);
+    border: 1px solid rgba(245, 158, 11, 0.18);
+    box-shadow: 
+      0 8px 32px 0 rgba(0, 0, 0, 0.45),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.25);
   }
 
   .glass-card-hover {
-    border-color: rgba(245, 158, 11, 0.40);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.40), 0 0 20px rgba(245, 158, 11, 0.12), inset 0 1px 0 rgba(245, 158, 11, 0.15);
+    background: rgba(16, 22, 38, 0.55);
+    border-color: rgba(245, 158, 11, 0.38);
+    box-shadow: 
+      0 12px 40px 0 rgba(0, 0, 0, 0.55),
+      0 0 24px 0 rgba(245, 158, 11, 0.15),
+      inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.20);
   }
 
+  /* Inputs de vidrio técnico */
   .glass-input {
-    background: rgba(14, 17, 32, 0.50);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(245, 158, 11, 0.15);
+    background: rgba(11, 15, 27, 0.50);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.40);
   }
 
   .glass-input:focus {
-    border-color: rgba(245, 158, 11, 0.50);
-    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.30);
+    background: rgba(14, 19, 34, 0.70);
+    border-color: rgba(245, 158, 11, 0.55);
+    box-shadow: 
+      0 0 0 1px rgba(245, 158, 11, 0.35),
+      0 0 16px 0 rgba(245, 158, 11, 0.18),
+      inset 0 1px 2px 0 rgba(0, 0, 0, 0.40);
     outline: none;
   }
 
+  /* Modales y ventanas flotantes estilo Linux desktop */
   .glass-modal {
-    background: rgba(10, 12, 23, 0.92);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(245, 158, 11, 0.20);
+    background: rgba(10, 13, 24, 0.78);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    box-shadow: 
+      0 24px 64px 0 rgba(0, 0, 0, 0.75),
+      0 0 1px 1px rgba(255, 255, 255, 0.08),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
   }
 
+  /* Barra lateral y superior traslúcida (Aero / Kvantum / Waybar style) */
   .glass-sidebar {
-    background: linear-gradient(180deg, rgba(10, 12, 23, 0.97) 0%, rgba(15, 10, 5, 0.95) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: linear-gradient(
+      180deg, 
+      rgba(9, 12, 22, 0.65) 0%, 
+      rgba(14, 16, 28, 0.60) 50%,
+      rgba(15, 11, 8, 0.65) 100%
+    );
+    backdrop-filter: blur(24px) saturate(190%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.10),
+      inset -1px 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  /* Header de ventana o barra con borde de luz */
+  .linux-window-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(10px);
   }
 
   .ambient-amber {
@@ -79,7 +123,7 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at 20% 50%, rgba(245, 158, 11, 0.05) 0%, transparent 60%);
+    background: radial-gradient(ellipse at 20% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 65%);
     pointer-events: none;
     z-index: 0;
   }

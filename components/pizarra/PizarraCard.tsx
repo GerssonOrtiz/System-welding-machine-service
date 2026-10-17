@@ -31,14 +31,14 @@ export default function PizarraCard({ equipment }: PizarraCardProps) {
   const priorityLevel = equipment.priority_level || (equipment.is_priority ? 1 : 0)
   const isPriority = priorityLevel > 0
 
-  const cardClasses = `glass-card border rounded-lg px-3 py-2 flex items-center gap-3 transition-standard group cursor-pointer shadow-glass mb-1.5 ${
+  const cardClasses = `glass-card border rounded-lg px-3 py-2 flex items-center gap-3 transition-standard group cursor-pointer mb-1.5 ${
     priorityLevel === 3
-      ? 'border-amber-core/80 shadow-vip-amber hover:bg-amber-ghost/40 animate-amber-pulse' 
+      ? 'border-amber-core/70 shadow-vip-amber hover:bg-amber-core/15 animate-amber-pulse' 
       : priorityLevel === 2
-      ? 'border-amber-glow/70 shadow-amber-md hover:bg-amber-ghost/30'
+      ? 'border-amber-glow/50 shadow-amber-md hover:bg-amber-core/10'
       : priorityLevel === 1
-      ? 'border-amber-border hover:bg-amber-ghost/20 shadow-amber-sm'
-      : 'border-amber-border/20 hover:border-amber-border/50 hover:bg-amber-ghost/15'
+      ? 'border-amber-border/60 hover:bg-white/[0.04] shadow-amber-sm'
+      : 'border-white/[0.08] hover:border-amber-border/40 hover:bg-white/[0.03]'
   }`
 
   const priorityStars = () => {
