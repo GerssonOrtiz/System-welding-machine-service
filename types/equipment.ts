@@ -90,6 +90,40 @@ export interface DeliverPartsInput {
   observaciones?: string
 }
 
+/** Motivo de devolución / rebote de repuesto */
+export type PartReturnReason = 'INCOMPATIBLE' | 'DEFECTUOSO' | 'NO_REQUERIDO' | 'DESPACHO_ERRONEO' | 'OTRO'
+
+export const PART_RETURN_REASON_LABELS: Record<PartReturnReason, string> = {
+  INCOMPATIBLE:      'Pieza incompatible / no calza',
+  DEFECTUOSO:        'Repuesto defectuoso de fábrica o dañado',
+  NO_REQUERIDO:      'No requerido (reparado/recuperado en taller)',
+  DESPACHO_ERRONEO:  'Error de despacho (código o unidades excedidas)',
+  OTRO:              'Otro motivo técnico',
+}
+
+/** Un ítem individual devuelto a Almacén */
+export interface ReturnLineItem {
+  descripcion:       string
+  cantidad_devuelta: number
+  motivo:            PartReturnReason
+  detalle?:          string
+}
+
+/** Registro de una devolución de repuestos realizada por Operaciones */
+export interface PartsReturn {
+  id:           string   // UUID
+  fecha:        string   // ISO 8601
+  devuelto_por: string   // username del técnico/operador
+  items:        ReturnLineItem[]
+  observaciones?: string
+}
+
+/** Body del request POST /api/equipment/[id]/return-parts */
+export interface ReturnPartsInput {
+  items:          ReturnLineItem[]
+  observaciones?: string
+}
+
 /** Labels legibles para el badge de partsStatus en la UI */
 export const PARTS_STATUS_LABELS: Record<PartsStatus, string> = {
   SIN_REPUESTOS: 'Sin repuestos',

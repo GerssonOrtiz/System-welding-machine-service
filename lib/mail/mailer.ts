@@ -146,6 +146,13 @@ export interface EntregaLogisticaData extends ThreadBaseData {
   observaciones: string
 }
 
+export interface ReboteRepuestosData extends ThreadBaseData {
+  /** Repuestos devueltos/rebotados a almacén con motivo */
+  items: Array<{ descripcion: string; cantidad: string; motivo: string; detalle?: string }>
+  observaciones?: string
+  devuelto_por: string
+}
+
 export interface SolicitudRepuestosData extends ThreadBaseData {
   /** Lista de componentes o repuestos solicitados para el mantenimiento */
   items: Array<{ descripcion: string; cantidad: string; nota?: string }>
@@ -361,6 +368,56 @@ function buildEntregaLogisticaHtml(data: EntregaLogisticaData): string {
       ${data.observaciones ? `
       <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
         <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones:</p>
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
+      </div>` : ''}
+
+      ${buildSignature()}
+    </div>
+  `
+}
+
+function buildReboteRepuestosHtml(data: ReboteRepuestosData): string {
+  const itemRows = data.items.map((item, i) => `
+    <tr style="${i % 2 === 0 ? 'background-color: #F8FAFC;' : ''}">
+      <td style="${tableCellStyle}">${item.descripcion}</td>
+      <td style="${tableCellStyle} text-align: center; font-weight: bold; color: #DC2626;">-${item.cantidad}</td>
+      <td style="${tableCellStyle} color: #B91C1C; font-weight: 600;">${item.motivo}</td>
+      <td style="${tableCellStyle} color: #6B7280; font-style: italic;">${item.detalle ?? '-'}</td>
+    </tr>
+  `).join('')
+
+  return `
+    <div style="font-family: Calibri, sans-serif; color: #1f375f; line-height: 1.5;">
+      <p>Estimados,</p>
+      <p>Se informa la <strong>DEVOLUCIÓN / REBOTE DE REPUESTOS</strong> desde Taller hacia Almacén para el equipo <strong>${data.fr_number}</strong> — ${data.client_name}.</p>
+
+      <div style="border-left: 4px solid #EF4444; background-color: #FEF2F2; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+        <span style="font-size: 15px; font-weight: bold; color: #DC2626;">↩️ DEVOLUCIÓN DE REPUESTOS — TALLER / OPERACIONES</span>
+        <p style="margin: 6px 0 0 0; font-size: 11px; color: #555;">
+          ${data.brand} ${data.model} &nbsp;|&nbsp; Serie: <span style="font-family: monospace;">${data.serial_number ?? 'N/S'}</span> &nbsp;|&nbsp; Registrado por: <strong>${data.devuelto_por}</strong>
+        </p>
+      </div>
+
+      <p style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #1f375f; margin-bottom: 6px;">Repuestos devueltos a Almacén:</p>
+      <div style="overflow-x: auto; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="${tableHeaderStyle}">Descripción</th>
+              <th style="${tableHeaderStyle} text-align: center;">Cantidad Devuelta</th>
+              <th style="${tableHeaderStyle}">Motivo</th>
+              <th style="${tableHeaderStyle}">Detalle Técnico</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRows}
+          </tbody>
+        </table>
+      </div>
+
+      ${data.observaciones ? `
+      <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
+        <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #991B1B;">Observaciones Generales:</p>
         <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
       </div>` : ''}
 
@@ -790,6 +847,37 @@ export const mailer = {
    * Logística responde el hilo con la entrega de repuestos.
    * Estado: "En espera de repuesto" (cuando se gestiona la entrega)
    */
+  /**
+   * Operaciones responde el hilo informando la devolución/rebote de repuestos a Almacén.
+   */
+  async sendReboteRepuestos(data: ReboteRepuestosData): Promise<MailerResult> {
+    if (!resend) {
+      console.warn('[Mailer] sendReboteRepuestos — RESEND_API_KEY no configurada, correo omitido.')
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
+    }
+    try {
+      const subject = data.thread_subject
+        ? `RE: ${data.thread_subject.replace(/^RE:\s*/i, '')}`
+        : `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
+
+      const res = await resend.emails.send({
+        from: FROM_ADDRESS,
+        to: ENTRY_TO,
+        subject,
+        html: buildReboteRepuestosHtml(data),
+        headers: threadHeaders(data.thread_id),
+      })
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendReboteRepuestos Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error de envío de devolución de repuestos' }
+      }
+      return { success: true, messageId: (res as any)?.data?.id }
+    } catch (error: any) {
+      console.error('[Mailer] sendReboteRepuestos error:', error)
+      return { success: false, error: error?.message || 'Error al enviar correo de devolución de repuestos' }
+    }
+  },
+
   async sendEntregaLogistica(data: EntregaLogisticaData): Promise<MailerResult> {
     if (!resend) {
       console.warn('[Mailer] sendEntregaLogistica — RESEND_API_KEY no configurada, correo omitido.')

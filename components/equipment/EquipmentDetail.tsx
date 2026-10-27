@@ -1,4 +1,4 @@
-// components/equipment/EquipmentDetail.tsx
+﻿// components/equipment/EquipmentDetail.tsx
 'use client'
 
 import React, { useState } from 'react'
@@ -32,6 +32,8 @@ import ClientSelector from './ClientSelector'
 import BrandSelector from './BrandSelector'
 import QRPrintModal from './QRPrintModal'
 import ModalEntregaRepuestos from './modals/ModalEntregaRepuestos'
+import ModalDevolucionRepuestos from './modals/ModalDevolucionRepuestos'
+import { Undo2 } from 'lucide-react'
 import {
   PARTS_STATUS_LABELS,
   PARTS_STATUS_COLORS,
@@ -99,6 +101,7 @@ export default function EquipmentDetail({
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
   const [isQrModalOpen, setIsQrModalOpen] = useState(false)
   const [isPartsModalOpen, setIsPartsModalOpen] = useState(false)
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -376,6 +379,20 @@ export default function EquipmentDetail({
                         >
                           <Package size={13} />
                           Registrar Entrega de Repuestos
+                        </button>
+                      )}
+
+                    {/* Botón dedicado para Operaciones: Devolver / Rebotar Repuestos a Almacén */}
+                    {['operaciones', 'admin', 'superadmin'].includes(role || '') &&
+                      (equipment as any).approved_parts &&
+                      (equipment as any).approved_parts.some((p: any) => (p.cantidad_entregada || 0) > 0) &&
+                      !isEditing && (
+                        <button
+                          onClick={() => setIsReturnModalOpen(true)}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 text-xs font-bold uppercase transition-all"
+                        >
+                          <Undo2 size={13} />
+                          Devolver Repuesto
                         </button>
                       )}
 
@@ -751,26 +768,47 @@ export default function EquipmentDetail({
                               </tbody>
                             </table>
                           </div>
-                          {/* Historial de entregas */}
+                          {/* Historial de entregas y devoluciones */}
                           {(equipment as any).parts_deliveries && (equipment as any).parts_deliveries.length > 0 && (
                             <div className="space-y-1.5">
                               <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                                Historial de Entregas
+                                Historial de Movimientos
                               </p>
-                              {((equipment as any).parts_deliveries as any[]).map((d: any, idx: number) => (
-                                <div key={d.id || idx} className="p-2 rounded-lg bg-bg-elevated/30 border border-border-subtle/50 text-[10px] space-y-0.5">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="font-bold text-text-primary">
-                                      {d.items?.map((i: any) => `${i.cantidad}× ${i.descripcion}`).join(', ')}
+                              {((equipment as any).parts_deliveries as any[]).map((d: any, idx: number) => {
+                                const isReturn = d.tipo === 'DEVOLUCION'
+                                return (
+                                  <div
+                                    key={d.id || idx}
+                                    className={`p-2 rounded-lg border text-[10px] space-y-0.5 ${
+                                      isReturn
+                                        ? 'bg-red-500/[0.04] border-red-500/30'
+                                        : 'bg-bg-elevated/30 border-border-subtle/50'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className={`font-bold flex items-center gap-1.5 ${isReturn ? 'text-red-400' : 'text-text-primary'}`}>
+                                        {isReturn ? (
+                                          <span className="px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-[9px] font-bold uppercase tracking-wider">↩ Devolución</span>
+                                        ) : (
+                                          <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-bold uppercase tracking-wider">📦 Entrega</span>
+                                        )}
+                                        {isReturn
+                                          ? d.items?.map((i: any) => `${i.cantidad_devuelta}× ${i.descripcion} (${i.motivo})`).join(', ')
+                                          : d.items?.map((i: any) => `${i.cantidad}× ${i.descripcion}`).join(', ')
+                                        }
+                                      </span>
+                                      <span className="text-text-muted shrink-0">{formatDate(d.fecha)}</span>
+                                    </div>
+                                    <span className="text-text-secondary">
+                                      {isReturn ? 'Devuelto por: ' : 'Por: '}
+                                      <strong>{d.devuelto_por || d.entregado_por}</strong>
                                     </span>
-                                    <span className="text-text-muted shrink-0">{formatDate(d.fecha)}</span>
+                                    {d.observaciones && (
+                                      <p className={`italic ${isReturn ? 'text-red-400/70' : 'text-text-muted'}`}>{d.observaciones}</p>
+                                    )}
                                   </div>
-                                  <span className="text-text-secondary">Por: <strong>{d.entregado_por}</strong></span>
-                                  {d.observaciones && (
-                                    <p className="text-text-muted italic">{d.observaciones}</p>
-                                  )}
-                                </div>
-                              ))}
+                                )
+                              })}
                             </div>
                           )}
                         </div>
@@ -839,6 +877,21 @@ export default function EquipmentDetail({
           currentStatusColor={equipment.status_color}
           nextStates={nextStates}
           onSuccess={handleStatusChangeSuccess}
+        />
+      )}
+
+      {/* Modal de devolución de repuestos (Operaciones ➔ Logística) */}
+      {equipment && (equipment as any).approved_parts && (
+        <ModalDevolucionRepuestos
+          isOpen={isReturnModalOpen}
+          onClose={() => setIsReturnModalOpen(false)}
+          equipmentId={equipment.id}
+          frNumber={equipment.fr_number || ''}
+          approvedParts={(equipment as any).approved_parts as ApprovedPartItem[]}
+          onSuccess={() => {
+            mutate()
+            if (onStatusUpdated) onStatusUpdated()
+          }}
         />
       )}
 
