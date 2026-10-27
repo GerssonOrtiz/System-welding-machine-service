@@ -10,10 +10,11 @@ import { createClient } from '@/lib/supabase/client'
 import { loginSchema, type LoginInput } from '@/lib/validations/user.schema'
 import { ROLE_HOME_ROUTE, type UserProfile } from '@/types/user'
 import Image from 'next/image'
-import { Lock, User, ArrowRight, Sparkles } from 'lucide-react'
+import { Lock, User, ArrowRight, Sparkles, Eye, EyeOff } from 'lucide-react'
 
 function LoginContent() {
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -89,37 +90,37 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-forge px-4 font-sans antialiased relative overflow-hidden selection:bg-cyan-500/20 selection:text-cyan-300">
+    <div className="min-h-screen flex items-center justify-center bg-[#050811] px-4 font-sans antialiased relative overflow-hidden selection:bg-cyan-500/20 selection:text-cyan-300">
       
-      {/* ── Capa de Fondo Dinámica: Orbes Flotantes y Malla Cibernética ── */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      {/* ── Capa de Fondo Dinámica: Orbes Flotantes con alta visibilidad y Malla Cibernética ── */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Micro-malla técnica de fondo */}
-        <div className="absolute inset-0 linux-grid-bg opacity-70" />
+        <div className="absolute inset-0 linux-grid-bg opacity-80" />
 
         {/* Orbe 1: Cian Eléctrico con animación fluida floatSlow */}
-        <div className="absolute -top-[15%] left-[10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-cyan-500/15 via-sky-600/8 to-transparent blur-[140px] animate-float-1" />
+        <div className="absolute -top-[12%] left-[8%] w-[580px] h-[580px] rounded-full bg-gradient-to-br from-cyan-400/25 via-sky-500/15 to-transparent blur-[90px] animate-float-1" />
 
-        {/* Orbe 2: Azul Cobalto/Índigo con animación inversa */}
-        <div className="absolute -bottom-[20%] right-[10%] w-[650px] h-[650px] rounded-full bg-gradient-to-tl from-indigo-600/18 via-blue-600/10 to-transparent blur-[150px] animate-float-2" />
+        {/* Orbe 2: Azul Cobalto / Índigo vibrante */}
+        <div className="absolute -bottom-[15%] right-[8%] w-[620px] h-[620px] rounded-full bg-gradient-to-tl from-indigo-500/30 via-blue-600/20 to-transparent blur-[100px] animate-float-2" />
 
-        {/* Orbe 3: Púrpura central sutil */}
-        <div className="absolute top-[35%] left-[30%] w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-purple-600/10 to-transparent blur-[130px] animate-float-3" />
+        {/* Orbe 3: Violeta central */}
+        <div className="absolute top-[28%] left-[28%] w-[480px] h-[480px] rounded-full bg-gradient-to-tr from-purple-500/20 via-pink-500/10 to-transparent blur-[95px] animate-float-3" />
 
         {/* Marca de agua centralizada con el isotipo de Synapse */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[720px] opacity-[0.04] select-none pointer-events-none flex items-center justify-center">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] opacity-[0.06] select-none pointer-events-none flex items-center justify-center">
           <img
             src="/synapse_logo.png"
             alt="SYNAPSE Watermark"
-            className="w-full h-full object-contain filter invert drop-shadow-[0_0_90px_rgba(0,210,255,0.8)]"
+            className="w-full h-full object-contain filter invert drop-shadow-[0_0_80px_rgba(0,210,255,0.9)]"
           />
         </div>
       </div>
 
-      {/* ── Tarjeta Glass Principal con animación de entrada (animate-slide-in / glass-in) ── */}
-      <div className="w-full max-w-[440px] p-8 sm:p-9 vision-sidebar-capsule rounded-3xl shadow-[0_24px_80px_rgba(0,0,0,0.8),0_0_35px_rgba(0,210,255,0.14)] relative z-10 overflow-hidden border border-white/12 hover:border-cyan-400/40 transition-all duration-500 animate-slide-in">
+      {/* ── Tarjeta Glass Principal con animación de entrada (animate-slide-in) ── */}
+      <div className="w-full max-w-[440px] p-8 sm:p-9 vision-sidebar-capsule rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.85),0_0_40px_rgba(0,210,255,0.18)] relative z-10 overflow-hidden border border-white/15 hover:border-cyan-400/40 transition-all duration-500 animate-slide-in">
         
         {/* Línea superior con destello de arco cyan/violeta */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 via-indigo-400 to-transparent opacity-80" />
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 via-indigo-400 to-transparent opacity-90" />
 
         {/* Header con Isotipo y Marca */}
         <div className="mb-7 flex flex-col items-center text-center">
@@ -134,7 +135,7 @@ function LoginContent() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 mt-2.5 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.08]">
+          <div className="flex items-center gap-1.5 mt-2.5 px-3.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.09] shadow-sm">
             <Sparkles size={11} className="text-cyan-400 animate-pulse" />
             <span className="text-[10px] font-mono tracking-widest uppercase text-slate-300">
               Sistema Operativo de Taller
@@ -178,16 +179,24 @@ function LoginContent() {
                 <Lock size={16} />
               </span>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 disabled={loading}
                 placeholder="••••••••"
                 {...register('password')}
-                className={`w-full pl-10 pr-4 py-3 bg-white/[0.04] border ${
+                className={`w-full pl-10 pr-11 py-3 bg-white/[0.04] border ${
                   errors.password
                     ? 'border-red-500/70 focus:border-red-500 focus:shadow-[0_0_15px_rgba(239,68,68,0.25)]'
                     : 'border-white/10 focus:border-cyan-400/80 focus:shadow-[0_0_15px_rgba(0,210,255,0.25)]'
                 } rounded-2xl text-slate-100 text-sm outline-none transition-all placeholder:text-slate-500 focus:bg-white/[0.07]`}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 text-slate-400 hover:text-cyan-300 transition-colors p-1 rounded-lg focus:outline-none"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
             {errors.password && (
               <p className="text-xs text-red-400 font-medium mt-1">{errors.password.message}</p>
