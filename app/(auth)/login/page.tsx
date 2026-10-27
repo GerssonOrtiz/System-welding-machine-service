@@ -106,14 +106,8 @@ function LoginContent() {
         {/* Orbe 3: Violeta central */}
         <div className="absolute top-[28%] left-[28%] w-[480px] h-[480px] rounded-full bg-gradient-to-tr from-purple-500/20 via-pink-500/10 to-transparent blur-[95px] animate-float-3" />
 
-        {/* Marca de agua centralizada con el isotipo de Synapse */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] opacity-[0.06] select-none pointer-events-none flex items-center justify-center">
-          <img
-            src="/synapse_logo.png"
-            alt="SYNAPSE Watermark"
-            className="w-full h-full object-contain filter invert drop-shadow-[0_0_80px_rgba(0,210,255,0.9)]"
-          />
-        </div>
+        {/* Resplandor central suave detrás de la tarjeta */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-cyan-500/10 blur-[120px] pointer-events-none" />
       </div>
 
       {/* ── Tarjeta Glass Principal con animación de entrada (animate-slide-in) ── */}

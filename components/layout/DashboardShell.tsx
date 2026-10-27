@@ -31,14 +31,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
           style={{ backgroundImage: "url('/wallpaper.png'), url('/wallpaper.jpg')" }}
         />
 
-        {/* Marca de agua elegante central con el isotipo de Synapse en baja opacidad */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] opacity-[0.035] select-none pointer-events-none flex items-center justify-center">
-          <img
-            src="/synapse_logo.png"
-            alt="SYNAPSE Watermark"
-            className="w-full h-full object-contain filter invert drop-shadow-[0_0_80px_rgba(0,210,255,0.8)]"
-          />
-        </div>
+        {/* Resplandor central suave */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-cyan-500/5 blur-[140px] pointer-events-none" />
 
         {/* ── Burbujas de degradado flotantes (Dark Aurora / Cyber Orbs) ── */}
         {/* Burbuja 1: Cyan / Arc plasma superior izquierda */}
