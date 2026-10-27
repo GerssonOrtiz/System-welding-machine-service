@@ -135,13 +135,13 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   // ── Skeleton de carga ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <aside className="w-[220px] glass-sidebar border-r border-amber-border/20 p-4 hidden md:flex flex-col gap-4 font-sans select-none animate-pulse">
-        <div className="h-8 bg-amber-core/5 rounded w-3/4 mb-4" />
+      <aside className="w-[230px] my-3 ml-3 rounded-3xl vision-sidebar-capsule p-4 hidden md:flex flex-col gap-4 font-sans select-none animate-pulse">
+        <div className="h-8 bg-amber-core/5 rounded-full w-3/4 mb-4" />
         <div className="space-y-3">
-          <div className="h-8 bg-amber-core/5 rounded" />
-          <div className="h-8 bg-amber-core/5 rounded" />
-          <div className="h-8 bg-amber-core/5 rounded" />
-          <div className="h-8 bg-amber-core/5 rounded" />
+          <div className="h-9 bg-amber-core/5 rounded-2xl" />
+          <div className="h-9 bg-amber-core/5 rounded-2xl" />
+          <div className="h-9 bg-amber-core/5 rounded-2xl" />
+          <div className="h-9 bg-amber-core/5 rounded-2xl" />
         </div>
       </aside>
     )
@@ -170,30 +170,30 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       )}
 
       <aside
-        className={`glass-sidebar border-r border-amber-border/25 ambient-amber flex flex-col justify-between font-sans selection:bg-amber-core selection:text-bg-forge select-none shrink-0 transition-all duration-300
+        className={`vision-sidebar-capsule md:my-3 md:ml-3 md:rounded-3xl flex flex-col justify-between font-sans selection:bg-amber-core selection:text-bg-forge select-none shrink-0 transition-all duration-300
           /* En móvil: posición fija deslizable tipo drawer */
           fixed inset-y-0 left-0 z-50 md:static md:translate-x-0
           ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
           /* En móvil siempre ancho completo (240px), en escritorio según isCollapsed */
-          w-[240px] ${isCollapsed ? 'md:w-[70px]' : 'md:w-[220px]'}
+          w-[240px] ${isCollapsed ? 'md:w-[76px]' : 'md:w-[230px]'}
         `}
       >
         {/* ── Botón para colapsar en escritorio (oculto en móvil) ─────────────── */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-          className="hidden md:flex absolute -right-3 top-10 w-6 h-6 glass-card border border-amber-border/40 rounded-full items-center justify-center text-text-forge-mid hover:text-amber-glow hover:border-amber-glow transition-all z-10 shadow-lg shadow-black/40"
+          className="hidden md:flex absolute -right-3 top-10 w-7 h-7 rounded-full bg-slate-900/90 border border-white/20 items-center justify-center text-text-forge-mid hover:text-cyan-400 hover:border-cyan-400/50 hover:scale-110 transition-all z-20 shadow-xl shadow-black/60 backdrop-blur-md"
         >
           {isCollapsed
-            ? <ChevronRight size={12} />
-            : <ChevronLeft size={12} />
+            ? <ChevronRight size={13} />
+            : <ChevronLeft size={13} />
           }
         </button>
 
       {/* ── Cuerpo superior: logo + navegación ───────────────────────────── */}
-      <div className="flex flex-col overflow-hidden relative z-10">
-        {/* Logo Synapse */}
-        <div className={`flex flex-col items-center px-3 py-4 border-b border-amber-border/20 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}>
+      <div className="flex flex-col overflow-hidden relative z-10 p-2 sm:p-2.5">
+        {/* Logo Synapse estilo cápsula Vision Pro */}
+        <div className={`flex flex-col items-center px-2 py-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] mb-2 ${isCollapsed ? 'justify-center' : ''}`}>
           {isCollapsed ? (
             <div className="relative w-8 h-8 flex items-center justify-center">
               <Image
@@ -201,7 +201,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
                 alt="Synapse"
                 width={32}
                 height={32}
-                className="object-contain max-h-8 w-auto"
+                className="object-contain max-h-8 w-auto filter drop-shadow-[0_0_10px_rgba(0,210,255,0.4)]"
               />
             </div>
           ) : (
@@ -210,20 +210,20 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
                 <Image
                   src="/synapse_horizontal.png"
                   alt="Synapse"
-                  width={150}
-                  height={34}
-                  className="object-contain max-h-8 w-auto"
+                  width={140}
+                  height={32}
+                  className="object-contain max-h-8 w-auto filter drop-shadow-[0_0_12px_rgba(0,210,255,0.3)]"
                 />
               </div>
             </div>
           )}
         </div>
 
-        {/* Lista de navegación */}
-        <nav className="p-3 space-y-1 overflow-hidden">
-          <div className={`px-2 mb-3 mt-1 transition-opacity duration-200 ${isCollapsed ? 'opacity-0 h-0 mb-0' : 'opacity-100'}`}>
-            <span className="text-[9px] text-text-forge-dim font-bold tracking-widest uppercase font-mono whitespace-nowrap">
-              Navegación
+        {/* Lista de navegación en burbujas */}
+        <nav className="space-y-1.5 overflow-hidden py-1">
+          <div className={`px-2.5 mb-2 transition-opacity duration-200 ${isCollapsed ? 'opacity-0 h-0 mb-0' : 'opacity-100'}`}>
+            <span className="text-[10px] text-cyan-400/70 font-semibold tracking-wider uppercase font-mono whitespace-nowrap">
+              Apps & Vistas
             </span>
           </div>
 
@@ -238,19 +238,26 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
                 href={item.href}
                 onClick={onMobileClose}
                 title={isCollapsed ? item.label : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-standard ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-medium vision-item-bubble ${
                   isActive
-                    ? 'bg-amber-ghost border border-amber-border/60 text-amber-glow shadow-amber-sm'
-                    : 'text-text-forge-mid hover:text-text-forge hover:bg-amber-ghost/40 border border-transparent'
+                    ? 'vision-item-bubble-active text-cyan-300'
+                    : 'text-slate-300 hover:text-white bg-white/[0.02] border border-transparent'
                 }`}
               >
-                <Icon
-                  size={16}
-                  className={`shrink-0 ${isActive ? 'text-amber-glow' : 'text-text-forge-mid'}`}
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
+                <div
+                  className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                    isActive
+                      ? 'bg-cyan-400/20 text-cyan-300 shadow-[0_0_12px_rgba(0,210,255,0.4)]'
+                      : 'bg-white/[0.04] text-slate-400 group-hover:text-white'
+                  }`}
+                >
+                  <Icon
+                    size={16}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                </div>
                 <span
-                  className={`transition-opacity duration-200 whitespace-nowrap text-sm ${
+                  className={`transition-opacity duration-200 whitespace-nowrap text-sm font-medium tracking-tight ${
                     isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
                   }`}
                 >
@@ -262,29 +269,29 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         </nav>
       </div>
 
-      {/* ── Pie: avatar + nombre + rol del usuario ───────────────────────── */}
-      <div className={`border-t border-amber-border/20 transition-all duration-200 relative z-10 ${isCollapsed ? 'p-2' : 'p-3'}`}>
+      {/* ── Pie: avatar + nombre + rol del usuario estilo cápsula flotante ── */}
+      <div className={`p-2.5 relative z-10`}>
         {isCollapsed ? (
-          /* Modo colapsado: solo el avatar */
+          /* Modo colapsado: solo el avatar en burbuja */
           <div className="flex justify-center">
             <div
               title={displayName}
-              className="w-8 h-8 rounded-full bg-amber-ghost border border-amber-border text-amber-glow flex items-center justify-center text-xs font-bold shadow-amber-sm"
+              className="w-10 h-10 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 flex items-center justify-center text-xs font-bold shadow-[0_0_14px_rgba(0,210,255,0.25)] hover:scale-105 transition-all"
             >
               {initial}
             </div>
           </div>
         ) : (
-          /* Modo expandido: avatar + info */
-          <div className="flex items-center gap-2.5 px-1">
-            <div className="w-8 h-8 rounded-full bg-amber-ghost border border-amber-border text-amber-glow flex items-center justify-center text-xs font-bold shrink-0 shadow-amber-sm">
+          /* Modo expandido: burbuja completa de perfil */
+          <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.07] transition-all">
+            <div className="w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 flex items-center justify-center text-xs font-bold shrink-0 shadow-[0_0_12px_rgba(0,210,255,0.25)]">
               {initial}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-text-forge truncate leading-tight">
+              <p className="text-xs font-semibold text-slate-100 truncate leading-tight">
                 {displayName}
               </p>
-              <p className="text-[10px] text-text-forge-mid truncate leading-tight mt-0.5 font-mono">
+              <p className="text-[10px] text-cyan-400/80 truncate leading-tight mt-0.5 font-mono">
                 {displayRole}
               </p>
             </div>
