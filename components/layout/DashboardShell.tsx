@@ -61,7 +61,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
       />
 
       {/* Contenedor principal con Sidebar y Contenido de Rutas */}
-      <div className="flex-1 flex overflow-hidden relative z-10">
+      <div className="flex-1 flex overflow-hidden relative z-10 items-center">
         {/* Sidebar lateral de navegación centrado verticalmente */}
         <Sidebar
           isMobileOpen={isMobileMenuOpen}
@@ -69,7 +69,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         />
 
         {/* Contenido principal — fondo transparente para dejar pasar el efecto glass */}
-        <main className="flex-1 overflow-y-auto px-4 pb-6 pt-2 sm:px-6 md:px-8 bg-transparent">
+        <main className="flex-1 h-full overflow-y-auto px-4 pb-6 pt-2 sm:px-6 md:px-8 bg-transparent transition-all duration-300">
           {children}
         </main>
       </div>

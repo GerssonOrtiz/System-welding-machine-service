@@ -179,7 +179,7 @@ export default function EquiposPage() {
       </div>
 
       {/*  Barra de búsqueda y filtro */}
-      <div className="bg-bg-surface border border-border-subtle rounded-xl p-3 shadow-sm space-y-3">
+      <div className="glass-card rounded-2xl p-4 shadow-glass space-y-3">
         <div className="flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm select-none pointer-events-none">
@@ -273,7 +273,7 @@ export default function EquiposPage() {
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-sm">
+      <div className="glass-card rounded-2xl p-5 shadow-glass">
         {showLoader ? (
           <div className="flex justify-center items-center py-20">
             <span className="text-neon-blue animate-pulse font-mono text-xs uppercase tracking-widest">

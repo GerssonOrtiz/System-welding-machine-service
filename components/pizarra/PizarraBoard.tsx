@@ -134,8 +134,8 @@ export default function PizarraBoard() {
                   key={col.id}
                   className={`flex flex-col border transition-all duration-500 ease-in-out shadow-2xl rounded-xl ${
                     isCoordinationOpen 
-                      ? 'min-w-[300px] flex-1 bg-bg-elevated border-indigo-500/50' 
-                      : 'w-max h-10 bg-bg-elevated border-indigo-500/30 absolute right-4 bottom-4 z-20'
+                      ? 'min-w-[300px] flex-1 glass-card border-indigo-500/50' 
+                      : 'w-max h-10 glass-card border-indigo-500/30 absolute right-4 bottom-4 z-20'
                   }`}
                 >
                   <button
@@ -153,7 +153,7 @@ export default function PizarraBoard() {
                           {col.name}
                         </h3>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono font-bold bg-bg-base border border-indigo-500/40 text-indigo-400 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-mono font-bold bg-indigo-500/10 border border-indigo-500/40 text-indigo-400 px-2 py-0.5 rounded-full">
                             {equipmentsInCol.length}
                           </span>
                           <span className="text-indigo-400 text-xs animate-pulse">❮</span>

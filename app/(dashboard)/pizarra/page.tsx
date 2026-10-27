@@ -55,12 +55,12 @@ export default function PizarraPage() {
   const [isKioskMode, setIsKioskMode] = useState(false)
 
   const content = (
-    <div className={`flex flex-col bg-bg-base font-sans text-text-primary ${isKioskMode ? 'fixed inset-0 z-[9999]' : 'min-h-screen'}`}>
+    <div className={`flex flex-col font-sans text-text-primary ${isKioskMode ? 'fixed inset-0 z-[9999]' : 'min-h-full bg-transparent'}`}>
       {/*  Header Pizarra  */}
-      <header className="flex justify-between items-center px-6 py-4 bg-bg-surface border-b border-border-subtle flex-shrink-0">
+      <header className="flex justify-between items-center px-6 py-4 glass-card rounded-2xl mb-3 flex-shrink-0 border border-white/10 shadow-glass">
         {/* Logo + título */}
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center p-1 shadow-inner">
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-white/[0.04] border border-white/10 flex items-center justify-center p-1 shadow-inner">
               <Image
                 src="/cabelab.png"
                 alt="CABELAB"
@@ -84,7 +84,7 @@ export default function PizarraPage() {
         <div className="flex items-center gap-6">
           <button
             onClick={() => setIsKioskMode(!isKioskMode)}
-            className="px-4 py-2 bg-bg-base border border-border-subtle hover:border-neon-blue hover:text-neon-blue rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm"
+            className="px-4 py-2 bg-white/[0.04] border border-white/10 hover:border-cyan-400/60 hover:text-cyan-300 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm"
           >
             {isKioskMode ? 'Salir Pantalla Completa' : 'Pantalla Completa'}
           </button>
@@ -95,7 +95,7 @@ export default function PizarraPage() {
       </header>
 
       {/*  Indicadores rápidos  */}
-      <div className="flex items-center gap-3 px-6 py-2 bg-bg-base border-b border-border-subtle/30 text-[10px] uppercase tracking-widest text-text-muted font-mono flex-shrink-0">
+      <div className="flex items-center gap-3 px-4 py-2 glass-card rounded-xl mb-3 text-[10px] uppercase tracking-widest text-slate-400 font-mono flex-shrink-0 border border-white/[0.06]">
         <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse shadow-neon-blue inline-block" />
         Conexión Realtime Activa
         <span className="ml-auto">Actualización automática</span>
@@ -107,7 +107,7 @@ export default function PizarraPage() {
       </main>
 
       {/*  Footer  */}
-      <footer className="flex justify-between px-6 py-3 bg-bg-surface/50 border-t border-border-subtle flex-shrink-0 text-[10px] text-text-muted uppercase tracking-wider items-center font-mono">
+      <footer className="flex justify-between px-6 py-2.5 glass-card rounded-xl mt-3 flex-shrink-0 text-[10px] text-slate-400 uppercase tracking-wider items-center font-mono border border-white/[0.06]">
         <span>Elaborado por Br. Gersson Ortiz </span>
         <span>Powered by Venllas</span>
       </footer>

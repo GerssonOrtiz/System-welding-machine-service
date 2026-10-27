@@ -40,7 +40,7 @@ export default function BuscarPage() {
       </div>
 
       {/* Search Input Container */}
-      <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 shadow-sm">
+      <div className="glass-card rounded-2xl p-5 shadow-glass">
         <div className="relative">
           <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-text-secondary text-base">
             ðŸ”
@@ -60,7 +60,7 @@ export default function BuscarPage() {
 
       {/* Results Container */}
       {debouncedTerm.trim().length >= 2 && (
-        <div className="bg-bg-surface border border-border-subtle rounded-xl p-5 space-y-4">
+        <div className="glass-card rounded-2xl p-5 shadow-glass space-y-4">
           <div className="flex justify-between items-center border-b border-border-subtle pb-2">
             <h2 className="text-xs font-bold uppercase tracking-wider text-neon-blue">
               Resultados de Búsqueda ({total})
