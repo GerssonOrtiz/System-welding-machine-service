@@ -893,3 +893,47 @@ Convierte el histórico de intervenciones y notas en un motor predictivo que per
   - `DeliveryForecastCalculator.tsx`: Calculadora interactiva que proyecta fechas de hito según fecha de ingreso.
   - `DelayFactorsAudit.tsx`: Análisis de causas frecuentes por rol.
 
+
+---
+
+## 18. SISTEMA VISUAL: CYBER GLASSMORPHISM & APPLE VISION PRO (ESPECIFICACIÓN CONSOLIDADA)
+
+> Estado: **100% Implementado y Funcional** (Consolida y reemplaza a `UI_UX_REDESIGN_PLAN.md`).  
+> Arquitectura estética: Premium Dark Cyber Glassmorphism con ergonomía flotante estilo Apple VisionOS y atmósfera de arco de soldadura eléctrica.
+
+### 18.1 Filosofía de Diseño y Principios Fundamentales
+1. **Lógica e integridad intocables:** El rediseño opera exclusivamente sobre capas visuales y de presentación (CSS / Tailwind / JSX). Los endpoints REST, esquemas de BD, transiciones del WorkflowEngine, RLS y permisos por rol se mantuvieron 100% intactos.
+2. **Cero dependencias pesadas innecesarias:** No se instalaron librerías invasivas como framer-motion o animadores externos. Toda la reactividad y fluidez se construyó con Tailwind CSS nativo, variables de capa `@layer components` y aceleración por GPU.
+3. **Legibilidad y Contraste WCAG AA:** Para evitar el defecto clásico del glassmorphism (fondos transparentes ilegibles), se calibraron fondos opacos con alto índice de refracción (`rgba(12, 17, 32, 0.78)` a `0.88`), desenfoque `blur(28px)` y saturación `saturate(190%-220%)`.
+
+### 18.2 Tokens de Diseño y Paleta Cyber Glass (`tailwind.config.ts` & `globals.css`)
+- **Fondos Raíz:** `bg-forge` (`#050811`), `bg-forge-mid` (`#090D1A`), `bg-forge-high` (`#0E1424`).
+- **Acentos Plasma / Cyber Cyan:** `amber-core` (`#00D2FF`), `amber-glow` (`#38BDF8`), `amber-deep` (`#0284C7`), `amber-ghost` (`rgba(0, 210, 255, 0.08)`).
+- **Acentos Eléctricos de Profundidad:** `forge-orange` (`#6366F1` cobalto índigo), `forge-bright` (`#818CF8`).
+- **Superficies Glass Reutilizables:**
+  - `.glass-card`: Tarjeta de vidrio con borde especular superior (`border-t: rgba(255,255,255,0.18)`) y sombra de profundidad.
+  - `.vision-sidebar-capsule`: Cápsula de navegación flotante con esquinas curvas (`rounded-3xl`), sombra envolvente y filtro óptico.
+  - `.vision-item-bubble`: Burbujas individuales para cada ítem de navegación con micro-elevación interactiva (`scale(1.02)`).
+  - `.linux-grid-bg`: Micro-retícula cibernética técnica de fondo.
+  - `animate-float-1`, `animate-float-2`, `animate-float-3`: Orbes de luz líquida orgánica respirando en bucle continuo.
+
+### 18.3 Componentes Clave Rediseñados
+1. **Sidebar Flotante Apple Vision Pro (`components/layout/Sidebar.tsx`):**
+   - Centrado verticalmente (`my-auto`, `max-h-[88vh]`), desvinculado de bordes rígidos.
+   - Estado reposo compacto (`76px`) que solo expone íconos en cápsulas de vidrio.
+   - Despliegue interactivo en hover (`onMouseEnter` / `onMouseLeave`) que expande horizontalmente los títulos de forma fluida (`w-max`) **desplazando el contenido de forma no invasiva** (`md:static`).
+   - Prefetching nativo de Next.js (`prefetch={true}`) en los enlaces para transiciones instantáneas entre páginas.
+2. **Navbar Cápsula Flotante (`components/layout/Navbar.tsx`):**
+   - Separada del borde superior con márgenes de respiración (`px-4 pt-3 md:px-6 md:pt-4`).
+   - Burbuja de estado en tiempo real para el usuario conectado (indicador esmeralda pulsante, nombre y rol) y botón de cierre de sesión integrado.
+3. **Pantalla de Login Cibernética (`app/(auth)/login/page.tsx`):**
+   - 3 orbes flotantes de alta visibilidad (Cian, Cobalto y Violeta) y micro-malla técnica.
+   - Tarjeta central con animación de entrada (`animate-slide-in`), bisel luminoso superior y campos redondeados con iconos Lucide (`User`, `Lock`).
+   - Botón interactivo para revelar/ocultar contraseña (`Eye` / `EyeOff`).
+4. **Pizarra, Tablas y Formularios Glassmorphism:**
+   - Eliminación total de fondos negros planos/sólidos (`bg-bg-surface`, `bg-bg-base`) en Pizarra, Equipos y Búsqueda, integrándolos en paneles de vidrio translúcido real con micro-bordes.
+
+### 18.4 Registro de Decisiones de Arquitectura UI (ADR)
+- **ADR-UI-01 (Estrategia de Adición de Tokens):** No se eliminaron los tokens de Tailwind existentes para asegurar retrocompatibilidad con los colores de badges de estado y roles de Supabase.
+- **ADR-UI-02 (Cápsula Flotante y Desplazamiento):** El Sidebar no utiliza posicionamiento `fixed` invasivo en escritorio, sino que se ubica en el flujo natural del layout para empujar el contenido continuo sin tapar tablas ni formularios.
+- **ADR-UI-03 (Seguridad en Prefetching):** La optimización de navegación instantánea se logró mediante `prefetch` en el cliente; las validaciones server-side de `proxy.ts` y `app/(dashboard)/layout.tsx` se preservaron intactas, garantizando máxima seguridad contra accesos no autorizados.
