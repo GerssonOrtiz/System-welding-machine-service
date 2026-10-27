@@ -217,6 +217,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
               <Link
                 key={item.key}
                 href={item.href}
+                prefetch={true}
                 onClick={onMobileClose}
                 title={!isHovered ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-medium vision-item-bubble w-full ${
