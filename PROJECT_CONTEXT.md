@@ -447,6 +447,13 @@ const ENTRY_TO = [ ... ]
 - Audit log inmutable (`status_history`) con captura automática del rol (`changed_by_role`) y comentarios/motivos opcionales (`notes`) para auditoría precisa de tiempos por rol
 - Timestamps operativos por fase + edición superadmin
 - Buscador instantáneo (FR, cliente, serie)
+- **Rediseño UI/UX Apple Vision Pro & Cyber Glassmorphism (UI_UX_REDESIGN_PLAN.md - 100% Completado)**:
+  - Sidebar interactivo en cápsula flotante centrada verticalmente con despliegue orgánico al cursor y ancho dinámico adaptable (w-max).
+  - Navbar en cápsula flotante compacta desacoplada con chip de estado en tiempo real.
+  - Tarjetas y paneles con vidrio translúcido real (backdrop-filter blur 28px saturate 200%) con opacidad calibrada para legibilidad perfecta.
+  - Eliminación de fondos opacos rígidos en Pizarra, Equipos y Búsqueda.
+  - Login interactivo con orbes flotantes animados de luz plasma, micro-malla cibernética, y toggle ver/ocultar contraseña con iconos Lucide.
+  - Optimización de prefetch en navegación sin comprometer la seguridad ni las validaciones del servidor.
 - **Identidad visual propia y autoría**:
   - Logo SVG propio (`CabelabLogo.tsx`) con icono de arco eléctrico y variante compacta
   - Autoría explícita de **Br. Gersson Ortiz** en login, navbar y metadata de aplicación

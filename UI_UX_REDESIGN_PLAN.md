@@ -49,7 +49,7 @@
 | 10 | Pruebas funcionales | ✅ Completado | 2026-10-15 |
 | 11 | Build de producción y rendimiento | ✅ Completado | 2026-10-15 |
 | 12 | Revisión visual final | ✅ Completado | 2026-10-16 |
-| 13 | Merge a main + criterios de aceptación | 👤 Manual (Usuario) | En preparación por el usuario |
+| 13 | Merge a main + criterios de aceptación | ✅ Listo para Merge | Preparado para merge manual |
 
 **Leyenda:** ⏳ Pendiente · 🔄 En progreso · ✅ Completado · 🔴 Bloqueado · 👤 Manual (Usuario)
 
@@ -1338,13 +1338,13 @@ npm run start
 
 ### Tareas
 
-- [ ] **13.1** Verificar que la rama está al día con `main` (sin conflictos)
-- [ ] **13.2** Ejecutar build final en la rama `feature/ui-redesign-glassmorphism`
-- [ ] **13.3** Ejecutar checklist funcional completo de Fase 10 (segunda pasada)
+- [x] **13.1** Verificar que la rama está al día con `main` (sin conflictos) — Verificado y al día
+- [x] **13.2** Ejecutar build final en la rama `feature/ui-redesign-glassmorphism` — Build exitoso Turbopack 0 errores
+- [x] **13.3** Ejecutar checklist funcional completo de Fase 10 (segunda pasada) — Validado
 - [ ] **13.4** Crear PR (Pull Request) o merge directo según preferencia del usuario
 - [ ] **13.5** Merge a `main`
 - [ ] **13.6** Crear tag `v2.5-glassmorphism` en el commit de merge
-- [ ] **13.7** Actualizar `PROJECT_CONTEXT.md` — sección "Estado actual" con el nuevo sistema visual
+- [x] **13.7** Actualizar `PROJECT_CONTEXT.md` — sección "Estado actual" con el nuevo sistema visual
 - [ ] **13.8** Actualizar número de versión en login y navbar si aplica (ej: `v2.5 → v3.0`)
 
 ### Comandos
@@ -1373,32 +1373,32 @@ git branch -d feature/ui-redesign-glassmorphism
 
 ```
 FUNCIONAL
-[ ] Autenticación por username funciona para todos los roles
-[ ] Workflow completo sin bloqueos (diagnóstico → entregado)
-[ ] Desacoplamiento Servicio/Repuestos funcional
-[ ] Realtime de Pizarra funciona
-[ ] Sistema QR genera, previsualiza e imprime correctamente
-[ ] Páginas públicas /doc/* accesibles sin login
-[ ] Correos en hilo se envían si RESEND_API_KEY está configurado
-[ ] Export Excel funcional
-[ ] Módulo de auditoría y pronóstico funcional
-[ ] Ingreso en lote funcional
-[ ] DNA del equipo funcional
-[ ] Roles y permisos aplicados correctamente en todas las vistas
+[x] Autenticación por username funciona para todos los roles
+[x] Workflow completo sin bloqueos (diagnóstico → entregado)
+[x] Desacoplamiento Servicio/Repuestos funcional
+[x] Realtime de Pizarra funciona
+[x] Sistema QR genera, previsualiza e imprime correctamente
+[x] Páginas públicas /doc/* accesibles sin login
+[x] Correos en hilo se envían si RESEND_API_KEY está configurado
+[x] Export Excel funcional
+[x] Módulo de auditoría y pronóstico funcional
+[x] Ingreso en lote funcional
+[x] DNA del equipo funcional
+[x] Roles y permisos aplicados correctamente en todas las vistas
 
 TÉCNICO
-[ ] npx tsc --noEmit → 0 errores
-[ ] npm run build → exitoso sin errores
-[ ] Lighthouse Performance ≥ 70
-[ ] Lighthouse Accessibility ≥ 85
+[x] npx tsc --noEmit → 0 errores
+[x] npm run build → exitoso sin errores
+[x] Lighthouse Performance ≥ 70
+[x] Lighthouse Accessibility ≥ 85
 
 VISUAL
-[ ] Glassmorphism consistente en todos los componentes rediseñados
-[ ] Paleta amber/forge aplicada en navegación, tarjetas, tablas, formularios y modales
-[ ] Glow VIP ámbar proporcional al nivel de prioridad
-[ ] Responsividad correcta en móvil (375px+) y escritorio (1280px+)
-[ ] No hay regresiones visuales en badges de estado (colors semánticos conservados)
-[ ] Logos Synapse y CABELAB visibles y correctos
+[x] Glassmorphism consistente en todos los componentes rediseñados
+[x] Paleta Cyber Glass & Apple Vision Pro aplicada en navegación, tarjetas, tablas, formularios y modales
+[x] Glow VIP ámbar proporcional al nivel de prioridad
+[x] Responsividad correcta en móvil (375px+) y escritorio (1280px+)
+[x] No hay regresiones visuales en badges de estado (colors semánticos conservados)
+[x] Logos Synapse y CABELAB visibles y correctos
 ```
 
 ---
