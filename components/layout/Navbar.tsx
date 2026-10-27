@@ -36,57 +36,60 @@ export function Navbar({ onMenuToggle, isMobileMenuOpen }: NavbarProps) {
   }
 
   return (
-    <header className="h-14 glass-sidebar border-b border-amber-border/30 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 selection:bg-amber-core selection:text-bg-forge font-sans">
-      {/* Sección Izquierda: Botón hamburguesa móvil + Logo Synapse y autoría */}
-      <div className="flex items-center gap-3 md:gap-4">
-        {/* Botón toggle para celulares */}
-        <button
-          onClick={onMenuToggle}
-          aria-label={isMobileMenuOpen ? 'Cerrar navegación' : 'Abrir navegación'}
-          className="md:hidden p-2 -ml-1 text-text-forge-mid hover:text-amber-glow hover:bg-amber-ghost/50 rounded-lg border border-amber-border/30 transition-colors flex items-center justify-center"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+    <header className="w-full px-4 pt-3 pb-1 md:px-6 md:pt-4 shrink-0 z-30 font-sans">
+      <div className="w-full h-14 vision-sidebar-capsule rounded-2xl px-4 md:px-6 flex items-center justify-between border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+        {/* Sección Izquierda: Botón hamburguesa móvil + Logo Synapse y autoría */}
+        <div className="flex items-center gap-3 md:gap-4">
+          {/* Botón toggle para celulares */}
+          <button
+            onClick={onMenuToggle}
+            aria-label={isMobileMenuOpen ? 'Cerrar navegación' : 'Abrir navegación'}
+            className="md:hidden p-2 text-slate-300 hover:text-cyan-300 hover:bg-white/[0.06] rounded-xl border border-white/10 transition-colors flex items-center justify-center"
+          >
+            {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
 
-        <div className="flex items-center gap-2.5">
-          <div className="relative h-8 w-24 md:w-28 flex items-center">
-            <Image
-              src="/synapse_horizontal.png"
-              alt="SYNAPSE"
-              width={140}
-              height={40}
-              priority
-              className="object-contain max-h-8 w-auto"
-            />
+          <div className="flex items-center gap-2.5">
+            <div className="relative h-7 w-24 md:w-28 flex items-center">
+              <Image
+                src="/synapse_horizontal.png"
+                alt="SYNAPSE"
+                width={140}
+                height={35}
+                priority
+                className="object-contain max-h-7 w-auto filter drop-shadow-[0_0_10px_rgba(0,210,255,0.3)]"
+              />
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono hidden lg:inline border-l border-white/10 pl-2.5">
+              por <strong className="text-slate-200 font-medium">Br. Gersson Ortiz</strong>
+            </span>
           </div>
-          <span className="text-[9px] text-text-forge-dim font-mono hidden lg:inline border-l border-amber-border/30 pl-2.5">
-            por <strong className="text-text-forge-mid font-medium">Br. Gersson Ortiz</strong>
-          </span>
-        </div>
-      </div>
-
-      {/* Sección Derecha: Información de usuario y Logout */}
-      <div className="flex items-center gap-4">
-        {/* Info del usuario actual */}
-        <div className="hidden sm:flex flex-col text-right">
-          <span className="text-xs font-semibold text-text-forge font-sans leading-none mb-0.5">
-            {profile?.full_name || profile?.username || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Cargando...'}
-          </span>
-          <span className="text-[10px] text-text-forge-mid uppercase tracking-widest leading-none font-semibold">
-            {role ? ROLE_LABELS[role] : 'Invitado'}
-          </span>
         </div>
 
-        {/* Separador */}
-        <div className="h-6 w-[1px] bg-amber-border/30 hidden sm:block" />
+        {/* Sección Derecha: Información de usuario y Logout */}
+        <div className="flex items-center gap-3 md:gap-4">
+          {/* Info del usuario actual en burbuja sutil */}
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+            <div className="flex flex-col text-right">
+              <span className="text-xs font-semibold text-slate-100 font-sans leading-none mb-0.5">
+                {profile?.full_name || profile?.username || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Cargando...'}
+              </span>
+              <span className="text-[9px] text-cyan-400 font-mono uppercase tracking-wider leading-none">
+                {role ? ROLE_LABELS[role] : 'Invitado'}
+              </span>
+            </div>
+          </div>
 
-        {/* Botón Logout */}
-        <button
-          onClick={handleLogout}
-          className="bg-transparent border border-red-500/30 hover:border-red-500 text-red-400 hover:bg-red-500/10 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded transition-standard hover:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
-        >
-          SALIR
-        </button>
+          {/* Botón Logout */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/60 text-red-400 text-xs font-semibold uppercase tracking-wider transition-all hover:shadow-[0_0_12px_rgba(239,68,68,0.3)]"
+          >
+            <LogOut size={13} />
+            <span className="hidden sm:inline">Salir</span>
+          </button>
+        </div>
       </div>
     </header>
   )

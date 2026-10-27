@@ -170,14 +170,14 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       )}
 
       {/* Contenedor espaciador en escritorio para no mover el contenido principal al flotar */}
-      <div className="hidden md:block w-[76px] shrink-0 my-3 ml-3 pointer-events-none" />
+      <div className="hidden md:flex flex-col justify-center items-center w-[76px] shrink-0 my-auto ml-3 pointer-events-none self-center" />
 
       <aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`vision-sidebar-capsule md:my-3 md:ml-3 md:rounded-3xl flex flex-col justify-between font-sans selection:bg-amber-core selection:text-bg-forge select-none shrink-0 transition-[width,box-shadow,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+        className={`vision-sidebar-capsule md:my-auto md:ml-3 md:rounded-3xl flex flex-col justify-between font-sans selection:bg-amber-core selection:text-bg-forge select-none shrink-0 transition-[width,box-shadow,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
           /* En móvil: posición fija deslizable tipo drawer */
-          fixed inset-y-0 left-0 z-50 md:top-0 md:bottom-0 md:h-[calc(100vh-1.5rem)]
+          fixed inset-y-0 left-0 z-50 md:top-1/2 md:-translate-y-1/2 md:max-h-[88vh]
           ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
           /* Ancho: en móvil 240px; en escritorio 76px colapsado y w-max al hacer hover */
           w-[240px] md:w-[76px] ${isHovered ? 'md:w-max md:shadow-[0_24px_70px_rgba(0,0,0,0.85),0_0_30px_rgba(0,210,255,0.18)]' : ''}
