@@ -1,5 +1,5 @@
 # UI_UX_REDESIGN_PLAN.md — SYNAPSE v2.5 · CABELAB
-> **Guía maestra del proceso de rediseño Premium Dark Glassmorphism con iluminación ambiental ámbar/naranja.**  
+> **Guía maestra del proceso de rediseño Premium Dark Cyber Glassmorphism con estética Linux Desktop (Wayland/Plasma/Tiling WM), orbes flotantes de luz fría y fondo personalizable.**  
 > Antigravity debe leer este documento completo antes de tocar cualquier archivo del proyecto.  
 > Actualizar el estado `[ ]` / `[x]` de cada tarea conforme se complete.
 
@@ -48,12 +48,12 @@
 | 9 | Responsive y accesibilidad | ✅ Completado | 2026-10-15 |
 | 10 | Pruebas funcionales | ✅ Completado | 2026-10-15 |
 | 11 | Build de producción y rendimiento | ✅ Completado | 2026-10-15 |
-| 12 | Revisión visual final | ✅ Completado | 2026-10-15 |
-| 13 | Merge a main + criterios de aceptación | ⏳ Pendiente | — |
+| 12 | Revisión visual final | ✅ Completado | 2026-10-16 |
+| 13 | Merge a main + criterios de aceptación | 👤 Manual (Usuario) | En preparación por el usuario |
 
-**Leyenda:** ⏳ Pendiente · 🔄 En progreso · ✅ Completado · 🔴 Bloqueado · ⚠️ Con advertencias
+**Leyenda:** ⏳ Pendiente · 🔄 En progreso · ✅ Completado · 🔴 Bloqueado · 👤 Manual (Usuario)
 
-> **REGLA DE ORO:** Ninguna fase puede comenzar sin que la anterior haya sido marcada ✅ y aprobada explícitamente por el usuario. Antigravity debe solicitar aprobación al final de cada fase.
+> **NOTA DE USUARIO:** La Fase 13 (merge a main, release y tags) será realizada **manualmente por el usuario**. No ejecutar comandos de merge ni eliminación de ramas automáticamente.
 
 ---
 
@@ -167,95 +167,95 @@
 
 ---
 
-## 4. Sistema visual objetivo — Premium Dark Glassmorphism
+## 4. Sistema visual objetivo — Premium Dark Cyber Glassmorphism (Linux Desktop Aesthetics)
 
 ### 4.1 Concepto de diseño
 
-**"Forge Ambience"** — Atmósfera de fragua industrial de alta precisión. El sistema evoca la calidez del metal caliente (ámbar/naranja) sobre la frialdad del acero nocturno (azul oscuro profundo), creando una identidad visual que honra el contexto industrial de taller de motosoldadoras.
+**"Cyber Arc & Linux Wayland Glass"** — Atmósfera de alta precisión técnica inspirada en interfaces modernas de Linux (Hyprland / KDE Plasma Kvantum / Waybar), el arco de soldadura eléctrica por plasma (Cyber Cyan / Cobalto) y superficies de vidrio de alto índice de refracción sobre fondos con orbes de gradiente flotantes y marca de agua SYNAPSE.
 
 ```
-ANTES (actual):            DESPUÉS (objetivo):
-─────────────────          ─────────────────────────────────────
-Neón azul cian puro   →   Glassmorphism + iluminación ámbar/naranja
-Fondos sólidos planos →   Capas translúcidas con blur y gradientes
-Bordes blancos tenues →   Bordes luminosos amber con glow sutil
-Sin profundidad       →   Jerarquía visual Z-axis con sombras cálidas
+ANTES (inicial):           EVOLUCIÓN FORGE:         FINAL (Cyber Linux Glass):
+─────────────────          ─────────────────        ───────────────────────────
+Neón azul cian plano  →   Naranja/Ámbar sólido →   Cyber Glass (Cyan/Cobalto/Aurora)
+Fondos sólidos planos →   Capas translúcidas   →   Vidrio real (blur 24px + saturación 200%)
+Sin profundidad       →   Glow estático        →   Burbujas flotantes animadas + Dot Grid
+Bordes gruesos        →   Borde ámbar 1px      →   Micro-bisel especular (inset 1px white)
 ```
 
 ### 4.2 Paleta de colores objetivo
 
 ```
-── FONDOS (mantener oscuros profundos) ──────────────────────────────
-bg-forge:        #06080F   // fondo raíz — negro acero
-bg-forge-mid:    #0A0C17   // superficie base
-bg-forge-high:   #0E1120   // tarjetas y paneles
-bg-glass:        rgba(14, 17, 32, 0.60)  // superficies glass
+── FONDOS CYBER / LINUX GLASS ───────────────────────────────────────
+bg-forge:        #050811   // fondo raíz — noche profunda de alta fidelidad
+bg-forge-mid:    #090D1A   // superficie base
+bg-forge-high:   #0E1424   // paneles y ventanas
+bg-glass:        rgba(10, 15, 28, 0.45)  // superficies de vidrio translúcido real
 
-── ACENTO PRIMARIO (ámbar — calor del metal) ─────────────────────────
-amber-core:      #F59E0B   // ámbar puro — acento principal
-amber-glow:      #FBBF24   // ámbar claro — hover / activo
-amber-deep:      #D97706   // ámbar profundo — bordes
-amber-ghost:     rgba(245, 158, 11, 0.08)  // fondo sutil en hover
-amber-border:    rgba(245, 158, 11, 0.20)  // borde glass
-amber-shine:     rgba(245, 158, 11, 0.40)  // borde activo
+── ACENTO PRIMARIO (Cyber Cyan — Arco eléctrico de soldadura / Wayland) ───
+amber-core:      #00D2FF   // Cyan plasma de alta gama — acento principal
+amber-glow:      #38BDF8   // Sky/Cyan brillante — hover / activo
+amber-deep:      #0284C7   // Azul cobalto profundo — bordes activos
+amber-ghost:     rgba(0, 210, 255, 0.08)   // fondo sutil translúcido
+amber-border:    rgba(0, 210, 255, 0.18)   // borde glass refinado
+amber-shine:     rgba(0, 210, 255, 0.35)   // borde activo / focus
 
-── ACENTO SECUNDARIO (naranja — arco de soldadura) ───────────────────
-forge-orange:    #EA580C   // naranja forja — énfasis
-forge-bright:    #F97316   // naranja brillante — CTAs
-forge-ghost:     rgba(234, 88, 12, 0.08)
+── ACENTO SECUNDARIO (Electric Cobalt & Violet Pulse) ───────────────
+forge-orange:    #6366F1   // Índigo cobalto — jerarquía y contraste
+forge-bright:    #818CF8   // Índigo claro — acentos sutiles
+forge-ghost:     rgba(99, 102, 241, 0.08)
 
-── CIAN (conservar para compatibilidad con badges de estado) ─────────
+── CIAN / NEÓN (conservar para compatibilidad con badges de estado) ───
 neon-blue:       #00E5FF   // MANTENER — usado en status badges
 electric:        #0052FF   // MANTENER — status badges
 neon-purple:     #9D4EDD   // MANTENER — status badges
 
 ── TEXTO ──────────────────────────────────────────────────────────────
-text-forge:      #F5F0E8   // blanco cálido — texto principal
-text-forge-mid:  #A89880   // beige apagado — texto secundario
-text-forge-dim:  #5C4F3D   // marrón oscuro — texto muted
+text-forge:      #F8FAFC   // blanco frío níveo — máxima legibilidad
+text-forge-mid:  #94A3B8   // gris titanio — texto secundario
+text-forge-dim:  #475569   // pizarra neutro — texto muted / hairlines
 
 ── SEMÁNTICOS (mantener para lógica de estados) ──────────────────────
 success:         #10B981   // MANTENER
-warning:         #F59E0B   // MANTENER (coincide con amber-core)
+warning:         #F59E0B   // MANTENER
 error:           #EF4444   // MANTENER
 info:            #00E5FF   // MANTENER
 ```
 
-> **Regla de migración de colores:** Los colores `status-*` y semánticos (`success`, `warning`, `error`) NO se cambian. Solo se agregan los nuevos tokens amber/forge y se reemplazan gradualmente los usos de `neon-blue` en UI estructural (no en badges de estado).
-
-### 4.3 Efectos glassmorphism
+### 4.3 Efectos glassmorphism y elementos de fondo
 
 ```css
-/* Tarjeta glass estándar */
+/* Tarjeta de Vidrio Traslúcido Real */
 .glass-card {
-  background: rgba(14, 17, 32, 0.60);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(245, 158, 11, 0.20);
+  background: rgba(10, 15, 30, 0.42);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.40),
-    0 0 0 1px rgba(245, 158, 11, 0.08),
-    inset 0 1px 0 rgba(245, 158, 11, 0.08);
+    0 12px 40px 0 rgba(0, 0, 0, 0.50),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35);
 }
 
-/* Tarjeta glass con glow ámbar activa */
-.glass-card-active {
-  border-color: rgba(245, 158, 11, 0.40);
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.40),
-    0 0 20px rgba(245, 158, 11, 0.12),
-    0 0 0 1px rgba(245, 158, 11, 0.20),
-    inset 0 1px 0 rgba(245, 158, 11, 0.15);
-}
+/* Burbujas de degradado flotantes en background */
+.animate-float-1 { animation: floatSlow 18s ease-in-out infinite; }
+.animate-float-2 { animation: floatReverse 22s ease-in-out infinite; }
+.animate-float-3 { animation: floatSlow 26s ease-in-out infinite reverse; }
 
-/* Iluminación ambiental — usado en sidebar y modales */
-.ambient-amber {
-  background: radial-gradient(
-    ellipse at 20% 50%,
-    rgba(245, 158, 11, 0.06) 0%,
-    transparent 60%
-  );
+/* Micro-malla técnica estilo terminal / tiling WM */
+.linux-grid-bg {
+  background-image: 
+    radial-gradient(rgba(0, 210, 255, 0.08) 1px, transparent 1px),
+    radial-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px, 56px 56px;
 }
+```
+
+### 4.4 Soporte de Wallpaper personalizado por el usuario
+- El contenedor raíz de [DashboardShell.tsx](file:///C:/Users/gorti/Desktop/System-welding-machine-service/components/layout/DashboardShell.tsx) incorpora detección automática de imagen de fondo:
+  - Archivo en `/public/wallpaper.png` o `/public/wallpaper.jpg`.
+  - Capa en modo `mix-blend-screen` con opacidad calibrada (0.25) para dar profundidad sin sacrificar contraste ni legibilidad.
+- Marca de agua centralizada con el isotipo oficial `synapse_logo.png` con baja opacidad (0.035) y resplandor suave.
 
 /* Barra lateral con gradiente de forja */
 .sidebar-forge {
@@ -1409,11 +1409,13 @@ VISUAL
 
 | ID | Fecha | Decisión | Alternativas consideradas | Razón |
 |----|-------|----------|--------------------------|-------|
-| ADR-001 | — | Estrategia de adición de tokens: AGREGAR nuevos tokens amber/forge sin eliminar los existentes para compatibilidad con badges de estado | Migración completa de paleta | Los colores `status-*` y semánticos están acoplados a la lógica de negocio (badges de equipos, estados de Supabase) y no deben cambiar |
+| ADR-001 | — | Estrategia de adición de tokens: AGREGAR nuevos tokens sin eliminar los existentes para compatibilidad con badges de estado | Migración destructiva de paleta | Los colores `status-*` y semánticos están acoplados a la lógica de negocio (badges de equipos, estados de Supabase) y no deben cambiar |
 | ADR-002 | — | `backdrop-filter` solo en elementos estructurales (sidebar, modales, columnas pizarra), NO en cada fila de tabla | Aplicar glass a todas las filas | Rendimiento: `backdrop-filter` en >50 elementos simultáneos puede causar jank en GPU |
 | ADR-003 | — | Usar `@layer components` en `globals.css` para clases glass reutilizables en lugar de crear nuevos componentes React | Componentes React `GlassCard` | Menor footprint de código, aplicable directamente con Tailwind, sin cambiar la arquitectura de componentes |
-| ADR-004 | — | — | — | — |
-| ADR-005 | — | — | — | — |
+| ADR-004 | — | Iluminación de fondo con orbes de gradiente flotantes (`Dark Aurora`) y micro-malla técnica (`.linux-grid-bg`) | Fondo plano monocolor | El efecto glass translúcido requiere elementos visuales y gradientes en capas inferiores para difuminar |
+| ADR-005 | — | Detección automática de imagen de fondo personalizada (`/public/wallpaper.png` o `.jpg`) con marca de agua SYNAPSE | Fondos rígidos en CSS | Otorga flexibilidad al usuario para personalizar la atmósfera sin modificar código |
+| ADR-006 | 2026-10-16 | Transición cromática de naranja/ámbar a Cyber Cyan (`#00D2FF`) y Electric Cobalt (`#6366F1`) con estética Linux Desktop (Wayland/Hyprland) | Conservar naranja forja | Mayor sofisticación estética, armonía con el arco eléctrico de soldadura y eliminación de sobrecarga monótona cálida |
+| ADR-007 | 2026-10-16 | Fase 13 (Merge a main, releases y tags) reservada exclusivamente para ejecución manual por parte del usuario | Merge automatizado por IA | Decisión explícita del usuario para control de versiones y auditoría final en producción |
 
 ---
 
