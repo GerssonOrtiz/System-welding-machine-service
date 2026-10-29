@@ -76,8 +76,17 @@ Todas las partes del enfoque A+B fueron completadas e integradas satisfactoriame
 
 ---
 
-## 3. VALIDACIÓN FUNCIONAL Y PRUEBAS
+## 4. INTEGRACIÓN DE CORREO AL PASAR A "LISTO PARA ENTREGA" (✅ COMPLETADO)
+* **Requerimiento:** Al cambiar de estado de *"En mantenimiento"* a *"Listo para entrega"*, enviar correo en hilo con los informes de servicio y certificados de VRD adjuntos (opcionales). Este cambio de estado solo debe estar permitido para `operaciones`, `admin` y `superadmin`.
+* **Solución y Estado:**
+  1. **Migración SQL 022 (`022_workflow_maintenance_to_ready_for_delivery.sql`):**
+     - Registra el estado *"Listo para entrega"* en `workflow_states`.
+     - Habilita la transición *"En mantenimiento"* ➔ *"Listo para entrega"* exclusivamente para `operaciones`, `admin` y `superadmin`.
+     - Habilita la transición subsecuente *"Listo para entrega"* ➔ *"Entregado"* para `operaciones`, `admin`, `superadmin` y `recepcion`.
+  2. **Esquema de Validación (`lib/validations/equipment.schema.ts`):**
+     - `culminadoODPSchema` preprocesa cadenas vacías para enlaces opcionales evitando fallos de validación URL cuando el usuario no los proporciona.
+  3. **Backend (`app/api/equipment/[id]/update-status/route.ts`):**
+     - Detecta `targetNameLower === 'listo para entrega'`, extrae de forma robusta los buffers de los archivos subidos (`service_report_file`, `vrd_file`) y enlaces web opcionales, y despacha en el hilo RFC 2822 mediante `mailer.sendCulminadoODP(...)`.
+  4. **Frontend (`components/equipment/StatusChangeModal.tsx` y `ModalCulminadoODP.tsx`):**
+     - Despliega el modal de servicio culminado permitiendo adjuntar PDFs y enlaces opcionales, enviándolo vía `FormData` o JSON.
 
-1. Entrar con rol `recepcion` o `admin` a un equipo que pertenezca a un lote.
-2. Ir a "Editar Equipo", modificar un dato y marcar la casilla de rectificación de correo.
-3. Verificar que el correo se reciba como respuesta al hilo original (`In-Reply-To`), con asunto `RE: ...`, y que muestre a todos los equipos del lote con el equipo corregido destacado con `✏️`.

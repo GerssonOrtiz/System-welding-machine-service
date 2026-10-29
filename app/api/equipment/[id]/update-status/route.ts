@@ -170,6 +170,7 @@ export async function POST(
     if (targetNameLower === ESTADO_CULMINADO_ODP) {
       const parsed = culminadoODPSchema.safeParse(rawBody)
       if (!parsed.success) {
+        console.error('[POST update-status] culminadoODPSchema validation failed:', parsed.error.flatten())
         return NextResponse.json({ success: false, error: 'Datos de culminado inválidos', details: parsed.error.flatten() }, { status: 400 })
       }
     }
@@ -326,12 +327,32 @@ export async function POST(
               observaciones: parsed.observaciones,
             })
           } else if (targetNameLower === ESTADO_CULMINADO_ODP) {
-            const parsed = culminadoODPSchema.parse(rawBody)
+            const parsed = culminadoODPSchema.safeParse(rawBody)
+            // Extraer observaciones de forma segura aunque las URLs fallen validación URL
+            const observaciones = parsed.success
+              ? (parsed.data.observaciones ?? '')
+              : (typeof rawBody.observaciones === 'string' ? rawBody.observaciones : '')
+            // Extraer URLs — solo usar si son strings no vacíos (validación laxa aquí, ya validado antes)
+            const svcUrl = parsed.success
+              ? parsed.data.service_report_url ?? null
+              : (rawBody.service_report_url?.trim() || null)
+            const vrdUrl = parsed.success
+              ? parsed.data.vrd_certificate_url ?? null
+              : (rawBody.vrd_certificate_url?.trim() || null)
+            console.log('[POST update-status] sendCulminadoODP payload:', {
+              fr_number: eq.fr_number,
+              thread_id: eq.email_thread_id,
+              observaciones,
+              svcUrl,
+              vrdUrl,
+              hasServiceReportBuffer: !!serviceReportBuffer,
+              hasVrdBuffer: !!vrdBuffer,
+            })
             mailResult = await mailer.sendCulminadoODP({
               ...threadBase,
-              observaciones:           parsed.observaciones,
-              service_report_url:      parsed.service_report_url || rawBody.service_report_url || null,
-              vrd_certificate_url:     parsed.vrd_certificate_url || rawBody.vrd_certificate_url || null,
+              observaciones,
+              service_report_url:      svcUrl,
+              vrd_certificate_url:     vrdUrl,
               service_report_buffer:   serviceReportBuffer,
               service_report_filename: serviceReportFilename,
               vrd_buffer:              vrdBuffer,

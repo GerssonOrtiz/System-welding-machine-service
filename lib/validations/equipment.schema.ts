@@ -110,9 +110,16 @@ export const solicitudRepuestosSchema = z.object({
 export const culminadoODPSchema = z.object({
   new_status_id: z.number().int(),
   notes: z.string().optional().nullable(),
-  // Campos de documentos opcionales
-  service_report_url: z.string().url({ message: 'El enlace del informe debe ser una URL válida' }).optional().nullable().or(z.literal('')),
-  vrd_certificate_url: z.string().url({ message: 'El enlace del certificado VRD debe ser una URL válida' }).optional().nullable().or(z.literal('')),
+  // Campos de documentos opcionales — se acepta string vacío, undefined o null
+  // Zod v4: preprocess limpia strings vacíos antes de la validación de URL
+  service_report_url: z.preprocess(
+    v => (typeof v === 'string' && v.trim() === '' ? null : v),
+    z.string().url({ message: 'El enlace del informe debe ser una URL válida' }).nullable().optional()
+  ),
+  vrd_certificate_url: z.preprocess(
+    v => (typeof v === 'string' && v.trim() === '' ? null : v),
+    z.string().url({ message: 'El enlace del certificado VRD debe ser una URL válida' }).nullable().optional()
+  ),
   // Campos del correo
   observaciones: z.string().optional().default(''),
 })

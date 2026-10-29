@@ -1,4 +1,4 @@
-﻿// components/equipment/EquipmentDetail.tsx
+// components/equipment/EquipmentDetail.tsx
 'use client'
 
 import React, { useState } from 'react'
@@ -22,6 +22,9 @@ import {
   Wrench,
   Package,
   Mail,
+  CheckCircle2,
+  Circle,
+  Loader2,
 } from 'lucide-react'
 import { useEquipmentDetail } from '@/hooks/useEquipmentList'
 import { useUser } from '@/hooks/useUser'
@@ -102,6 +105,7 @@ export default function EquipmentDetail({
   const [isQrModalOpen, setIsQrModalOpen] = useState(false)
   const [isPartsModalOpen, setIsPartsModalOpen] = useState(false)
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false)
+  const [togglingServiceId, setTogglingServiceId] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -136,6 +140,32 @@ export default function EquipmentDetail({
   const handleStatusChangeSuccess = () => {
     mutate()
     if (onStatusUpdated) onStatusUpdated()
+  }
+
+  const handleToggleService = async (serviceId: string, currentCompleted: boolean) => {
+    const newCompleted = !currentCompleted
+    setTogglingServiceId(serviceId)
+    try {
+      const res = await fetch(`/api/equipment/${equipmentId}/toggle-service`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceId,
+          completed: newCompleted,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'No se pudo actualizar el servicio')
+      }
+      toast.success(newCompleted ? 'Servicio marcado como completado' : 'Servicio marcado como pendiente')
+      mutate()
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.message || 'Error al actualizar el servicio')
+    } finally {
+      setTogglingServiceId(null)
+    }
   }
 
   const formatToLocalISO = (dateStr: string | null) => {
@@ -754,8 +784,11 @@ export default function EquipmentDetail({
                     const colors = PARTS_STATUS_COLORS[ps] ?? PARTS_STATUS_COLORS['SIN_REPUESTOS']
 
                     // Separación de repuestos según la etapa (DIAGNOSTICO vs SERVICIO)
-                    const diagParts = approvedParts.filter(p => p.etapa === 'DIAGNOSTICO')
-                    const serviceParts = approvedParts.filter(p => p.etapa !== 'DIAGNOSTICO')
+                    // y división clara entre Repuestos Físicos (Logística) y Servicios de Taller (Operaciones)
+                    const diagParts = approvedParts.filter(p => p.etapa === 'DIAGNOSTICO' && p.tipo !== 'SERVICIO')
+                    const servicePhysicalParts = approvedParts.filter(p => p.etapa !== 'DIAGNOSTICO' && p.tipo !== 'SERVICIO')
+                    const serviceLaborItems = approvedParts.filter(p => p.tipo === 'SERVICIO')
+                    const canOperateServices = ['operaciones', 'admin', 'superadmin'].includes(role || '')
 
                     const renderPartsTable = (partsList: ApprovedPartItem[], emptyMessage: string) => {
                       if (partsList.length === 0) {
@@ -770,8 +803,7 @@ export default function EquipmentDetail({
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="bg-bg-elevated/40 text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                                <th className="px-3 py-2 text-left">Repuesto / Servicio</th>
-                                <th className="px-3 py-2 text-center">Tipo</th>
+                                <th className="px-3 py-2 text-left">Repuesto</th>
                                 <th className="px-3 py-2 text-center">F. Llegada</th>
                                 <th className="px-3 py-2 text-center">Solicitado</th>
                                 <th className="px-3 py-2 text-center">Entregado</th>
@@ -780,20 +812,10 @@ export default function EquipmentDetail({
                             </thead>
                             <tbody className="divide-y divide-border-subtle/50">
                               {partsList.map((part, idx) => {
-                                const saldo = part.cantidad_solicitada - part.cantidad_entregada
-                                const isServicio = part.tipo === 'SERVICIO'
+                                const saldo = part.cantidad_solicitada - (part.cantidad_entregada || 0)
                                 return (
                                   <tr key={part.id || idx} className="hover:bg-bg-elevated/20">
                                     <td className="px-3 py-2 text-text-primary font-medium">{part.descripcion}</td>
-                                    <td className="px-3 py-2 text-center">
-                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
-                                        isServicio 
-                                          ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' 
-                                          : 'bg-neon-blue/10 text-neon-blue border border-neon-blue/20'
-                                      }`}>
-                                        {isServicio ? 'Servicio' : 'Repuesto'}
-                                      </span>
-                                    </td>
                                     <td className="px-3 py-2 text-center font-mono text-[11px] text-text-secondary">
                                       {part.fecha_llegada ? (
                                         <span className="text-amber-glow font-bold">{part.fecha_llegada}</span>
@@ -807,7 +829,7 @@ export default function EquipmentDetail({
                                       {part.cantidad_solicitada}
                                     </td>
                                     <td className="px-3 py-2 text-center font-mono font-bold text-emerald-400">
-                                      {part.cantidad_entregada}
+                                      {part.cantidad_entregada || 0}
                                     </td>
                                     <td className="px-3 py-2 text-center font-mono font-bold">
                                       {saldo > 0 ? (
@@ -848,19 +870,115 @@ export default function EquipmentDetail({
                             {renderPartsTable(diagParts, 'No se registraron repuestos solicitados en la etapa de diagnóstico.')}
                           </div>
 
-                          {/* ── Tabla 2: Repuestos y Servicios Aprobados en Servicio ── */}
+                          {/* ── Tabla 2: Repuestos Físicos Aprobados en Servicio (Almacén / Logística) ── */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
                               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                                ⚙️ Repuestos y Servicios Aprobados en Servicio
+                                📦 Repuestos Físicos para Servicio (Logística)
                               </span>
-                              {serviceParts.length > 0 && (
+                              {servicePhysicalParts.length > 0 && (
                                 <span className="text-[10px] font-mono text-text-muted">
-                                  {serviceParts.length} {serviceParts.length === 1 ? 'ítem' : 'ítems'}
+                                  {servicePhysicalParts.length} {servicePhysicalParts.length === 1 ? 'ítem' : 'ítems'}
                                 </span>
                               )}
                             </div>
-                            {renderPartsTable(serviceParts, 'No se han registrado repuestos ni servicios aprobados para mantenimiento.')}
+                            {renderPartsTable(servicePhysicalParts, 'No se registraron repuestos físicos requeridos para esta etapa.')}
+                          </div>
+
+                          {/* ── Tabla 3: Servicios de Taller Aprobados (Operaciones) ── */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                                ⚙️ Servicios y Trabajos Técnicos (Operaciones)
+                              </span>
+                              {serviceLaborItems.length > 0 && (
+                                <span className="text-[10px] font-mono text-text-muted">
+                                  {serviceLaborItems.filter(s => s.completed).length} / {serviceLaborItems.length} completados
+                                </span>
+                              )}
+                            </div>
+
+                            {serviceLaborItems.length === 0 ? (
+                              <div className="py-2.5 px-3 text-center text-[11px] text-text-muted italic bg-bg-elevated/10 rounded-lg border border-border-subtle/40">
+                                No se definieron servicios ni trabajos técnicos específicos.
+                              </div>
+                            ) : (
+                              <div className="rounded-lg border border-purple-500/20 bg-purple-500/[0.02] overflow-hidden">
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="bg-bg-elevated/40 text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                                      <th className="px-3 py-2 text-left">Trabajo / Servicio</th>
+                                      <th className="px-3 py-2 text-center">Estado</th>
+                                      <th className="px-3 py-2 text-center">Fecha Conclusión</th>
+                                      {canOperateServices && !isEditing && (
+                                        <th className="px-3 py-2 text-right">Acción (Operaciones)</th>
+                                      )}
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-border-subtle/50">
+                                    {serviceLaborItems.map((srv, idx) => {
+                                      const srvId = srv.id || srv.descripcion
+                                      const isToggling = togglingServiceId === srvId
+                                      return (
+                                        <tr key={srvId || idx} className="hover:bg-bg-elevated/20 transition-colors">
+                                          <td className="px-3 py-2 font-medium text-text-primary">
+                                            <div className="flex items-center gap-2">
+                                              <span className={`w-1.5 h-1.5 rounded-full ${srv.completed ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' : 'bg-purple-400/60'}`} />
+                                              <span className={srv.completed ? 'line-through text-text-muted' : 'text-text-primary'}>
+                                                {srv.descripcion}
+                                              </span>
+                                            </div>
+                                          </td>
+                                          <td className="px-3 py-2 text-center">
+                                            {srv.completed ? (
+                                              <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                                <CheckCircle2 size={10} />
+                                                Completado
+                                              </span>
+                                            ) : (
+                                              <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">
+                                                <Circle size={10} />
+                                                Pendiente
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td className="px-3 py-2 text-center font-mono text-[11px] text-text-secondary">
+                                            {srv.completed_at ? formatDate(srv.completed_at) : (
+                                              <span className="text-text-muted italic text-[10px]">Pendiente de taller</span>
+                                            )}
+                                          </td>
+                                          {canOperateServices && !isEditing && (
+                                            <td className="px-3 py-2 text-right">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleToggleService(srvId, !!srv.completed)}
+                                                disabled={isToggling}
+                                                className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-all inline-flex items-center gap-1.5 ${
+                                                  srv.completed
+                                                    ? 'bg-bg-elevated text-text-muted hover:text-yellow-400 border border-border-subtle hover:border-yellow-400/40'
+                                                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 shadow-sm'
+                                                }`}
+                                              >
+                                                {isToggling ? (
+                                                  <Loader2 size={11} className="animate-spin" />
+                                                ) : srv.completed ? (
+                                                  'Desmarcar'
+                                                ) : (
+                                                  <>
+                                                    <CheckCircle2 size={11} />
+                                                    Marcar Listo
+                                                  </>
+                                                )}
+                                              </button>
+                                            </td>
+                                          )}
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
                           </div>
                           {/* Historial de entregas y devoluciones */}
                           {(equipment as any).parts_deliveries && (equipment as any).parts_deliveries.length > 0 && (

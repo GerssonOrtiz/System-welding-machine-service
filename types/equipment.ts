@@ -69,6 +69,8 @@ export interface ApprovedPartItem {
   fecha_llegada?:      string  // Fecha estimada/programada de llegada del repuesto
   tipo?:               'REPUESTO' | 'SERVICIO'
   etapa?:              'DIAGNOSTICO' | 'SERVICIO' // Origen de la solicitud: en diagnóstico o en servicio/taller
+  completed?:          boolean // Para tipo === 'SERVICIO': si fue completado por Operaciones
+  completed_at?:       string  // ISO string de cuándo se marcó como completado
 }
 
 /** Un ítem individual dentro de una entrega de Logística */

@@ -33,11 +33,12 @@ const returnPartsSchema = z.object({
   observaciones: z.string().optional().default(''),
 })
 
-/** Recalcula parts_status basándose en los ítems actualizados de approved_parts */
+/** Recalcula parts_status basándose en los ítems de repuestos (excluyendo servicios) */
 function calcPartsStatus(parts: ApprovedPartItem[]): PartsStatus {
-  if (!parts || parts.length === 0) return 'SIN_REPUESTOS'
-  const totalSolicitado = parts.reduce((acc, p) => acc + (p.cantidad_solicitada || 0), 0)
-  const totalEntregado  = parts.reduce((acc, p) => acc + (p.cantidad_entregada || 0), 0)
+  const physicalParts = (parts || []).filter((p) => p.tipo !== 'SERVICIO')
+  if (physicalParts.length === 0) return 'SIN_REPUESTOS'
+  const totalSolicitado = physicalParts.reduce((acc, p) => acc + (p.cantidad_solicitada || 0), 0)
+  const totalEntregado  = physicalParts.reduce((acc, p) => acc + (p.cantidad_entregada || 0), 0)
   if (totalEntregado <= 0)              return 'SIN_REPUESTOS'
   if (totalEntregado >= totalSolicitado) return 'COMPLETO'
   return 'PARCIAL'

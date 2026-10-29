@@ -59,8 +59,10 @@ export default function ModalEntregaRepuestos({
   // Sincronizar y resetear estado cada vez que se abre el modal o cambian los approvedParts
   useEffect(() => {
     if (isOpen) {
+      // Filtrar únicamente los repuestos físicos para Logística (excluyendo ítems de servicio de Operaciones)
+      const physicalParts = (approvedParts || []).filter((p) => p.tipo !== 'SERVICIO')
       setCheckedParts(
-        (approvedParts || []).map((p) => ({
+        physicalParts.map((p) => ({
           partId:         p.id || crypto.randomUUID(),
           descripcion:    p.descripcion,
           cantSolicitada: p.cantidad_solicitada,
