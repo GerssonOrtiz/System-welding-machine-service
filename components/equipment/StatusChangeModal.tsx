@@ -64,13 +64,17 @@ export default function StatusChangeModal({
   const [pdfFile, setPdfFile]         = useState<File | null>(null)
   const [reportUrl, setReportUrl]     = useState('')
   // Aprobación Ventas
-  const [ventasItems, setVentasItems]           = useState<VentasItem[]>([{ descripcion: '', cantidad: '1', precio: '' }])
+  const [ventasItems, setVentasItems]           = useState<VentasItem[]>([{ descripcion: '', cantidad: '1', fecha_llegada: '', tipo: 'REPUESTO' }])
   const [ventasObservaciones, setVentasObs]     = useState('')
   // Entrega Logística
   const [logisticaItems, setLogisticaItems]     = useState<LogisticaItem[]>([{ descripcion: '', cantidad: '1', nota: '' }])
   const [logisticaObservaciones, setLogisticaObs] = useState('')
   // Culminado ODP
-  const [culminadoObs, setCulminadoObs]         = useState('')
+  const [culminadoObs, setCulminadoObs]                 = useState('')
+  const [serviceReportFile, setServiceReportFile]       = useState<File | null>(null)
+  const [serviceReportUrl, setServiceReportUrl]         = useState('')
+  const [vrdFile, setVrdFile]                           = useState<File | null>(null)
+  const [vrdCertificateUrl, setVrdCertificateUrl]       = useState('')
   // Coordinación con el cliente
   const [coordinacionSendEmail, setCoordinacionSendEmail] = useState(false)
   const [coordinacionEmailBody, setCoordinacionEmailBody] = useState('')
@@ -128,11 +132,15 @@ export default function StatusChangeModal({
       setNotifyByEmail(false)
       setDiagnostico('')
       setPdfFile(null)
-      setVentasItems([{ descripcion: '', cantidad: '1', precio: '' }])
+      setVentasItems([{ descripcion: '', cantidad: '1', fecha_llegada: '', tipo: 'REPUESTO' }])
       setVentasObs('')
       setLogisticaItems([{ descripcion: '', cantidad: '1', nota: '' }])
       setLogisticaObs('')
       setCulminadoObs('')
+      setServiceReportFile(null)
+      setServiceReportUrl('')
+      setVrdFile(null)
+      setVrdCertificateUrl('')
       setCoordinacionSendEmail(false)
       setCoordinacionEmailBody('')
     }
@@ -155,8 +163,12 @@ export default function StatusChangeModal({
       if (!pdfFile) { toast.error('Debe adjuntar el PDF del informe'); return }
     }
     if (showAprobacionVentas) {
-      const valid = ventasItems.every(i => i.descripcion.trim() && i.cantidad.trim() && i.precio.trim())
-      if (!valid) { toast.error('Complete todos los campos de la tabla de aprobación'); return }
+      if (ventasItems.length === 0) {
+        toast.error('Debe agregar al menos un repuesto o servicio');
+        return;
+      }
+      const valid = ventasItems.every(i => i.descripcion.trim() && i.cantidad.trim())
+      if (!valid) { toast.error('Complete la descripción y cantidad de cada ítem aprobado'); return }
     }
     if (showEntregaLogistica) {
       const valid = logisticaItems.every(i => i.descripcion.trim() && i.cantidad.trim())
@@ -201,6 +213,21 @@ export default function StatusChangeModal({
         fd.append('pdf', pdfFile)
         response = await fetch(endpoint, { method: 'POST', body: fd })
 
+      } else if (showCulminadoODP && (serviceReportFile || vrdFile)) {
+        // Culminado ODP con archivos adjuntos vía FormData
+        const fd = new FormData()
+        fd.append('new_status_id', targetStatusId)
+        fd.append('observaciones', culminadoObs)
+        if (serviceReportUrl.trim()) fd.append('service_report_url', serviceReportUrl.trim())
+        if (vrdCertificateUrl.trim()) fd.append('vrd_certificate_url', vrdCertificateUrl.trim())
+        if (notes) fd.append('notes', notes)
+        if (selectedTechIds.length > 0) {
+          fd.append('assigned_technician_ids', JSON.stringify(selectedTechIds))
+        }
+        if (serviceReportFile) fd.append('service_report_file', serviceReportFile)
+        if (vrdFile) fd.append('vrd_file', vrdFile)
+        response = await fetch(endpoint, { method: 'POST', body: fd })
+
       } else {
         // Resto de eventos como JSON
         const finalNotes = notes || (showAprobacionVentas ? ventasObservaciones : showEntregaLogistica ? logisticaObservaciones : showCulminadoODP ? culminadoObs : null)
@@ -218,6 +245,8 @@ export default function StatusChangeModal({
           payload.observaciones = logisticaObservaciones
         } else if (showCulminadoODP) {
           payload.observaciones = culminadoObs
+          if (serviceReportUrl.trim()) payload.service_report_url = serviceReportUrl.trim()
+          if (vrdCertificateUrl.trim()) payload.vrd_certificate_url = vrdCertificateUrl.trim()
         } else if (showCoordinacionCliente) {
           payload.send_email = coordinacionSendEmail
           payload.email_body = coordinacionEmailBody.trim()
@@ -379,6 +408,14 @@ export default function StatusChangeModal({
               <ModalCulminadoODP
                 observaciones={culminadoObs}
                 onObservacionesChange={setCulminadoObs}
+                serviceReportFile={serviceReportFile}
+                onServiceReportFileChange={setServiceReportFile}
+                serviceReportUrl={serviceReportUrl}
+                onServiceReportUrlChange={setServiceReportUrl}
+                vrdFile={vrdFile}
+                onVrdFileChange={setVrdFile}
+                vrdCertificateUrl={vrdCertificateUrl}
+                onVrdCertificateUrlChange={setVrdCertificateUrl}
               />
             )}
 

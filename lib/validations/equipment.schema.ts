@@ -71,11 +71,13 @@ export const informeODPSchema = z.object({
 export const aprobacionVentasSchema = z.object({
   new_status_id: z.number().int(),
   notes: z.string().optional().nullable(),
-  // Campos del correo
+  // Campos del correo y gestión de repuestos / servicios
   items: z.array(z.object({
     descripcion: z.string().min(1),
     cantidad: z.string().min(1),
-    precio: z.string().min(1),
+    precio: z.string().optional().default(''),
+    fecha_llegada: z.string().optional().default(''),
+    tipo: z.enum(['REPUESTO', 'SERVICIO']).optional().default('REPUESTO'),
   })).min(1, { message: 'Debe agregar al menos un ítem' }),
   observaciones: z.string().optional().default(''),
 })
@@ -108,6 +110,9 @@ export const solicitudRepuestosSchema = z.object({
 export const culminadoODPSchema = z.object({
   new_status_id: z.number().int(),
   notes: z.string().optional().nullable(),
+  // Campos de documentos opcionales
+  service_report_url: z.string().url({ message: 'El enlace del informe debe ser una URL válida' }).optional().nullable().or(z.literal('')),
+  vrd_certificate_url: z.string().url({ message: 'El enlace del certificado VRD debe ser una URL válida' }).optional().nullable().or(z.literal('')),
   // Campos del correo
   observaciones: z.string().optional().default(''),
 })

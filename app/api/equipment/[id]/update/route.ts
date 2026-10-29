@@ -69,8 +69,11 @@ export async function PUT(
     if (body.model !== undefined) updateData.model = body.model.trim() ? body.model.trim().toUpperCase() : 'S/M'
     if (body.serial_number !== undefined) updateData.serial_number = body.serial_number.trim() ? body.serial_number.trim().toUpperCase() : 'N/S'
     
-    if (body.report_number !== undefined) updateData.report_number = body.report_number.trim().toUpperCase() || null
-    if (body.report_url !== undefined) updateData.report_url = body.report_url?.trim() || null
+    // Solo admin y superadmin pueden asignar o modificar N° de informe y URL del PDF
+    if (!isRecepcion) {
+      if (body.report_number !== undefined) updateData.report_number = body.report_number.trim().toUpperCase() || null
+      if (body.report_url !== undefined) updateData.report_url = body.report_url?.trim() || null
+    }
     if (body.client_report !== undefined) updateData.client_report = body.client_report.trim().toUpperCase() || null
     if (body.accessories !== undefined) updateData.accessories = body.accessories.trim().toUpperCase() || null
     if (body.condition_in !== undefined) updateData.condition_in = body.condition_in.trim().toUpperCase() || null
@@ -171,14 +174,18 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Error al actualizar el equipo en la base de datos: ' + updateError.message }, { status: 500 })
     }
 
-    // 8. Reenvío opcional de correo de ingreso si fue solicitado
+    // 8. Reenvío de correo de rectificación si fue solicitado (A+B):
+    //    - Si el equipo tiene hilo existente → reply en el hilo con tabla completa del lote
+    //    - Si no tiene hilo → correo nuevo (comportamiento legacy)
     let emailSent = false
     let mailWarning: string | null = null
 
     if (body.resend_email === true) {
       try {
-        const eqForMail = {
-          fr_number: updateData.fr_number ?? currentEquipment.fr_number,
+        // Datos del equipo editado con los valores ya actualizados
+        const correctedFR = updateData.fr_number ?? currentEquipment.fr_number
+        const correctedEquipment = {
+          fr_number: correctedFR,
           brand: updateData.brand ?? currentEquipment.brand,
           model: updateData.model ?? currentEquipment.model,
           serial_number: updateData.serial_number ?? currentEquipment.serial_number,
@@ -188,33 +195,71 @@ export async function PUT(
           is_priority: updateData.is_priority ?? currentEquipment.is_priority ?? false,
           date_in: updateData.date_in ?? currentEquipment.date_in,
         }
+        const clientName = updateData.client_name ?? currentEquipment.client_name
+        const existingThreadId: string | null = currentEquipment.email_thread_id ?? null
+        const existingThreadSubject: string | null = currentEquipment.email_thread_subject ?? null
 
-        const mailResult = await mailer.sendBatchEquipmentEntry({
-          client_name: updateData.client_name ?? currentEquipment.client_name,
-          equipments: [eqForMail],
-        })
+        if (existingThreadId) {
+          // ─── A+B: reply en el hilo con tabla completa del lote ───────────
+          // Traer los demás equipos del mismo lote (si existe batch_id)
+          let batchEquipments = [correctedEquipment]
+          if (currentEquipment.batch_id) {
+            const { data: siblings } = await (supabase.from('equipment_records') as any)
+              .select('fr_number, brand, model, serial_number, service_type, client_report, accessories, is_priority, date_in')
+              .eq('batch_id', currentEquipment.batch_id)
+              .neq('id', equipmentId)
 
-        if (mailResult.success) {
-          emailSent = true
-          if (mailResult.messageId) {
-            const updatePayload: Record<string, any> = {
-              email_thread_id: mailResult.messageId,
+            if (siblings && siblings.length > 0) {
+              batchEquipments = [correctedEquipment, ...siblings]
             }
-            if (mailResult.subject) {
-              updatePayload.email_thread_subject = mailResult.subject
-            }
-            await (supabase.from('equipment_records') as any)
-              .update(updatePayload)
-              .eq('id', equipmentId)
           }
-        } else if (mailResult.skipped) {
-          mailWarning = 'Equipo actualizado, pero el correo no se envió porque RESEND_API_KEY no está configurada.'
-        } else if (mailResult.error) {
-          mailWarning = `Equipo actualizado, pero ocurrió un problema al reenviar el correo: ${mailResult.error}`
+
+          // Ordenar por FR para que la tabla tenga el mismo orden que el correo original
+          batchEquipments.sort((a, b) =>
+            (a.fr_number ?? '').localeCompare(b.fr_number ?? '', 'es', { numeric: true })
+          )
+
+          const mailResult = await mailer.sendRectificacionIngreso({
+            thread_id: existingThreadId,
+            thread_subject: existingThreadSubject,
+            client_name: clientName,
+            equipments: batchEquipments,
+            corrected_fr: correctedFR,
+          })
+
+          if (mailResult.success) {
+            emailSent = true
+            // NO actualizamos email_thread_id — el hilo existente se preserva intacto
+          } else if (mailResult.skipped) {
+            mailWarning = 'Equipo actualizado, pero el correo no se envió porque RESEND_API_KEY no está configurada.'
+          } else if (mailResult.error) {
+            mailWarning = `Equipo actualizado, pero ocurrió un problema al enviar la rectificación: ${mailResult.error}`
+          }
+        } else {
+          // ─── Sin hilo previo: correo nuevo (solo este equipo) ─────────────
+          const mailResult = await mailer.sendBatchEquipmentEntry({
+            client_name: clientName,
+            equipments: [correctedEquipment],
+          })
+
+          if (mailResult.success) {
+            emailSent = true
+            if (mailResult.messageId) {
+              const updatePayload: Record<string, any> = { email_thread_id: mailResult.messageId }
+              if (mailResult.subject) updatePayload.email_thread_subject = mailResult.subject
+              await (supabase.from('equipment_records') as any)
+                .update(updatePayload)
+                .eq('id', equipmentId)
+            }
+          } else if (mailResult.skipped) {
+            mailWarning = 'Equipo actualizado, pero el correo no se envió porque RESEND_API_KEY no está configurada.'
+          } else if (mailResult.error) {
+            mailWarning = `Equipo actualizado, pero ocurrió un problema al reenviar el correo: ${mailResult.error}`
+          }
         }
       } catch (mailErr: any) {
-        console.error('[PUT /api/equipment/[id]/update] Error resending entry email:', mailErr)
-        mailWarning = `Equipo actualizado, pero no se pudo reenviar el correo: ${mailErr?.message || 'Error desconocido'}`
+        console.error('[PUT /api/equipment/[id]/update] Error sending rectification email:', mailErr)
+        mailWarning = `Equipo actualizado, pero no se pudo enviar el correo: ${mailErr?.message || 'Error desconocido'}`
       }
     }
 

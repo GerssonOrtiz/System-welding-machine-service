@@ -79,6 +79,8 @@ export type Database = {
           pending_approval_at: string | null
           report_number: string | null
           report_url: string | null
+          service_report_url?: string | null
+          vrd_certificate_url?: string | null
           serial_number: string
           service_type: Database["public"]["Enums"]["service_type_enum"]
           start_diagnosis_at: string | null
@@ -107,6 +109,8 @@ export type Database = {
           pending_approval_at?: string | null
           report_number?: string | null
           report_url?: string | null
+          service_report_url?: string | null
+          vrd_certificate_url?: string | null
           serial_number: string
           service_type: Database["public"]["Enums"]["service_type_enum"]
           start_diagnosis_at?: string | null
@@ -135,6 +139,8 @@ export type Database = {
           pending_approval_at?: string | null
           report_number?: string | null
           report_url?: string | null
+          service_report_url?: string | null
+          vrd_certificate_url?: string | null
           serial_number?: string
           service_type?: Database["public"]["Enums"]["service_type_enum"]
           start_diagnosis_at?: string | null
@@ -446,6 +452,8 @@ export type Database = {
           phase_3_days: number | null
           report_number: string | null
           report_url: string | null
+          service_report_url?: string | null
+          vrd_certificate_url?: string | null
           serial_number: string | null
           service_type: Database["public"]["Enums"]["service_type_enum"] | null
           start_diagnosis_at: string | null

@@ -65,7 +65,10 @@ export interface ApprovedPartItem {
   descripcion:         string
   cantidad_solicitada: number
   cantidad_entregada:  number
-  precio:              string
+  precio?:             string  // Legacy / opcional
+  fecha_llegada?:      string  // Fecha estimada/programada de llegada del repuesto
+  tipo?:               'REPUESTO' | 'SERVICIO'
+  etapa?:              'DIAGNOSTICO' | 'SERVICIO' // Origen de la solicitud: en diagnóstico o en servicio/taller
 }
 
 /** Un ítem individual dentro de una entrega de Logística */
@@ -194,9 +197,17 @@ export const ROLE_RELEVANT_STATES: Record<string, string[]> = {
     'En espera de repuesto adicional',
   ],
   recepcion: [
+    // Recepción ve todos los estados para seguimiento completo del ciclo de vida
     'En espera de diagnóstico',
+    'En diagnóstico',
+    'Coordinación con el cliente',
+    'En espera de repuesto',
     'Pendiente de aprobación',
     'Aprobado',
+    'En mantenimiento',
+    'En espera de repuesto adicional',
+    'Control de calidad',
+    'Listo para entrega',
     'Entregado',
   ],
   almacen: [

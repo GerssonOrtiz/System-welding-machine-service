@@ -135,8 +135,14 @@ export interface InformeODPData extends ThreadBaseData {
 }
 
 export interface AprobacionVentasData extends ThreadBaseData {
-  /** Filas de la tabla: descripción, cantidad, precio unitario */
-  items: Array<{ descripcion: string; cantidad: string; precio: string }>
+  /** Filas de la tabla: descripción, cantidad, fecha_llegada / precio, tipo */
+  items: Array<{
+    descripcion: string
+    cantidad: string
+    precio?: string
+    fecha_llegada?: string
+    tipo?: 'REPUESTO' | 'SERVICIO'
+  }>
   observaciones: string
 }
 
@@ -161,6 +167,12 @@ export interface SolicitudRepuestosData extends ThreadBaseData {
 
 export interface CulminadoODPData extends ThreadBaseData {
   observaciones: string
+  service_report_url?: string | null
+  vrd_certificate_url?: string | null
+  service_report_buffer?: Buffer | null
+  service_report_filename?: string | null
+  vrd_buffer?: Buffer | null
+  vrd_filename?: string | null
 }
 
 export interface CoordinacionClienteData extends ThreadBaseData {
@@ -168,6 +180,18 @@ export interface CoordinacionClienteData extends ThreadBaseData {
   observaciones?: string
 }
 
+/** Datos para el correo de rectificaci&#243;n de ingreso (A+B: reply en hilo + tabla completa del lote) */
+export interface RectificacionIngresoData {
+  /** message-id del hilo original de ingreso */
+  thread_id: string
+  /** Asunto original exacto del hilo */
+  thread_subject?: string | null
+  client_name: string
+  /** Lista completa de equipos del lote con los datos ya corregidos */
+  equipments: EquipmentItemData[]
+  /** FR del equipo que disparó la corrección, para resaltarlo en la tabla */
+  corrected_fr: string
+}
 // ─────────────────────────────────────────
 // BUILDERS HTML
 // ─────────────────────────────────────────
@@ -281,41 +305,56 @@ function buildInformeODPHtml(data: InformeODPData): string {
 }
 
 function buildAprobacionVentasHtml(data: AprobacionVentasData): string {
-  const itemRows = data.items.map((item, i) => `
-    <tr style="${i % 2 === 0 ? 'background-color: #F8FAFC;' : ''}">
-      <td style="${tableCellStyle}">${item.descripcion}</td>
-      <td style="${tableCellStyle} text-align: center;">${item.cantidad}</td>
-      <td style="${tableCellStyle} text-align: right;">${item.precio}</td>
-    </tr>
-  `).join('')
+  const repuestos = data.items.filter((item) => (item.tipo || 'REPUESTO') === 'REPUESTO')
+  const servicios = data.items.filter((item) => item.tipo === 'SERVICIO')
 
-  return `
-    <div style="font-family: Calibri, sans-serif; color: #1f375f; line-height: 1.5;">
-      <p>Estimados,</p>
-      <p>Les informamos que el cliente ha <strong style="color: #10B981;">APROBADO</strong> el presupuesto para el equipo <strong>${data.fr_number}</strong> — ${data.client_name}.</p>
+  const renderTable = (items: typeof data.items, isRepuesto: boolean) => {
+    if (items.length === 0) {
+      return '<p style="font-size: 11px; color: #888; font-style: italic; margin: 4px 0 16px 0;">Ninguno registrado</p>'
+    }
+    const rows = items.map((item, i) => `
+      <tr style="${i % 2 === 0 ? 'background-color: #F8FAFC;' : ''}">
+        <td style="${tableCellStyle}">${item.descripcion}</td>
+        <td style="${tableCellStyle} text-align: center;">${item.cantidad}</td>
+        ${isRepuesto ? `<td style="${tableCellStyle} text-align: center; color: #0284c7; font-weight: bold;">${item.fecha_llegada ? item.fecha_llegada : 'Por confirmar'}</td>` : ''}
+      </tr>
+    `).join('')
 
-      <div style="border-left: 4px solid #10B981; background-color: #ECFDF5; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
-        <span style="font-size: 15px; font-weight: bold; color: #10B981;">✅ APROBACIÓN DE PRESUPUESTO</span>
-        <p style="margin: 6px 0 0 0; font-size: 11px; color: #555;">
-          ${data.brand} ${data.model} &nbsp;|&nbsp; Serie: <span style="font-family: monospace;">${data.serial_number ?? 'N/S'}</span>
-        </p>
-      </div>
-
-      <p style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #1f375f; margin-bottom: 6px;">Repuestos y servicios aprobados:</p>
+    return `
       <div style="overflow-x: auto; margin-bottom: 20px;">
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr>
               <th style="${tableHeaderStyle}">Descripción</th>
-              <th style="${tableHeaderStyle} text-align: center;">Cantidad</th>
-              <th style="${tableHeaderStyle} text-align: right;">Precio Unit.</th>
+              <th style="${tableHeaderStyle} text-align: center; width: 80px;">Cantidad</th>
+              ${isRepuesto ? `<th style="${tableHeaderStyle} text-align: center; width: 140px;">F. Llegada Repuesto</th>` : ''}
             </tr>
           </thead>
           <tbody>
-            ${itemRows}
+            ${rows}
           </tbody>
         </table>
       </div>
+    `
+  }
+
+  return `
+    <div style="font-family: Calibri, sans-serif; color: #1f375f; line-height: 1.5;">
+      <p>Estimados,</p>
+      <p>Les informamos que el cliente ha <strong style="color: #10B981;">APROBADO</strong> el servicio para el equipo <strong>${data.fr_number}</strong> — ${data.client_name}.</p>
+
+      <div style="border-left: 4px solid #10B981; background-color: #ECFDF5; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+        <span style="font-size: 15px; font-weight: bold; color: #10B981;">✅ SERVICIO APROBADO</span>
+        <p style="margin: 6px 0 0 0; font-size: 11px; color: #555;">
+          ${data.brand} ${data.model} &nbsp;|&nbsp; Serie: <span style="font-family: monospace;">${data.serial_number ?? 'N/S'}</span>
+        </p>
+      </div>
+
+      <p style="font-size: 12px; font-weight: bold; text-transform: uppercase; color: #0284c7; margin-bottom: 4px;">📦 Repuestos Aprobados:</p>
+      ${renderTable(repuestos, true)}
+
+      <p style="font-size: 12px; font-weight: bold; text-transform: uppercase; color: #7c3aed; margin-bottom: 4px;">🛠️ Servicios Aprobados:</p>
+      ${renderTable(servicios, false)}
 
       ${data.observaciones ? `
       <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
@@ -508,6 +547,13 @@ function buildCulminadoODPHtml(data: CulminadoODPData): string {
         </tbody>
       </table>
 
+      ${(data.service_report_url || data.vrd_certificate_url) ? `
+      <div style="background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 4px; padding: 12px 14px; margin-bottom: 20px;">
+        <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1E40AF;">Documentación técnica final adjunta/enlazada:</p>
+        ${data.service_report_url ? `<p style="margin: 0 0 4px 0; font-size: 11px;"><a href="${data.service_report_url}" target="_blank" style="color: #2563EB; font-weight: bold; text-decoration: underline;">📄 Ver Informe de Servicio Final</a></p>` : ''}
+        ${data.vrd_certificate_url ? `<p style="margin: 0; font-size: 11px;"><a href="${data.vrd_certificate_url}" target="_blank" style="color: #7C3AED; font-weight: bold; text-decoration: underline;">🛡️ Ver Certificado de VRD</a></p>` : ''}
+      </div>` : ''}
+
       ${data.observaciones ? `
       <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
         <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones:</p>
@@ -563,6 +609,70 @@ function buildCoordinacionClienteHtml(data: CoordinacionClienteData): string {
         <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
       </div>` : ''}
 
+      ${buildSignature()}
+    </div>
+  `
+}
+
+function buildRectificacionIngresoHtml(data: RectificacionIngresoData): string {
+  const rows = data.equipments.map(eq => {
+    const dateStr = eq.date_in
+      ? new Date(eq.date_in).toLocaleDateString('es-PE')
+      : new Date().toLocaleDateString('es-PE')
+    const isCorrected = eq.fr_number === data.corrected_fr
+    const rowBg = isCorrected ? 'background-color: #FFF7ED;' : ''
+    const frCell = isCorrected
+      ? `<td style="${tableCellStyle} font-weight: bold; color: #D97706; ${rowBg}">${eq.fr_number} ✏️</td>`
+      : `<td style="${tableCellStyle} font-weight: bold; ${rowBg}">${eq.fr_number}</td>`
+    return `
+      <tr style="${rowBg}">
+        ${frCell}
+        <td style="${tableCellStyle} ${rowBg}">${data.client_name}</td>
+        <td style="${tableCellStyle} ${rowBg}">${dateStr}</td>
+        <td style="${tableCellStyle} ${rowBg}">${eq.brand}</td>
+        <td style="${tableCellStyle} ${rowBg}">${eq.model}</td>
+        <td style="${tableCellStyle} font-family: monospace; ${rowBg}">${eq.serial_number}</td>
+        <td style="${tableCellStyle} ${rowBg}">${eq.service_type}</td>
+        <td style="${tableCellStyle} ${rowBg}">${eq.client_report || '-'}</td>
+        <td style="${tableCellStyle} text-align: center; ${rowBg}">${eq.is_priority ? '⭐ Sí' : 'No'}</td>
+        <td style="${tableCellStyle} ${rowBg}">${eq.accessories || '-'}</td>
+      </tr>
+    `
+  }).join('')
+
+  return `
+    <div style="font-family: Calibri, sans-serif; color: #1f375f; line-height: 1.5;">
+      <p>Estimados,</p>
+      <p>Se informa la <strong>RECTIFICACIÓN DE DATOS</strong> de uno de los equipos del siguiente lote. A continuación se muestra la tabla completa del lote con los datos actualizados.</p>
+
+      <div style="border-left: 4px solid #F59E0B; background-color: #FFFBEB; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+        <span style="font-size: 15px; font-weight: bold; color: #D97706;">✏️ CORRECCIÓN DE DATOS — FICHA ${data.corrected_fr}</span>
+        <p style="margin: 6px 0 0 0; font-size: 11px; color: #555;">
+          La fila resaltada en naranja corresponde al equipo corregido. Los demás equipos del lote se muestran como referencia.
+        </p>
+      </div>
+
+      <div style="overflow-x: auto; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+          <thead>
+            <tr>
+              <th style="${tableHeaderStyle}">FR</th>
+              <th style="${tableHeaderStyle}">CLIENTE</th>
+              <th style="${tableHeaderStyle}">F. INGRESO</th>
+              <th style="${tableHeaderStyle}">MARCA</th>
+              <th style="${tableHeaderStyle}">MODELO</th>
+              <th style="${tableHeaderStyle}">SERIE</th>
+              <th style="${tableHeaderStyle}">T. SERVICIO</th>
+              <th style="${tableHeaderStyle}">FALLA REPORTADA</th>
+              <th style="${tableHeaderStyle}">PRIORIDAD</th>
+              <th style="${tableHeaderStyle}">ACCESORIOS</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
       ${buildSignature()}
     </div>
   `
@@ -952,12 +1062,21 @@ export const mailer = {
         ? `RE: ${data.thread_subject.replace(/^RE:\s*/i, '')}`
         : `RE: 📥 Ingreso de Equipo — ${data.fr_number} — ${data.client_name}`
 
+      const attachments: Array<{ filename: string; content: Buffer }> = []
+      if (data.service_report_buffer && data.service_report_filename) {
+        attachments.push({ filename: data.service_report_filename, content: data.service_report_buffer })
+      }
+      if (data.vrd_buffer && data.vrd_filename) {
+        attachments.push({ filename: data.vrd_filename, content: data.vrd_buffer })
+      }
+
       const res = await resend.emails.send({
         from: FROM_ADDRESS,
         to: ENTRY_TO,
         subject,
         html: buildCulminadoODPHtml(data),
         headers: threadHeaders(data.thread_id),
+        ...(attachments.length > 0 ? { attachments } : {}),
       })
       if ((res as any)?.error) {
         console.error('[Mailer] sendCulminadoODP Resend error:', (res as any).error)
@@ -1005,6 +1124,39 @@ export const mailer = {
   /**
    * Envía una notificación interna por cambio de estado forzado (o manual).
    */
+  /**
+   * Rectificación de datos de ingreso: reply en el hilo original con la tabla completa
+   * del lote (A+B). El equipo corregido se resalta en naranja.
+   * NO genera un nuevo email_thread_id — responde en el hilo existente.
+   */
+  async sendRectificacionIngreso(data: RectificacionIngresoData): Promise<MailerResult> {
+    if (!resend) {
+      console.warn('[Mailer] sendRectificacionIngreso — RESEND_API_KEY no configurada, correo omitido.')
+      return { success: false, skipped: true, error: 'RESEND_API_KEY no configurada' }
+    }
+    try {
+      const subject = data.thread_subject
+        ? `RE: ${data.thread_subject.replace(/^RE:\s*/i, '')}`
+        : `RE: 📥 Ingreso de Equipo — ${data.corrected_fr} — ${data.client_name}`
+
+      const res = await resend.emails.send({
+        from: FROM_ADDRESS,
+        to: ENTRY_TO,
+        subject,
+        html: buildRectificacionIngresoHtml(data),
+        headers: threadHeaders(data.thread_id),
+      })
+      if ((res as any)?.error) {
+        console.error('[Mailer] sendRectificacionIngreso Resend error:', (res as any).error)
+        return { success: false, error: (res as any).error?.message || 'Error de envío de rectificación de ingreso' }
+      }
+      return { success: true, messageId: (res as any)?.data?.id }
+    } catch (error: any) {
+      console.error('[Mailer] sendRectificacionIngreso error:', error)
+      return { success: false, error: error?.message || 'Error al enviar correo de rectificación' }
+    }
+  },
+
   async sendStatusChange(
     data: StatusChangeData,
     isOverride: boolean = false

@@ -103,10 +103,10 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `/api/equipment/export` | GET | Exportar a Excel (.xlsx) |
 | `/api/equipment/import` | POST | Importar desde Excel |
 | `/api/equipment/create` | POST | Creación de equipo (individual o lote/batch). Genera un único correo consolidado, asigna `batch_id`, `email_thread_id` y `email_thread_subject` |
-| `/api/equipment/[id]/update-status` | POST | Cambio de estado. Detecta estado destino y dispara correo-reply específico en el hilo existente (`In-Reply-To` / `References` normalizados). Acepta JSON o FormData (informe ODP con PDF y `report_url`). Soporta evento "En espera de repuesto" con solicitud estructurada de piezas. Usa `supabase.auth.getUser()` |
+| `/api/equipment/[id]/update-status` | POST | Cambio de estado. Detecta estado destino y dispara correo-reply específico en el hilo existente (`In-Reply-To` / `References` normalizados). Acepta JSON o FormData (informe diagnóstico ODP con PDF, culminación con informe de servicio y certificado VRD). Soporta eventos "En espera de repuesto" y "Aprobado" (bifurcado en repuestos y servicios). Usa `supabase.auth.getUser()` |
 | `/api/equipment/[id]/deliver-parts` | POST | **Logística / Almacén**: Entrega total/parcial de repuestos aprobados o ítems adicionales. Actualiza `approved_parts`, `parts_deliveries`, recalcula `parts_status` ('SIN_REPUESTOS' \| 'PARCIAL' \| 'COMPLETO') e inserta en `status_history`. Despacha correo `sendEntregaLogistica` en el hilo |
 | `/api/equipment/[id]/return-parts` | POST | **Operaciones / Taller**: Devolución total o parcial de repuestos entregados hacia Almacén. Valida que `cantidad_devuelta ≤ cantidad_entregada`, descuenta en `approved_parts`, registra el movimiento en `parts_deliveries` con `tipo: 'DEVOLUCION'`, recalcula `parts_status`, inserta en `status_history` y despacha correo `sendReboteRepuestos` en el hilo. Roles: `operaciones`, `admin`, `superadmin` |
-| `/api/equipment/[id]/update` | PUT | Edición de equipo. Permitida para `superadmin`, `admin` y para `recepcion` únicamente si el equipo está en estado inicial "En espera de diagnóstico" |
+| `/api/equipment/[id]/update` | PUT | Edición de equipo. Permitida para `superadmin`, `admin` y para `recepcion` (estado inicial "En espera de diagnóstico"). Soporta reenvío de correo de rectificación agrupado en hilo sin romper `email_thread_id` (enfoque A+B con lote completo) |
 | `/api/equipment/[id]/force-status` | POST | Override de estado (solo superadmin). Notificación por correo opcional |
 | `/api/workflow/states` | GET/POST | CRUD de estados del workflow |
 | `/api/workflow/transitions` | GET/POST | CRUD de transiciones del workflow |
@@ -130,7 +130,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `layout/Navbar.tsx` | Barra superior con usuario activo y logout |
 | `layout/DashboardShell.tsx` | Envoltorio client-side del layout dashboard (menú móvil, Navbar y Sidebar) desacoplado del server layout |
 | `equipment/EquipmentForm.tsx` | Formulario de creación/edición de equipos (individual o en lote) |
-| `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Layout con secciones colapsables: Tiempos Operativos, Demora por Fases, Historial de Estados y Control de Repuestos. Cabecera con badge dual (servicio y repuestos). Botón de edición habilitado para superadmin/admin y recepción (estado inicial). Botones dedicados: "Registrar Entrega de Repuestos" (almacen/admin/superadmin) y "Devolver Repuesto" (operaciones/admin/superadmin, solo cuando hay piezas entregadas). Historial de Movimientos distingue visualmente entregas vs devoluciones |
+| `equipment/EquipmentDetail.tsx` | Ficha completa del equipo. Layout con secciones colapsables: Tiempos Operativos, Demora por Fases, Historial de Estados y Control de Repuestos (bifurcado en 2 tablas: Diagnóstico vs Servicio). Cabecera con badge dual (servicio y repuestos). Botón de edición habilitado para superadmin/admin y recepción (estado inicial con protección de campos). Botones dedicados: "Registrar Entrega de Repuestos" y "Devolver Repuesto". Historial de Movimientos distingue entregas vs devoluciones |
 | `equipment/EquipmentTable.tsx` | Tabla paginada con indicadores VIP, badge de repuestos (`parts_status`), filtros y botón directo de etiqueta QR |
 | `equipment/QRPrintModal.tsx` | Modal con generación de código QR (qrcode.react) e impresión optimizada de etiqueta física |
 | `equipment/StatusChangeModal.tsx` | Modal principal de cambio de estado de servicio taller. Renderiza sub-modales de correo según estado destino |
@@ -139,10 +139,10 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `equipment/BrandSelector.tsx` | Búsqueda predictiva de marcas del catálogo. Auto-registra marcas nuevas |
 | `equipment/ModelSelector.tsx` | Selector de modelos filtrado por marca seleccionada |
 | `equipment/modals/ModalInformeODP.tsx` | Sub-modal: diagnóstico técnico + upload PDF (estado "Pendiente de aprobación") |
-| `equipment/modals/ModalAprobacionVentas.tsx` | Sub-modal: tabla dinámica repuestos/servicios aprobados + observaciones (estado "Aprobado", inicializa `approved_parts` y `parts_status = 'SIN_REPUESTOS'`) |
+| `equipment/modals/ModalAprobacionVentas.tsx` | Sub-modal: aprobación bifurcada en dos secciones independientes (Repuestos con Fecha de Llegada estimada y Servicios con botones de sugerencias rápidas habituales) + observaciones (estado "Aprobado", inicializa `approved_parts` y `parts_status = 'SIN_REPUESTOS'`) |
 | `equipment/modals/ModalEntregaLogistica.tsx` | Sub-modal de solicitud/entrega de repuestos con items requeridos y notas |
 | `equipment/modals/ModalEntregaRepuestos.tsx` | Modal dedicado de Almacén/Logística para registro directo de entregas (totales o parciales) de repuestos aprobados e ítems adicionales |
-| `equipment/modals/ModalCulminadoODP.tsx` | Sub-modal: texto predefinido + observaciones finales (estado "Listo para entrega") |
+| `equipment/modals/ModalCulminadoODP.tsx` | Sub-modal: texto predefinido + subida opcional de archivos PDF y/o enlaces URL para Informe de Servicio y Certificado de VRD + observaciones finales (estado "Listo para entrega") |
 | `pizarra/PizarraBoard.tsx` | Tablero kanban realtime con columnas de taller (`Aprobado`, `En mantenimiento`). Usa `useRealtimePizarra` |
 | `pizarra/PizarraCard.tsx` | Tarjeta de equipo con estrellas VIP ⭐, efecto glow pulsante y chip independiente de estado de repuestos (`📦 Parcial`, `📦 Listo`, etc.) |
 | `admin/BrandModelManager.tsx` | CRUD de marcas y modelos del catálogo |
@@ -211,7 +211,9 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `parts_deliveries` | `JSONB` | 019 | Historial inmutable de entregas realizadas por Logística con fechas, notas y responsable |
 | `email_thread_id` | `TEXT` | 013 | Message-ID devuelto por Resend al enviar el correo de ingreso. Se usa formateado como `<id@domain>` en `In-Reply-To` y `References` en todos los replies del hilo |
 | `email_cc` | `TEXT[]` | 013 | Columna en BD (legacy / sin uso actual: CC fue removido del frontend y backend para simplificar el flujo) |
-| `report_url` | `TEXT` | 015 | Enlace directo al PDF del informe técnico (Google Drive u otro). Se muestra en la página pública por QR `/doc/[serial]` |
+| `report_url` | `TEXT` | 015 | Enlace directo al PDF del informe técnico de diagnóstico (Google Drive u otro). Se muestra en la página pública por QR `/doc/[serial]` |
+| `service_report_url` | `TEXT` | 021 | Enlace directo al PDF del informe final de servicio culminado |
+| `vrd_certificate_url` | `TEXT` | 021 | Enlace directo al PDF del certificado de VRD emitido tras el servicio |
 | `batch_id` | `UUID` | 018 | Identificador del lote para agrupar múltiples equipos ingresados juntos en la misma orden |
 | `email_thread_subject` | `TEXT` | 018 | Asunto original exacto del hilo generado al ingresar el o los equipos. Se usa para prefijar `RE:` idéntico en todos los replies |
 
@@ -346,10 +348,10 @@ vivian.mamani@cabelab.com → Fijo adicional
 |---|---|---|---|
 | **Ingreso** (al crear equipo) | Recepción / Ventas | Tabla horizontal con datos del equipo | Datos del equipo |
 | **Pendiente de aprobación** | ODP | Informe técnico con PDF adjunto | Texto de diagnóstico + archivo PDF |
-| **Aprobado** | Ventas | Tabla de repuestos/servicios aprobados | Filas: descripción / cantidad / precio + observaciones |
+| **Aprobado** | Ventas | Tabla clasificada de repuestos (con fecha de llegada) y servicios aprobados | Filas independientes para repuestos y servicios + fecha estimada + observaciones |
 | **En espera de repuesto** | Logística / Taller | Solicitud o entrega de repuestos | Filas: descripción / cantidad / detalle + observaciones |
 | **Coordinación con el cliente** | Operaciones / Admin | Reply en hilo con cuerpo personalizado | Checkbox "Enviar correo" + campo de texto para cuerpo del correo |
-| **Listo para entrega** | ODP | Texto predefinido de culminado | Observaciones adicionales (opcional) |
+| **Listo para entrega** | ODP | Texto predefinido de culminado + documentos técnicos (Informe de servicio y Certificado VRD) | Subida PDF opcional, links opcionales + observaciones |
 | Otros estados | — | **Sin correo** | — |
 | **Override superadmin** | Superadmin | Correo con banner amarillo de advertencia | Solo si activa el checkbox "notificar por correo" |
 
@@ -418,7 +420,7 @@ const ENTRY_TO = [ ... ]
 
 ## 12. ESTADO ACTUAL Y PENDIENTES
 
-> Última sesión: 04/10/2026
+> Última sesión: 28/10/2026
 
 ### ✅ Implementado y funcional
  
@@ -429,6 +431,20 @@ const ENTRY_TO = [ ... ]
 +  - Cliente Supabase de servidor adaptado con `getAll()` / `setAll()`.
 +  - Layout `app/(dashboard)/layout.tsx` transformado en Server Component que alimenta `<UserProvider>` y `<DashboardShell>`, erradicando bloqueos infinitos de `"Autenticando sesión..."` al recargar el navegador.
 +  - Ruta raíz `/` (`app/page.tsx`) dinámica con redirección inteligente según sesión activa y rol.
+- **Protección y Restricciones de Edición para Recepción (v2.5)**:
+  - Al editar un equipo en estado inicial "En espera de diagnóstico", el rol `recepcion` no tiene acceso ni visual a los campos de N° Informe, Enlace PDF ni a la sección colapsable de Tiempos Operativos, impidiendo su edición tanto en la UI (`EquipmentDetail.tsx`) como a nivel de backend (`PUT /api/equipment/[id]/update`).
+- **Aprobación de Servicio y Repuestos con Fecha Estimada (v2.5)**:
+  - Sub-modal `ModalAprobacionVentas.tsx` dividido en dos secciones claras e independientes:
+    1. **Repuestos Aprobados:** Se reemplazó la columna de precio unitario por selector de **Fecha de Llegada** estimada del repuesto.
+    2. **Servicios Aprobados:** Sección dedicada con chips de inserción inmediata para servicios habituales (*Pintado de tapa*, *Servicio de mantenimiento*, *Informe de servicio*, *Certificado de VRD*, *Reparación de tarjeta*, *Reparación general*) y campo para servicios personalizados.
+  - Generación de correo en hilo con dos tablas separadas por tipo (`lib/mail/mailer.ts`).
+  - Tabla de "Control de Repuestos" en `EquipmentDetail.tsx` actualizada para indicar el tipo (*Repuesto* / *Servicio*) y la fecha programada de llegada.
+- **Documentación Técnica Final en Culminación de Servicio (v2.5)**:
+  - Sub-modal `ModalCulminadoODP.tsx` enriquecido con opciones para subir el **Informe de Servicio** (archivo PDF y/o enlace web/Drive) y el **Certificado de VRD** (archivo PDF y/o enlace web/Drive), ambos de carácter opcional.
+  - Soporte de subida y despacho vía `FormData` en `StatusChangeModal.tsx` y `app/api/equipment/[id]/update-status/route.ts`.
+  - Persistencia de `service_report_url` y `vrd_certificate_url` en `equipment_records` (Migración 021).
+  - Correo de servicio culminado adjunta los PDFs seleccionados y renderiza accesos directos estilizados para consultar los enlaces.
+  - Ficha técnica (`EquipmentDetail.tsx`) presenta botones de acceso directo a los informes finales y certificados cuando existan.
 +- **Desacoplamiento de Estado de Servicio y Repuestos (ESPECIFICACION_REFACTORIZACION_REPUESTOS_SERVICIO.md — 100% Implementado y Funcional)**:
 +  - **Migración 019**: columnas `parts_status` (`SIN_REPUESTOS`, `PARCIAL`, `COMPLETO`), `approved_parts` (JSONB) y `parts_deliveries` (JSONB).
 +  - Vista `equipment_with_status` actualizada con las nuevas columnas.
@@ -471,6 +487,18 @@ const ENTRY_TO = [ ... ]
   - Normalización RFC 2822: delimitación de `In-Reply-To` y `References` con `<...>` y formato `@dominio` para asegurar el agrupamiento de hilos en clientes SMTP.
   - Flujo simplificado: eliminación de CC en frontend y backend, envíos centralizados a `ENTRY_TO`.
   - Manejo de resiliencia: si el correo falla o la API Key no está configurada, **no se revierte el cambio de estado**, notificando una advertencia informativa (`toast.warning`) que permite al usuario reintentar sin inconsistencias.
+- **Separación de Repuestos Solicitados en Diagnóstico vs. Servicio (v2.5 — Opción A)**:
+  - Estructura `ApprovedPartItem` extendida con discriminador de fase: `etapa?: 'DIAGNOSTICO' | 'SERVICIO'`.
+  - Backend (`/api/equipment/[id]/update-status`): asigna automáticamente `etapa: 'DIAGNOSTICO'` al solicitar repuestos desde diagnóstico ("En espera de repuesto") y `etapa: 'SERVICIO'` al aprobar repuestos y servicios ("Aprobado"), preservando acumulativamente los pedidos previos.
+  - Interfaz (`EquipmentDetail.tsx`): la sección colapsable de "Control de Repuestos" presenta dos tablas independientes y visualmente estilizadas:
+    1. **Repuestos Solicitados en Diagnóstico** (`🔍`).
+    2. **Repuestos y Servicios Aprobados en Servicio** (`⚙️`) con fecha de llegada, cantidades entregadas y saldos pendientes.
+- **Rectificación de Datos de Equipos y Reenvío de Correo Unificado (v2.5 — Solución A+B)**:
+  - Corrección de datos de equipos pertenecientes a lotes con reenvío de correo en hilo RFC 2822 (`In-Reply-To` / `References`) sin generar un thread aislado ni sobreescribir `email_thread_id`.
+  - Generación de tabla HTML consolidada con todos los equipos hermanos del lote (`batch_id`), resaltando la ficha modificada en naranja (`#FFF7ED`) y con distintivo (`✏️`).
+  - Nueva función en el mailer: `mailer.sendRectificacionIngreso(data)` y soporte nativo en `PUT /api/equipment/[id]/update`.
+- **Ampliación de Visibilidad de Equipos para Rol Recepción**:
+  - `ROLE_RELEVANT_STATES.recepcion` ampliado a los 11 estados del ciclo de vida del taller, permitiendo a recepción consultar equipos en todo el flujo sin perder la restricción de edición segura.
 - **Sistema de Ingreso Múltiple por Lote y Hilo Compartido — v2.5**:
   - Soporte en frontend (`EquipmentForm.tsx`) para registrar 1 o múltiples equipos de un mismo cliente en una sola operación sin saturación visual.
   - Bloque común de cliente y tipo de servicio general con tarjetas modulares dinámicas, botón de agregar otro equipo, duplicación de datos y detalles colapsables.
@@ -535,6 +563,7 @@ const ENTRY_TO = [ ... ]
 | 018 | `018_batch_equipment_and_thread_subject.sql` | Columnas `batch_id UUID` y `email_thread_subject TEXT` para soporte de ingreso múltiple y asunto de hilo exacto en replies |
 | 019 | `019_service_and_parts_status_separation.sql` | Desacoplamiento de Servicio de Taller vs Repuestos: columnas `parts_status`, `approved_parts`, `parts_deliveries`, recrea vista `equipment_with_status` y transiciones directas |
 | 020 | `020_non_business_days.sql` | Tabla `non_business_days` con RLS para gestión de feriados y días no hábiles considerados en la calculadora predictiva |
+| 021 | `021_service_report_and_vrd_certificate.sql` | Columnas `service_report_url` y `vrd_certificate_url` en `equipment_records` y actualización de vista `equipment_with_status` para documentación técnica de culminación |
 
 ---
 

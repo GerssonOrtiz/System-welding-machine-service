@@ -37,11 +37,15 @@ export async function POST(
     let rawBody: Record<string, any> = {}
     let pdfBuffer: Buffer | null = null
     let pdfFilename = 'informe.pdf'
+    let serviceReportBuffer: Buffer | null = null
+    let serviceReportFilename = 'informe_servicio.pdf'
+    let vrdBuffer: Buffer | null = null
+    let vrdFilename = 'certificado_vrd.pdf'
 
     if (isFormData) {
       const formData = await request.formData()
       formData.forEach((value, key) => {
-        if (key !== 'pdf') rawBody[key] = value
+        if (key !== 'pdf' && key !== 'service_report_file' && key !== 'vrd_file') rawBody[key] = value
       })
       // Parsear campos JSON que vienen como string en FormData
       if (typeof rawBody.new_status_id === 'string') rawBody.new_status_id = parseInt(rawBody.new_status_id, 10)
@@ -56,6 +60,16 @@ export async function POST(
       if (pdfFile) {
         pdfBuffer = Buffer.from(await pdfFile.arrayBuffer())
         pdfFilename = pdfFile.name
+      }
+      const sReportFile = formData.get('service_report_file') as File | null
+      if (sReportFile) {
+        serviceReportBuffer = Buffer.from(await sReportFile.arrayBuffer())
+        serviceReportFilename = sReportFile.name
+      }
+      const vrdFile = formData.get('vrd_file') as File | null
+      if (vrdFile) {
+        vrdBuffer = Buffer.from(await vrdFile.arrayBuffer())
+        vrdFilename = vrdFile.name
       }
     } else {
       rawBody = await request.json()
@@ -72,7 +86,7 @@ export async function POST(
     // 5. Obtener datos del equipo (incluyendo thread_id y thread_subject para los correos)
     const { data: equipment, error: eqError } = await supabase
       .from('equipment_records')
-      .select('current_status_id, fr_number, client_name, brand, model, serial_number, email_thread_id, email_thread_subject')
+      .select('current_status_id, fr_number, client_name, brand, model, serial_number, email_thread_id, email_thread_subject, approved_parts')
       .eq('id', equipmentId)
       .single()
 
@@ -191,35 +205,58 @@ export async function POST(
     if (rawBody.report_url !== undefined) {
       updateData.report_url = rawBody.report_url?.trim() || null
     }
+    if (rawBody.service_report_url !== undefined) {
+      updateData.service_report_url = rawBody.service_report_url?.trim() || null
+    }
+    if (rawBody.vrd_certificate_url !== undefined) {
+      updateData.vrd_certificate_url = rawBody.vrd_certificate_url?.trim() || null
+    }
 
-    // Al pasar a "Aprobado": inicializar approved_parts con los ítems del presupuesto
-    // y fijar parts_status = 'SIN_REPUESTOS' para el seguimiento logístico independiente.
+    // Al pasar a "Aprobado": agregar o inicializar approved_parts con los ítems del presupuesto (etapa SERVICIO)
+    // conservando los repuestos previos de diagnóstico si existían.
     if (targetNameLower === ESTADO_APROBACION_VENTAS) {
       const parsed = aprobacionVentasSchema.parse(rawBody)
-      const initializedParts: ApprovedPartItem[] = parsed.items.map((item, idx) => ({
+      const existingParts: ApprovedPartItem[] = Array.isArray(eq.approved_parts) ? eq.approved_parts : []
+      const serviceParts: ApprovedPartItem[] = parsed.items.map((item) => ({
         id:                  crypto.randomUUID(),
         descripcion:         item.descripcion,
         cantidad_solicitada: parseInt(item.cantidad, 10) || 1,
         cantidad_entregada:  0,
-        precio:              item.precio,
+        precio:              item.precio || '',
+        fecha_llegada:       item.fecha_llegada || '',
+        tipo:                item.tipo || 'REPUESTO',
+        etapa:               'SERVICIO',
       }))
-      updateData.approved_parts = initializedParts
+      // Mantenemos los que ya eran de DIAGNOSTICO y anexamos los de SERVICIO
+      const diagParts = existingParts.filter(p => p.etapa === 'DIAGNOSTICO')
+      updateData.approved_parts = [...diagParts, ...serviceParts]
       updateData.parts_status   = 'SIN_REPUESTOS'
     }
 
     // Al pasar a "En espera de repuesto" (desde diagnóstico): inicializar approved_parts
-    // con los ítems solicitados para que Logística pueda hacer entregas en paralelo
-    // sin alterar el flujo principal. Sin precio (se desconoce aún).
+    // con los ítems solicitados (etapa DIAGNOSTICO) para que Logística pueda hacer entregas en paralelo
+    // sin alterar el flujo principal.
     if (targetNameLower === ESTADO_ESPERA_REPUESTO) {
       const parsed = solicitudRepuestosSchema.parse(rawBody)
-      const initializedParts: ApprovedPartItem[] = parsed.items.map((item) => ({
+      const existingParts: ApprovedPartItem[] = Array.isArray(eq.approved_parts) ? eq.approved_parts : []
+      const isFromService = previousStateName?.trim().toLowerCase() === 'en mantenimiento' || previousStateName?.trim().toLowerCase() === 'aprobado'
+      const etapaAsignada = isFromService ? 'SERVICIO' : 'DIAGNOSTICO'
+      
+      const newParts: ApprovedPartItem[] = parsed.items.map((item) => ({
         id:                  crypto.randomUUID(),
         descripcion:         item.descripcion,
         cantidad_solicitada: parseInt(item.cantidad, 10) || 1,
         cantidad_entregada:  0,
         precio:              '',
+        etapa:               etapaAsignada,
       }))
-      updateData.approved_parts = initializedParts
+      
+      // Si ya habían partes, preservamos las de otra etapa y unimos
+      if (existingParts.length > 0) {
+        updateData.approved_parts = [...existingParts, ...newParts]
+      } else {
+        updateData.approved_parts = newParts
+      }
       updateData.parts_status   = 'SIN_REPUESTOS'
     }
     // 12. Actualizar BD
@@ -292,7 +329,13 @@ export async function POST(
             const parsed = culminadoODPSchema.parse(rawBody)
             mailResult = await mailer.sendCulminadoODP({
               ...threadBase,
-              observaciones: parsed.observaciones,
+              observaciones:           parsed.observaciones,
+              service_report_url:      parsed.service_report_url || rawBody.service_report_url || null,
+              vrd_certificate_url:     parsed.vrd_certificate_url || rawBody.vrd_certificate_url || null,
+              service_report_buffer:   serviceReportBuffer,
+              service_report_filename: serviceReportFilename,
+              vrd_buffer:              vrdBuffer,
+              vrd_filename:            vrdFilename,
             })
           } else if (shouldSendCoordinationEmail) {
             const parsed = coordinacionClienteSchema.parse(rawBody)

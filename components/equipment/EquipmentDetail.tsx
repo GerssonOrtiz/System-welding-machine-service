@@ -163,6 +163,7 @@ export default function EquipmentDetail({
   }
 
   const isSuperadmin = role === 'superadmin'
+  const isRecepcion = role === 'recepcion'
   const isInitialState = equipment?.status_name === 'En espera de diagnóstico' || equipment?.is_initial === true
   const canEdit = isSuperadmin || role === 'admin' || (role === 'recepcion' && isInitialState)
 
@@ -504,12 +505,14 @@ export default function EquipmentDetail({
 
                         {/* N° Informe y enlace PDF */}
                         {isEditing ? (
-                          <>
-                            <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">N° Informe:</span>
-                            <input type="text" value={editReportNumber} onChange={(e) => setEditReportNumber(e.target.value)} placeholder="Ej: INF-001" className={`${inputCls} font-mono`} />
-                            <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Enlace PDF:</span>
-                            <input type="url" value={editReportUrl} onChange={(e) => setEditReportUrl(e.target.value)} placeholder="https://drive.google.com/..." className={`${inputCls} font-mono`} />
-                          </>
+                          !isRecepcion && (
+                            <>
+                              <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">N° Informe:</span>
+                              <input type="text" value={editReportNumber} onChange={(e) => setEditReportNumber(e.target.value)} placeholder="Ej: INF-001" className={`${inputCls} font-mono`} />
+                              <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Enlace PDF:</span>
+                              <input type="url" value={editReportUrl} onChange={(e) => setEditReportUrl(e.target.value)} placeholder="https://drive.google.com/..." className={`${inputCls} font-mono`} />
+                            </>
+                          )
                         ) : (
                           <>
                             {equipment.report_number && !equipment.report_number.startsWith('INT-') && (
@@ -520,14 +523,40 @@ export default function EquipmentDetail({
                             )}
                             {(equipment as any).report_url && (
                               <>
-                                <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Informe PDF:</span>
+                                <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Informe Diagnóstico:</span>
                                 <a
                                   href={(equipment as any).report_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-neon-blue/10 border border-neon-blue/30 text-neon-blue hover:bg-neon-blue/20 font-bold text-[11px] transition-colors"
                                 >
-                                  <FileText size={11} /> Ver Informe <ExternalLink size={10} />
+                                  <FileText size={11} /> Ver Diagnóstico <ExternalLink size={10} />
+                                </a>
+                              </>
+                            )}
+                            {(equipment as any).service_report_url && (
+                              <>
+                                <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Informe Servicio:</span>
+                                <a
+                                  href={(equipment as any).service_report_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 font-bold text-[11px] transition-colors"
+                                >
+                                  <FileText size={11} /> Ver Informe Servicio <ExternalLink size={10} />
+                                </a>
+                              </>
+                            )}
+                            {(equipment as any).vrd_certificate_url && (
+                              <>
+                                <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Certificado VRD:</span>
+                                <a
+                                  href={(equipment as any).vrd_certificate_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500/20 font-bold text-[11px] transition-colors"
+                                >
+                                  <FileText size={11} /> Ver Certificado VRD <ExternalLink size={10} />
                                 </a>
                               </>
                             )}
@@ -607,7 +636,7 @@ export default function EquipmentDetail({
                           />
                           <label htmlFor="edit-resend-email" className="text-xs cursor-pointer select-none">
                             <span className="font-bold text-text-primary flex items-center gap-1.5">
-                              <Mail size={13} className="text-neon-blue" /> Reenviar correo de notificación de ingreso
+                              <Mail size={13} className="text-neon-blue" /> Enviar correo de rectificación de datos
                             </span>
                             <span className="block text-[11px] text-text-secondary mt-0.5">
                               Envía nuevamente el correo oficial de ingreso a los destinatarios configurados con los datos actualizados del equipo.
@@ -619,6 +648,7 @@ export default function EquipmentDetail({
                   )}
 
                   {/* ── Tiempos Operativos — colapsable, cerrado por defecto ── */}
+                  {(!isEditing || !isRecepcion) && (
                   <CollapsibleSection title="Tiempos Operativos" icon={<Clock size={12} />} defaultOpen={isEditing}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       {/* Diagnóstico */}
@@ -683,6 +713,7 @@ export default function EquipmentDetail({
                       </div>
                     </div>
                   </CollapsibleSection>
+                  )}
 
                   {/* ── Seguimiento por Fases — colapsable, cerrado por defecto ── */}
                   <CollapsibleSection title="Demora por Fases" icon={<BarChart2 size={12} />}>
@@ -721,6 +752,79 @@ export default function EquipmentDetail({
                     const approvedParts = (equipment as any).approved_parts as ApprovedPartItem[]
                     const ps = ((equipment as any).parts_status ?? 'SIN_REPUESTOS') as PartsStatus
                     const colors = PARTS_STATUS_COLORS[ps] ?? PARTS_STATUS_COLORS['SIN_REPUESTOS']
+
+                    // Separación de repuestos según la etapa (DIAGNOSTICO vs SERVICIO)
+                    const diagParts = approvedParts.filter(p => p.etapa === 'DIAGNOSTICO')
+                    const serviceParts = approvedParts.filter(p => p.etapa !== 'DIAGNOSTICO')
+
+                    const renderPartsTable = (partsList: ApprovedPartItem[], emptyMessage: string) => {
+                      if (partsList.length === 0) {
+                        return (
+                          <div className="py-2.5 px-3 text-center text-[11px] text-text-muted italic bg-bg-elevated/10 rounded-lg border border-border-subtle/40">
+                            {emptyMessage}
+                          </div>
+                        )
+                      }
+                      return (
+                        <div className="rounded-lg border border-border-subtle overflow-hidden">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-bg-elevated/40 text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                                <th className="px-3 py-2 text-left">Repuesto / Servicio</th>
+                                <th className="px-3 py-2 text-center">Tipo</th>
+                                <th className="px-3 py-2 text-center">F. Llegada</th>
+                                <th className="px-3 py-2 text-center">Solicitado</th>
+                                <th className="px-3 py-2 text-center">Entregado</th>
+                                <th className="px-3 py-2 text-center">Saldo</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border-subtle/50">
+                              {partsList.map((part, idx) => {
+                                const saldo = part.cantidad_solicitada - part.cantidad_entregada
+                                const isServicio = part.tipo === 'SERVICIO'
+                                return (
+                                  <tr key={part.id || idx} className="hover:bg-bg-elevated/20">
+                                    <td className="px-3 py-2 text-text-primary font-medium">{part.descripcion}</td>
+                                    <td className="px-3 py-2 text-center">
+                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                                        isServicio 
+                                          ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' 
+                                          : 'bg-neon-blue/10 text-neon-blue border border-neon-blue/20'
+                                      }`}>
+                                        {isServicio ? 'Servicio' : 'Repuesto'}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2 text-center font-mono text-[11px] text-text-secondary">
+                                      {part.fecha_llegada ? (
+                                        <span className="text-amber-glow font-bold">{part.fecha_llegada}</span>
+                                      ) : part.precio ? (
+                                        <span>S/ {part.precio}</span>
+                                      ) : (
+                                        <span className="text-text-muted">-</span>
+                                      )}
+                                    </td>
+                                    <td className="px-3 py-2 text-center text-text-secondary font-mono font-bold">
+                                      {part.cantidad_solicitada}
+                                    </td>
+                                    <td className="px-3 py-2 text-center font-mono font-bold text-emerald-400">
+                                      {part.cantidad_entregada}
+                                    </td>
+                                    <td className="px-3 py-2 text-center font-mono font-bold">
+                                      {saldo > 0 ? (
+                                        <span className="text-yellow-400">{saldo} Pendiente{saldo > 1 ? 's' : ''}</span>
+                                      ) : (
+                                        <span className="text-emerald-400">✓ Completo</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    }
+
                     return (
                       <CollapsibleSection
                         title="Control de Repuestos"
@@ -728,45 +832,35 @@ export default function EquipmentDetail({
                         defaultOpen={true}
                         badge={PARTS_STATUS_LABELS[ps]}
                       >
-                        <div className="space-y-3">
-                          <div className="rounded-lg border border-border-subtle overflow-hidden">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="bg-bg-elevated/40 text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                                  <th className="px-3 py-2 text-left">Repuesto / Insumo</th>
-                                  <th className="px-3 py-2 text-center">Precio</th>
-                                  <th className="px-3 py-2 text-center">Solicitado</th>
-                                  <th className="px-3 py-2 text-center">Entregado</th>
-                                  <th className="px-3 py-2 text-center">Saldo</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-border-subtle/50">
-                                {approvedParts.map((part, idx) => {
-                                  const saldo = part.cantidad_solicitada - part.cantidad_entregada
-                                  return (
-                                    <tr key={part.id || idx} className="hover:bg-bg-elevated/20">
-                                      <td className="px-3 py-2 text-text-primary">{part.descripcion}</td>
-                                      <td className="px-3 py-2 text-center text-text-secondary font-mono text-[11px]">
-                                        S/ {part.precio}
-                                      </td>
-                                      <td className="px-3 py-2 text-center text-text-secondary font-mono font-bold">
-                                        {part.cantidad_solicitada}
-                                      </td>
-                                      <td className="px-3 py-2 text-center font-mono font-bold text-emerald-400">
-                                        {part.cantidad_entregada}
-                                      </td>
-                                      <td className="px-3 py-2 text-center font-mono font-bold">
-                                        {saldo > 0 ? (
-                                          <span className="text-yellow-400">{saldo} Pendiente{saldo > 1 ? 's' : ''}</span>
-                                        ) : (
-                                          <span className="text-emerald-400">✓ Completo</span>
-                                        )}
-                                      </td>
-                                    </tr>
-                                  )
-                                })}
-                              </tbody>
-                            </table>
+                        <div className="space-y-4">
+                          {/* ── Tabla 1: Repuestos Solicitados en Diagnóstico ── */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-neon-blue flex items-center gap-1.5">
+                                🔍 Repuestos Solicitados en Diagnóstico
+                              </span>
+                              {diagParts.length > 0 && (
+                                <span className="text-[10px] font-mono text-text-muted">
+                                  {diagParts.length} {diagParts.length === 1 ? 'ítem' : 'ítems'}
+                                </span>
+                              )}
+                            </div>
+                            {renderPartsTable(diagParts, 'No se registraron repuestos solicitados en la etapa de diagnóstico.')}
+                          </div>
+
+                          {/* ── Tabla 2: Repuestos y Servicios Aprobados en Servicio ── */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                                ⚙️ Repuestos y Servicios Aprobados en Servicio
+                              </span>
+                              {serviceParts.length > 0 && (
+                                <span className="text-[10px] font-mono text-text-muted">
+                                  {serviceParts.length} {serviceParts.length === 1 ? 'ítem' : 'ítems'}
+                                </span>
+                              )}
+                            </div>
+                            {renderPartsTable(serviceParts, 'No se han registrado repuestos ni servicios aprobados para mantenimiento.')}
                           </div>
                           {/* Historial de entregas y devoluciones */}
                           {(equipment as any).parts_deliveries && (equipment as any).parts_deliveries.length > 0 && (
