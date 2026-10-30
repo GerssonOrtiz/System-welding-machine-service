@@ -1,4 +1,4 @@
-// components/equipment/modals/ModalEntregaRepuestos.tsx
+﻿// components/equipment/modals/ModalEntregaRepuestos.tsx
 // Modal dedicado para que Logística (almacen, admin, superadmin) registre
 // entregas de repuestos de forma independiente al estado del servicio.
 // Muestra la lista de ítems solicitados como checkboxes y permite agregar
@@ -23,6 +23,7 @@ interface ModalEntregaRepuestosProps {
 // Ítem de la lista de solicitud con su checkbox de entrega
 interface CheckedPart {
   partId:      string          // corresponde a ApprovedPartItem.id
+  codigo?:     string          // c'digo del repuesto si existe
   descripcion: string
   cantSolicitada: number
   cantEntregada:  number       // ya entregada anteriormente
@@ -64,6 +65,7 @@ export default function ModalEntregaRepuestos({
       setCheckedParts(
         physicalParts.map((p) => ({
           partId:         p.id || crypto.randomUUID(),
+          codigo:         p.codigo || undefined,
           descripcion:    p.descripcion,
           cantSolicitada: p.cantidad_solicitada,
           cantEntregada:  p.cantidad_entregada || 0,
@@ -213,8 +215,9 @@ export default function ModalEntregaRepuestos({
 
                 <div className="rounded-lg border border-border-subtle overflow-hidden">
                   {/* Encabezados */}
-                  <div className="grid grid-cols-[24px_1fr_64px_64px_64px_80px_100px] gap-1 px-3 py-2 bg-bg-elevated/40 text-[9px] font-bold text-text-muted uppercase tracking-wider">
+                  <div className="grid grid-cols-[24px_80px_1fr_64px_64px_64px_80px_100px] gap-1 px-3 py-2 bg-bg-elevated/40 text-[9px] font-bold text-text-muted uppercase tracking-wider">
                     <span />
+                    <span>Código</span>
                     <span>Descripción</span>
                     <span className="text-center">Solicit.</span>
                     <span className="text-center">Entregado</span>
@@ -229,7 +232,7 @@ export default function ModalEntregaRepuestos({
                     return (
                       <div
                         key={part.partId}
-                        className={`grid grid-cols-[24px_1fr_64px_64px_64px_80px_100px] gap-1 items-center px-3 py-2.5 border-t border-border-subtle/50 transition-colors ${
+                        className={`grid grid-cols-[24px_80px_1fr_64px_64px_64px_80px_100px] gap-1 items-center px-3 py-2.5 border-t border-border-subtle/50 transition-colors ${
                           part.checked
                             ? 'bg-neon-blue/5'
                             : completo
@@ -258,6 +261,11 @@ export default function ModalEntregaRepuestos({
                             <Square size={14} />
                           )}
                         </button>
+
+                        {/* Código */}
+                        <span className="text-[10px] font-mono text-neon-blue/70 truncate">
+                          {part.codigo || <span className="text-text-muted">—</span>}
+                        </span>
 
                         {/* Descripción */}
                         <span className={`text-xs truncate ${completo ? 'line-through text-text-muted' : 'text-text-primary'}`}>

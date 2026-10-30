@@ -73,6 +73,7 @@ export const aprobacionVentasSchema = z.object({
   notes: z.string().optional().nullable(),
   // Campos del correo y gestión de repuestos / servicios
   items: z.array(z.object({
+    codigo: z.string().optional().default(''),
     descripcion: z.string().min(1),
     cantidad: z.string().min(1),
     precio: z.string().optional().default(''),
@@ -87,6 +88,7 @@ export const entregaLogisticaSchema = z.object({
   notes: z.string().optional().nullable(),
   // Campos del correo
   items: z.array(z.object({
+    codigo: z.string().optional().default(''),
     descripcion: z.string().min(1),
     cantidad: z.string().min(1),
     nota: z.string().optional().default(''),
@@ -100,6 +102,7 @@ export const solicitudRepuestosSchema = z.object({
   assigned_technician_ids: z.array(z.number()).optional(),
   // Campos del correo
   items: z.array(z.object({
+    codigo: z.string().optional().default(''),
     descripcion: z.string().min(1, { message: 'La descripción es obligatoria' }),
     cantidad: z.string().min(1, { message: 'La cantidad es obligatoria' }),
     nota: z.string().optional().default(''),

@@ -137,6 +137,7 @@ export interface InformeODPData extends ThreadBaseData {
 export interface AprobacionVentasData extends ThreadBaseData {
   /** Filas de la tabla: descripción, cantidad, fecha_llegada / precio, tipo */
   items: Array<{
+    codigo?: string
     descripcion: string
     cantidad: string
     precio?: string
@@ -148,7 +149,7 @@ export interface AprobacionVentasData extends ThreadBaseData {
 
 export interface EntregaLogisticaData extends ThreadBaseData {
   /** Repuestos entregados, pueden diferir de los aprobados (compatibles) */
-  items: Array<{ descripcion: string; cantidad: string; nota?: string }>
+  items: Array<{ codigo?: string; descripcion: string; cantidad: string; nota?: string }>
   observaciones: string
 }
 
@@ -161,7 +162,7 @@ export interface ReboteRepuestosData extends ThreadBaseData {
 
 export interface SolicitudRepuestosData extends ThreadBaseData {
   /** Lista de componentes o repuestos solicitados para el mantenimiento */
-  items: Array<{ descripcion: string; cantidad: string; nota?: string }>
+  items: Array<{ codigo?: string; descripcion: string; cantidad: string; nota?: string }>
   observaciones: string
 }
 
@@ -314,6 +315,7 @@ function buildAprobacionVentasHtml(data: AprobacionVentasData): string {
     }
     const rows = items.map((item, i) => `
       <tr style="${i % 2 === 0 ? 'background-color: #F8FAFC;' : ''}">
+        ${isRepuesto ? `<td style="${tableCellStyle} font-family: monospace; font-weight: bold; color: #1E293B;">${item.codigo ? item.codigo : '-'}</td>` : ''}
         <td style="${tableCellStyle}">${item.descripcion}</td>
         <td style="${tableCellStyle} text-align: center;">${item.cantidad}</td>
         ${isRepuesto ? `<td style="${tableCellStyle} text-align: center; color: #0284c7; font-weight: bold;">${item.fecha_llegada ? item.fecha_llegada : 'Por confirmar'}</td>` : ''}
@@ -325,6 +327,7 @@ function buildAprobacionVentasHtml(data: AprobacionVentasData): string {
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr>
+              ${isRepuesto ? `<th style="${tableHeaderStyle} width: 120px;">Código</th>` : ''}
               <th style="${tableHeaderStyle}">Descripción</th>
               <th style="${tableHeaderStyle} text-align: center; width: 80px;">Cantidad</th>
               ${isRepuesto ? `<th style="${tableHeaderStyle} text-align: center; width: 140px;">F. Llegada Repuesto</th>` : ''}
@@ -356,11 +359,10 @@ function buildAprobacionVentasHtml(data: AprobacionVentasData): string {
       <p style="font-size: 12px; font-weight: bold; text-transform: uppercase; color: #7c3aed; margin-bottom: 4px;">🛠️ Servicios Aprobados:</p>
       ${renderTable(servicios, false)}
 
-      ${data.observaciones ? `
       <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
         <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones:</p>
-        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
-      </div>` : ''}
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones && data.observaciones.trim() ? data.observaciones : '--'}</p>
+      </div>
 
       ${buildSignature()}
     </div>
@@ -370,6 +372,7 @@ function buildAprobacionVentasHtml(data: AprobacionVentasData): string {
 function buildEntregaLogisticaHtml(data: EntregaLogisticaData): string {
   const itemRows = data.items.map((item, i) => `
     <tr style="${i % 2 === 0 ? 'background-color: #F8FAFC;' : ''}">
+      <td style="${tableCellStyle} font-family: monospace; font-weight: bold; color: #1E293B;">${item.codigo ? item.codigo : '-'}</td>
       <td style="${tableCellStyle}">${item.descripcion}</td>
       <td style="${tableCellStyle} text-align: center;">${item.cantidad}</td>
       <td style="${tableCellStyle} color: #6B7280; font-style: italic;">${item.nota ?? '-'}</td>
@@ -393,6 +396,7 @@ function buildEntregaLogisticaHtml(data: EntregaLogisticaData): string {
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr>
+              <th style="${tableHeaderStyle} width: 120px;">Código</th>
               <th style="${tableHeaderStyle}">Descripción</th>
               <th style="${tableHeaderStyle} text-align: center;">Cantidad</th>
               <th style="${tableHeaderStyle}">Nota / Reemplazo compatible</th>
@@ -404,11 +408,10 @@ function buildEntregaLogisticaHtml(data: EntregaLogisticaData): string {
         </table>
       </div>
 
-      ${data.observaciones ? `
       <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
         <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones:</p>
-        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
-      </div>` : ''}
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones && data.observaciones.trim() ? data.observaciones : '--'}</p>
+      </div>
 
       ${buildSignature()}
     </div>
@@ -454,11 +457,10 @@ function buildReboteRepuestosHtml(data: ReboteRepuestosData): string {
         </table>
       </div>
 
-      ${data.observaciones ? `
       <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
         <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #991B1B;">Observaciones Generales:</p>
-        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
-      </div>` : ''}
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones && data.observaciones.trim() ? data.observaciones : '--'}</p>
+      </div>
 
       ${buildSignature()}
     </div>
@@ -491,6 +493,7 @@ function buildSolicitudRepuestosHtml(data: SolicitudRepuestosData): string {
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr>
+              <th style="${tableHeaderStyle} width: 120px;">Código</th>
               <th style="${tableHeaderStyle}">Descripción / Componente</th>
               <th style="${tableHeaderStyle} text-align: center;">Cantidad</th>
               <th style="${tableHeaderStyle}">Detalle / Especificación</th>
@@ -502,11 +505,10 @@ function buildSolicitudRepuestosHtml(data: SolicitudRepuestosData): string {
         </table>
       </div>
 
-      ${data.observaciones ? `
       <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
         <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones:</p>
-        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
-      </div>` : ''}
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones && data.observaciones.trim() ? data.observaciones : '--'}</p>
+      </div>
 
       ${buildSignature()}
     </div>
@@ -542,7 +544,7 @@ function buildCulminadoODPHtml(data: CulminadoODPData): string {
           </tr>
           <tr>
             <td style="${tableCellStyle} font-weight: bold;">Fecha:</td>
-            <td style="${tableCellStyle} font-size: 9px; color: #6B7280;">${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })} (Hora Lima)</td>
+            <td style="${tableCellStyle} font-size: 9px; color: #6B7280;">${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })}</td>
           </tr>
         </tbody>
       </table>
@@ -554,11 +556,10 @@ function buildCulminadoODPHtml(data: CulminadoODPData): string {
         ${data.vrd_certificate_url ? `<p style="margin: 0; font-size: 11px;"><a href="${data.vrd_certificate_url}" target="_blank" style="color: #7C3AED; font-weight: bold; text-decoration: underline;">🛡️ Ver Certificado de VRD</a></p>` : ''}
       </div>` : ''}
 
-      ${data.observaciones ? `
       <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
         <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones:</p>
-        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
-      </div>` : ''}
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones && data.observaciones.trim() ? data.observaciones : '--'}</p>
+      </div>
 
       ${buildSignature()}
     </div>
@@ -591,7 +592,7 @@ function buildCoordinacionClienteHtml(data: CoordinacionClienteData): string {
           </tr>
           <tr>
             <td style="${tableCellStyle} font-weight: bold;">Fecha:</td>
-            <td style="${tableCellStyle} font-size: 9px; color: #6B7280;">${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })} (Hora Lima)</td>
+            <td style="${tableCellStyle} font-size: 9px; color: #6B7280;">${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })}</td>
           </tr>
         </tbody>
       </table>
@@ -603,11 +604,10 @@ function buildCoordinacionClienteHtml(data: CoordinacionClienteData): string {
         </p>
       </div>
 
-      ${data.observaciones ? `
       <div style="background-color: #F8FAFC; border: 1px solid #dee2e6; border-radius: 4px; padding: 14px; margin-bottom: 20px;">
         <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #1f375f;">Observaciones adicionales:</p>
-        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones}</p>
-      </div>` : ''}
+        <p style="margin: 0; font-size: 11px; color: #333;">${data.observaciones && data.observaciones.trim() ? data.observaciones : '--'}</p>
+      </div>
 
       ${buildSignature()}
     </div>

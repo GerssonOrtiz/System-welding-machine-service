@@ -5,6 +5,7 @@ import React from 'react'
 import { Package, Plus, Trash2 } from 'lucide-react'
 
 export interface LogisticaItem {
+  codigo: string
   descripcion: string
   cantidad: string
   nota: string
@@ -24,7 +25,7 @@ export default function ModalEntregaLogistica({
   onObservacionesChange,
 }: ModalEntregaLogisticaProps) {
   const addRow = () => {
-    onItemsChange([...items, { descripcion: '', cantidad: '1', nota: '' }])
+    onItemsChange([...items, { codigo: '', descripcion: '', cantidad: '1', nota: '' }])
   }
 
   const removeRow = (idx: number) => {
@@ -52,7 +53,8 @@ export default function ModalEntregaLogistica({
 
         <div className="space-y-2">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_70px_1fr_32px] gap-1.5 px-1">
+          <div className="grid grid-cols-[90px_1fr_70px_1fr_32px] gap-1.5 px-1">
+            <span className="text-[9px] font-bold text-text-muted uppercase">Código</span>
             <span className="text-[9px] font-bold text-text-muted uppercase">Descripción / Componente</span>
             <span className="text-[9px] font-bold text-text-muted uppercase text-center">Cant.</span>
             <span className="text-[9px] font-bold text-text-muted uppercase">Detalle / Especificación</span>
@@ -61,7 +63,14 @@ export default function ModalEntregaLogistica({
 
           {/* Filas */}
           {items.map((item, idx) => (
-            <div key={idx} className="grid grid-cols-[1fr_70px_1fr_32px] gap-1.5 items-center">
+            <div key={idx} className="grid grid-cols-[90px_1fr_70px_1fr_32px] gap-1.5 items-center">
+              <input
+                type="text"
+                value={item.codigo}
+                onChange={(e) => updateRow(idx, 'codigo', e.target.value)}
+                placeholder="Ej: CB-001"
+                className="bg-bg-elevated border border-border-subtle rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:outline-none transition-all font-mono"
+              />
               <input
                 type="text"
                 value={item.descripcion}
@@ -80,7 +89,7 @@ export default function ModalEntregaLogistica({
                 type="text"
                 value={item.nota}
                 onChange={(e) => updateRow(idx, 'nota', e.target.value)}
-                placeholder="Código, parte o detalle (opcional)"
+                placeholder="Parte o detalle (opcional)"
                 className="bg-bg-elevated border border-border-subtle rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:outline-none transition-all"
               />
               <button

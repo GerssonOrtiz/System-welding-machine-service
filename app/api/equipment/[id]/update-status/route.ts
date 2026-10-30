@@ -220,6 +220,7 @@ export async function POST(
       const existingParts: ApprovedPartItem[] = Array.isArray(eq.approved_parts) ? eq.approved_parts : []
       const serviceParts: ApprovedPartItem[] = parsed.items.map((item) => ({
         id:                  crypto.randomUUID(),
+        codigo:              item.codigo?.trim().toUpperCase() || undefined,
         descripcion:         item.descripcion,
         cantidad_solicitada: parseInt(item.cantidad, 10) || 1,
         cantidad_entregada:  0,
@@ -245,6 +246,7 @@ export async function POST(
       
       const newParts: ApprovedPartItem[] = parsed.items.map((item) => ({
         id:                  crypto.randomUUID(),
+        codigo:              item.codigo?.trim().toUpperCase() || undefined,
         descripcion:         item.descripcion,
         cantidad_solicitada: parseInt(item.cantidad, 10) || 1,
         cantidad_entregada:  0,

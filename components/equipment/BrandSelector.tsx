@@ -63,10 +63,30 @@ export default function BrandSelector({ value, onChange, error, label }: BrandSe
   }
 
   const handleSelectBrand = (brandName: string) => {
-    const upperName = brandName.toUpperCase()
+    const upperName = brandName.trim().toUpperCase()
     setSearch(upperName)
     onChange(upperName)
     setIsOpen(false)
+  }
+
+  const handleBlur = () => {
+    const trimmed = search.trim().toUpperCase()
+    if (!trimmed) {
+      setSearch('')
+      onChange('')
+      return
+    }
+
+    // Si coincide con alguna marca existente sin importar mayúsculas o espacios accidentales
+    const exactMatch = brands.find(b => b.trim().toUpperCase() === trimmed)
+    if (exactMatch) {
+      const canonical = exactMatch.toUpperCase()
+      setSearch(canonical)
+      onChange(canonical)
+    } else {
+      setSearch(trimmed)
+      onChange(trimmed)
+    }
   }
 
   const isNewBrand = search && !brands.some(b => b.toUpperCase() === search.toUpperCase())
@@ -85,6 +105,14 @@ export default function BrandSelector({ value, onChange, error, label }: BrandSe
           value={search}
           onChange={handleSearchChange}
           onFocus={() => setIsOpen(true)}
+          onBlur={handleBlur}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              handleBlur()
+              setIsOpen(false)
+            }
+          }}
           placeholder="Escriba o seleccione una marca..."
           className={`w-full bg-bg-elevated border ${
             error ? 'border-red-500/50' : 'border-border-subtle focus:border-neon-blue'

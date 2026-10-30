@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const brand = searchParams.get('brand')
+    const rawBrand = searchParams.get('brand')
+    const brand = rawBrand ? rawBrand.trim().toUpperCase() : null
 
     // 1. Obtener de catalog_models (normalizado)
     let catalogQuery = supabase
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
       .select('name, catalog_brands!inner(name)')
     
     if (brand) {
-      catalogQuery = catalogQuery.eq('catalog_brands.name', brand.toUpperCase())
+      catalogQuery = catalogQuery.ilike('catalog_brands.name', brand)
     }
 
     // 2. Obtener de equipment_records (histórico)
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       .select('model')
     
     if (brand) {
-      recordsQuery = recordsQuery.eq('brand', brand.toUpperCase())
+      recordsQuery = recordsQuery.ilike('brand', brand)
     }
 
     const [catalogRes, recordsRes] = await Promise.all([

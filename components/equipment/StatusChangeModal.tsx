@@ -64,10 +64,10 @@ export default function StatusChangeModal({
   const [pdfFile, setPdfFile]         = useState<File | null>(null)
   const [reportUrl, setReportUrl]     = useState('')
   // Aprobación Ventas
-  const [ventasItems, setVentasItems]           = useState<VentasItem[]>([{ descripcion: '', cantidad: '1', fecha_llegada: '', tipo: 'REPUESTO' }])
+  const [ventasItems, setVentasItems]           = useState<VentasItem[]>([{ codigo: '', descripcion: '', cantidad: '1', fecha_llegada: '', tipo: 'REPUESTO' }])
   const [ventasObservaciones, setVentasObs]     = useState('')
   // Entrega Logística
-  const [logisticaItems, setLogisticaItems]     = useState<LogisticaItem[]>([{ descripcion: '', cantidad: '1', nota: '' }])
+  const [logisticaItems, setLogisticaItems]     = useState<LogisticaItem[]>([{ codigo: '', descripcion: '', cantidad: '1', nota: '' }])
   const [logisticaObservaciones, setLogisticaObs] = useState('')
   // Culminado ODP
   const [culminadoObs, setCulminadoObs]                 = useState('')
@@ -132,9 +132,9 @@ export default function StatusChangeModal({
       setNotifyByEmail(false)
       setDiagnostico('')
       setPdfFile(null)
-      setVentasItems([{ descripcion: '', cantidad: '1', fecha_llegada: '', tipo: 'REPUESTO' }])
+      setVentasItems([{ codigo: '', descripcion: '', cantidad: '1', fecha_llegada: '', tipo: 'REPUESTO' }])
       setVentasObs('')
-      setLogisticaItems([{ descripcion: '', cantidad: '1', nota: '' }])
+      setLogisticaItems([{ codigo: '', descripcion: '', cantidad: '1', nota: '' }])
       setLogisticaObs('')
       setCulminadoObs('')
       setServiceReportFile(null)

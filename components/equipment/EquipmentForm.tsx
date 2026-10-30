@@ -44,17 +44,16 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [clientName, setClientName] = useState('')
   const [clientError, setClientError] = useState<string | null>(null)
-  const [defaultServiceType, setDefaultServiceType] = useState<'GARANTIA_CABELAB' | 'GARANTIA_ESAB' | 'REVISION_GENERAL'>('REVISION_GENERAL')
 
   const [equipments, setEquipments] = useState<EquipmentItemState[]>([
     createEmptyEquipmentItem(0, 'REVISION_GENERAL'),
   ])
 
-  // Track de qué tarjeta está expandida para detalles opcionales (reporte/accesorios)
-  const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({})
+  // Track de qué tarjeta está colapsada (por defecto todas desplegadas)
+  const [collapsedDetails, setCollapsedDetails] = useState<Record<string, boolean>>({})
 
   const toggleDetails = (id: string) => {
-    setExpandedDetails(prev => ({ ...prev, [id]: !prev[id] }))
+    setCollapsedDetails(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
   const handleUpdateItem = (id: string, field: keyof EquipmentItemState, value: any) => {
@@ -76,7 +75,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
   const handleAddEquipment = () => {
     // Si ya hay uno anterior, heredar opcionalmente marca y tipo de servicio
     const last = equipments[equipments.length - 1]
-    const newItem = createEmptyEquipmentItem(equipments.length, defaultServiceType)
+    const newItem = createEmptyEquipmentItem(equipments.length, 'REVISION_GENERAL')
     if (last) {
       newItem.brand = last.brand
       newItem.service_type = last.service_type
@@ -187,7 +186,17 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
   const isMultiple = equipments.length > 1
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 font-sans text-text-forge" autoComplete="off">
+    <form
+      onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        // Prevenir envío accidental al presionar Enter en inputs regulares
+        if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+          e.preventDefault()
+        }
+      }}
+      className="space-y-6 font-sans text-text-forge"
+      autoComplete="off"
+    >
       {/* ── CABECERA GENERAL DEL INGRESO (CLIENTE & SERVICIO GENERAL) ── */}
       <div className="glass-card border border-amber-border/30 rounded-xl p-4 sm:p-5 space-y-4 shadow-glass">
         <div className="flex items-center justify-between border-b border-amber-border/20 pb-2.5">
@@ -202,7 +211,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
           {/* Cliente */}
           <div className="space-y-1">
             <ClientSelector
@@ -214,32 +223,6 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
               error={clientError || undefined}
               label="Nombre del Cliente *"
             />
-          </div>
-
-          {/* Tipo de Servicio Predeterminado */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-text-forge-mid uppercase tracking-wider">
-              Tipo de Servicio Principal
-            </label>
-            <select
-              value={defaultServiceType}
-              onChange={(e) => {
-                const val = e.target.value as any
-                setDefaultServiceType(val)
-                // Si solo hay un equipo, actualizarlo inmediatamente
-                if (equipments.length === 1) {
-                  handleUpdateItem(equipments[0].id, 'service_type', val)
-                }
-              }}
-              className="w-full glass-input rounded-lg px-3.5 py-2.5 text-sm transition-all text-text-forge"
-            >
-              <option value="REVISION_GENERAL" className="bg-bg-forge-high">REVISIÓN GENERAL</option>
-              <option value="GARANTIA_CABELAB" className="bg-bg-forge-high">GARANTÍA CABELAB</option>
-              <option value="GARANTIA_ESAB" className="bg-bg-forge-high">GARANTÍA ESAB</option>
-            </select>
-            <p className="text-[10px] text-text-forge-dim mt-0.5">
-              Aplica por defecto a los equipos agregados. Puedes personalizar cada uno abajo.
-            </p>
           </div>
         </div>
       </div>
@@ -262,7 +245,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
 
         <div className="space-y-3.5">
           {equipments.map((eq, index) => {
-            const isExpanded = !!expandedDetails[eq.id]
+            const isExpanded = !collapsedDetails[eq.id]
 
             return (
               <div
@@ -450,17 +433,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
       </div>
 
       {/* ── BOTONES DE ACCIÓN ── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-amber-border/20">
-        <button
-          type="button"
-          onClick={handleAddEquipment}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-amber-glow border border-amber-border/40 rounded-lg bg-amber-ghost/30 hover:bg-amber-ghost transition-all uppercase tracking-wider"
-        >
-          <Plus size={14} />
-          <span>+ Agregar otro equipo a este cliente</span>
-        </button>
-
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-amber-border/20">
           {onCancel && (
             <button
               type="button"
@@ -481,7 +454,6 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
               ? `Registrar Lote (${equipments.length} Equipos)`
               : 'Registrar Equipo'}
           </button>
-        </div>
       </div>
     </form>
   )

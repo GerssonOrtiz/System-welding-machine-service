@@ -62,6 +62,7 @@ export type PartsStatus = 'SIN_REPUESTOS' | 'PARCIAL' | 'COMPLETO'
 /** Ítem de repuesto aprobado por Ventas al pasar a estado "Aprobado" */
 export interface ApprovedPartItem {
   id:                  string  // UUID generado al inicializar
+  codigo?:             string  // Código / N° de parte del repuesto
   descripcion:         string
   cantidad_solicitada: number
   cantidad_entregada:  number

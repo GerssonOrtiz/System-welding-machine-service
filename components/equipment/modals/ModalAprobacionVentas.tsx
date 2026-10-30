@@ -5,6 +5,7 @@ import React from 'react'
 import { CheckSquare, Plus, Trash2, Package, Wrench } from 'lucide-react'
 
 export interface VentasItem {
+  codigo?: string
   descripcion: string
   cantidad: string
   precio?: string
@@ -38,7 +39,7 @@ export default function ModalAprobacionVentas({
   const addRepuesto = () => {
     onItemsChange([
       ...items,
-      { descripcion: '', cantidad: '1', fecha_llegada: '', tipo: 'REPUESTO' },
+      { codigo: '', descripcion: '', cantidad: '1', fecha_llegada: '', tipo: 'REPUESTO' },
     ])
   }
 
@@ -92,7 +93,8 @@ export default function ModalAprobacionVentas({
         ) : (
           <div className="space-y-2">
             {/* Header */}
-            <div className="grid grid-cols-[1fr_70px_130px_32px] gap-1.5 px-1">
+            <div className="grid grid-cols-[90px_1fr_70px_130px_32px] gap-1.5 px-1">
+              <span className="text-[9px] font-bold text-text-muted uppercase">Código</span>
               <span className="text-[9px] font-bold text-text-muted uppercase">Descripción del Repuesto</span>
               <span className="text-[9px] font-bold text-text-muted uppercase text-center">Cant.</span>
               <span className="text-[9px] font-bold text-text-muted uppercase text-center">Fecha Llegada</span>
@@ -101,7 +103,14 @@ export default function ModalAprobacionVentas({
 
             {/* Filas */}
             {repuestosWithIdx.map(({ item, index }) => (
-              <div key={index} className="grid grid-cols-[1fr_70px_130px_32px] gap-1.5 items-center">
+              <div key={index} className="grid grid-cols-[90px_1fr_70px_130px_32px] gap-1.5 items-center">
+                <input
+                  type="text"
+                  value={item.codigo || ''}
+                  onChange={(e) => updateItem(index, 'codigo', e.target.value)}
+                  placeholder="Ej: CB-001"
+                  className="bg-bg-elevated border border-border-subtle rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-neon-blue focus:outline-none transition-all font-mono"
+                />
                 <input
                   type="text"
                   value={item.descripcion}
