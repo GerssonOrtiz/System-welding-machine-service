@@ -230,10 +230,10 @@ El sistema opera con **dos líneas de estado completamente desacopladas**:
        → Pendiente de aprobación   ← correo: Informe ODP (con PDF adjunto)
          → Aprobado                ← correo: Aprobación Ventas (tabla repuestos, inicia parts_status = 'SIN_REPUESTOS')
            → En mantenimiento      (Operaciones inicia trabajo físico sin bloqueo de repuestos)
-             → Control de calidad
-               → Listo para entrega  ← correo: Culminado ODP
-                 → Entregado (terminal)
+             → Listo para entrega  ← correo: Culminado ODP (Informe de Servicio + Certificado VRD opcionales)
+               → Entregado (terminal)
    ```
+   > **Nota:** El estado `Control de calidad` mencionado en versiones anteriores del documento **no existe en la BD** ni en el código. El flujo real va directamente `En mantenimiento → Listo para entrega`. La transición la habilita la migración 022.
 2. **Línea Logística de Repuestos (Almacén)**:
    - Funciona en paralelo sin bloquear ni ser bloqueada por el avance del taller.
    - Estados: `SIN_REPUESTOS` ➔ `PARCIAL` ➔ `COMPLETO`.
@@ -421,7 +421,7 @@ const ENTRY_TO = [ ... ]
 
 ## 12. ESTADO ACTUAL Y PENDIENTES
 
-> Última sesión: 28/10/2026
+> Última sesión: 30/10/2026
 
 ### ✅ Implementado y funcional
  

@@ -16,8 +16,13 @@ import type { ApprovedPartItem } from '@/types/equipment'
 const ESTADO_INFORME_ODP            = 'pendiente de aprobación'
 const ESTADO_APROBACION_VENTAS      = 'aprobado'
 const ESTADO_ESPERA_REPUESTO        = 'en espera de repuesto'
-const ESTADO_CULMINADO_ODP          = 'listo para entrega'
 const ESTADO_COORDINACION_CLIENTE   = 'coordinación con el cliente'
+
+// 'Servicio culminado' es el estado canónico; 'listo para entrega' se mantiene
+// por retrocompatibilidad con registros antiguos en la BD.
+function isCulminadoODP(stateName: string): boolean {
+  return stateName === 'servicio culminado' || stateName === 'listo para entrega'
+}
 
 export async function POST(
   request: NextRequest,
@@ -167,7 +172,7 @@ export async function POST(
       }
     }
 
-    if (targetNameLower === ESTADO_CULMINADO_ODP) {
+    if (isCulminadoODP(targetNameLower)) {
       const parsed = culminadoODPSchema.safeParse(rawBody)
       if (!parsed.success) {
         console.error('[POST update-status] culminadoODPSchema validation failed:', parsed.error.flatten())
@@ -291,7 +296,7 @@ export async function POST(
       targetNameLower === ESTADO_INFORME_ODP ||
       targetNameLower === ESTADO_APROBACION_VENTAS ||
       targetNameLower === ESTADO_ESPERA_REPUESTO ||
-      targetNameLower === ESTADO_CULMINADO_ODP ||
+      isCulminadoODP(targetNameLower) ||
       shouldSendCoordinationEmail
 
     if (requiresEmail) {
@@ -328,7 +333,7 @@ export async function POST(
               items:         parsed.items,
               observaciones: parsed.observaciones,
             })
-          } else if (targetNameLower === ESTADO_CULMINADO_ODP) {
+          } else if (isCulminadoODP(targetNameLower)) {
             const parsed = culminadoODPSchema.safeParse(rawBody)
             // Extraer observaciones de forma segura aunque las URLs fallen validación URL
             const observaciones = parsed.success

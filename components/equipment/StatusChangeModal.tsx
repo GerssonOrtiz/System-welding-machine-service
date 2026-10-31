@@ -16,8 +16,13 @@ import ModalCoordinacionCliente from './modals/ModalCoordinacionCliente'
 const ESTADO_INFORME_ODP            = 'pendiente de aprobación'
 const ESTADO_APROBACION_VENTAS      = 'aprobado'
 const ESTADO_ENTREGA_LOGISTICA      = 'en espera de repuesto'
-const ESTADO_CULMINADO_ODP          = 'listo para entrega'
 const ESTADO_COORDINACION_CLIENTE   = 'coordinación con el cliente'
+
+// 'Servicio culminado' es el estado canónico; 'listo para entrega' se mantiene
+// por retrocompatibilidad con registros y transiciones previas en la BD.
+function isCulminadoODP(stateName: string): boolean {
+  return stateName === 'servicio culminado' || stateName === 'listo para entrega'
+}
 
 interface StatusChangeModalProps {
   isOpen: boolean
@@ -92,7 +97,7 @@ export default function StatusChangeModal({
   const showInformeODP          = !isOverride && targetNameLower === ESTADO_INFORME_ODP
   const showAprobacionVentas    = !isOverride && targetNameLower === ESTADO_APROBACION_VENTAS
   const showEntregaLogistica    = !isOverride && targetNameLower === ESTADO_ENTREGA_LOGISTICA
-  const showCulminadoODP        = !isOverride && targetNameLower === ESTADO_CULMINADO_ODP
+  const showCulminadoODP        = !isOverride && isCulminadoODP(targetNameLower)
   const showCoordinacionCliente = !isOverride && targetNameLower === ESTADO_COORDINACION_CLIENTE
 
   // ── Fetch técnicos ───────────────────────────────────────────────────────

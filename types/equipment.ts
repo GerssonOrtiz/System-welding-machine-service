@@ -195,6 +195,8 @@ export const ROLE_RELEVANT_STATES: Record<string, string[]> = {
     'En diagnóstico',
     'Aprobado',
     'En mantenimiento',
+    'Servicio culminado',
+    'Listo para entrega',
     // Compatibilidad con equipos en estados legacy de repuestos
     'En espera de repuesto',
     'En espera de repuesto adicional',
@@ -210,6 +212,7 @@ export const ROLE_RELEVANT_STATES: Record<string, string[]> = {
     'En mantenimiento',
     'En espera de repuesto adicional',
     'Control de calidad',
+    'Servicio culminado',
     'Listo para entrega',
     'Entregado',
   ],

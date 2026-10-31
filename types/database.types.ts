@@ -61,6 +61,7 @@ export type Database = {
           accessories: string | null
           additional_observations: string | null
           approval_at: string | null
+          approved_parts?: Json | null
           assigned_technician_ids: number[] | null
           brand: string
           client_name: string
@@ -69,6 +70,9 @@ export type Database = {
           created_by: string | null
           current_status_id: number
           date_in: string
+          email_cc?: string[] | null
+          email_thread_id?: string | null
+          email_thread_subject?: string | null
           end_diagnosis_at: string | null
           end_maintenance_at: string | null
           finalized_at: string | null
@@ -76,7 +80,10 @@ export type Database = {
           id: string
           is_priority: boolean
           model: string
+          parts_deliveries?: Json | null
+          parts_status?: string | null
           pending_approval_at: string | null
+          priority_level?: number | null
           report_number: string | null
           report_url: string | null
           service_report_url?: string | null
@@ -91,6 +98,7 @@ export type Database = {
           accessories?: string | null
           additional_observations?: string | null
           approval_at?: string | null
+          approved_parts?: Json | null
           assigned_technician_ids?: number[] | null
           brand: string
           client_name: string
@@ -99,6 +107,9 @@ export type Database = {
           created_by?: string | null
           current_status_id: number
           date_in?: string
+          email_cc?: string[] | null
+          email_thread_id?: string | null
+          email_thread_subject?: string | null
           end_diagnosis_at?: string | null
           end_maintenance_at?: string | null
           finalized_at?: string | null
@@ -106,7 +117,10 @@ export type Database = {
           id?: string
           is_priority?: boolean
           model: string
+          parts_deliveries?: Json | null
+          parts_status?: string | null
           pending_approval_at?: string | null
+          priority_level?: number | null
           report_number?: string | null
           report_url?: string | null
           service_report_url?: string | null
@@ -121,6 +135,7 @@ export type Database = {
           accessories?: string | null
           additional_observations?: string | null
           approval_at?: string | null
+          approved_parts?: Json | null
           assigned_technician_ids?: number[] | null
           brand?: string
           client_name?: string
@@ -129,6 +144,9 @@ export type Database = {
           created_by?: string | null
           current_status_id?: number
           date_in?: string
+          email_cc?: string[] | null
+          email_thread_id?: string | null
+          email_thread_subject?: string | null
           end_diagnosis_at?: string | null
           end_maintenance_at?: string | null
           finalized_at?: string | null
@@ -136,7 +154,10 @@ export type Database = {
           id?: string
           is_priority?: boolean
           model?: string
+          parts_deliveries?: Json | null
+          parts_status?: string | null
           pending_approval_at?: string | null
+          priority_level?: number | null
           report_number?: string | null
           report_url?: string | null
           service_report_url?: string | null
@@ -428,6 +449,7 @@ export type Database = {
           accessories: string | null
           additional_observations: string | null
           approval_at: string | null
+          approved_parts?: Json | null
           assigned_technician_ids: number[] | null
           assigned_technicians: string[] | null
           brand: string
@@ -438,6 +460,9 @@ export type Database = {
           current_status_id: number | null
           date_in: string | null
           days_elapsed: number | null
+          email_cc?: string[] | null
+          email_thread_id?: string | null
+          email_thread_subject?: string | null
           end_diagnosis_at: string | null
           end_maintenance_at: string | null
           finalized_at: string | null
@@ -446,10 +471,13 @@ export type Database = {
           is_priority: boolean | null
           is_terminal: boolean | null
           model: string | null
+          parts_deliveries?: Json | null
+          parts_status?: string | null
           pending_approval_at: string | null
           phase_1_days: number | null
           phase_2_days: number | null
           phase_3_days: number | null
+          priority_level?: number | null
           report_number: string | null
           report_url: string | null
           service_report_url?: string | null
