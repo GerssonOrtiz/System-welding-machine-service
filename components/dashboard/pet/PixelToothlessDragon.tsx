@@ -41,10 +41,13 @@ export function PixelToothlessDragon({
   const isFalling = action === 'fall'
   const isSpurtingSpark = action === 'spark'
   const isEatingSnack = action === 'snack'
+  const isSitting = action === 'sit'
+  const isFlying = action === 'fly' || action === 'fall' || action === 'drag'
+  const isLooking = action === 'look'
 
   return (
     <div
-      className="relative select-none pointer-events-none transition-transform duration-75"
+      className={`dragon-sprite relative select-none pointer-events-none ${action === 'walk' ? 'dragon-walk' : ''} ${isSitting ? 'dragon-sit' : ''} ${isLooking ? 'dragon-look' : ''} ${isFlying ? 'dragon-fly' : ''} ${isSleeping ? 'dragon-sleep' : ''}`}
       style={{
         width: `${width * scale}px`,
         height: `${height * scale}px`,
@@ -64,6 +67,36 @@ export function PixelToothlessDragon({
           imageRendering: 'pixelated',
         }}
       >
+        <style>{`
+          @keyframes dragon-breathe {
+            0%, 100% { transform: translateY(0) scaleY(1); }
+            50% { transform: translateY(-1px) scaleY(1.025); }
+          }
+          @keyframes dragon-tail-sway {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-7deg); }
+          }
+          @keyframes dragon-wing-flap {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(.68); }
+          }
+          @keyframes dragon-hop {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+          }
+          @keyframes dragon-sleep-bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(1.5px); }
+          }
+          .dragon-body-motion { transform-box: fill-box; transform-origin: center bottom; animation: dragon-breathe 2.2s ease-in-out infinite; }
+          .dragon-tail-motion { transform-box: fill-box; transform-origin: right center; animation: dragon-tail-sway 1.7s ease-in-out infinite; }
+          .dragon-wing-motion { transform-box: fill-box; transform-origin: center bottom; }
+          .dragon-sprite.dragon-walk .dragon-body-motion { animation-duration: .48s; }
+          .dragon-sprite.dragon-sit .dragon-body-motion { transform: translateY(2px); animation-duration: 3s; }
+          .dragon-sprite.dragon-look .dragon-body-motion { animation: dragon-hop 1.8s ease-in-out infinite; }
+          .dragon-sprite.dragon-fly .dragon-wing-motion { animation: dragon-wing-flap .24s ease-in-out infinite; }
+          .dragon-sprite.dragon-sleep .dragon-body-motion { animation: dragon-sleep-bob 3.2s ease-in-out infinite; }
+        `}</style>
         <defs>
           <filter id="plasma-glow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#00D2FF" floodOpacity="0.8" />
@@ -74,7 +107,7 @@ export function PixelToothlessDragon({
         </defs>
 
         {/* ── COLA Y ALETA TIMÓN ROJA / NEGRA DE CHIMUELO ── */}
-        <g id="dragon-tail">
+        <g id="dragon-tail" className="dragon-tail-motion">
           {/* Cola curva */}
           <rect x="6" y="32" width="6" height="4" fill="#0f1117" />
           <rect x="2" y="30" width="6" height="4" fill="#161922" />
@@ -87,8 +120,8 @@ export function PixelToothlessDragon({
         </g>
 
         {/* ── ALAS (Plegadas o Desplegadas al caer/arrastrar) ── */}
-        <g id="dragon-wings">
-          {isDragging || isFalling ? (
+        <g id="dragon-wings" className="dragon-wing-motion">
+          {isDragging || isFalling || isFlying ? (
             /* Alas abiertas planeando / pataleando */
             <g id="wings-open">
               <path
@@ -111,7 +144,7 @@ export function PixelToothlessDragon({
         </g>
 
         {/* ── CUERPO PRINCIPAL ── */}
-        <g id="dragon-body">
+        <g id="dragon-body" className="dragon-body-motion">
           {/* Sombra base en suelo */}
           {!isDragging && !isFalling && (
             <ellipse cx="32" cy="48" rx="20" ry="3.5" fill="#000000" fillOpacity="0.35" />
@@ -132,7 +165,16 @@ export function PixelToothlessDragon({
 
         {/* ── PATITAS (Animadas al caminar o patalear) ── */}
         <g id="dragon-legs">
-          {isDragging ? (
+          {isSitting ? (
+            <>
+              <rect x="13" y="40" width="6" height="5" fill="#0c0d12" />
+              <rect x="12" y="44" width="8" height="4" fill="#161922" />
+              <rect x="25" y="40" width="6" height="5" fill="#0c0d12" />
+              <rect x="24" y="44" width="8" height="4" fill="#161922" />
+              <rect x="35" y="40" width="5" height="5" fill="#0c0d12" />
+              <rect x="34" y="44" width="7" height="4" fill="#161922" />
+            </>
+          ) : isDragging ? (
             /* Pataleo en el aire */
             <>
               <rect x="14" y="40" width="4" height="6" fill="#0c0d12" />
@@ -211,6 +253,10 @@ export function PixelToothlessDragon({
               <circle cx="45.5" cy="18" r="1.2" fill="#ffffff" />
               <circle cx="48" cy="22" r="0.7" fill="#ffffff" />
             </g>
+          )}
+
+          {isLooking && (
+            <circle cx="49" cy="17" r="1.1" fill="#ffffff" opacity="0.9" />
           )}
 
           {/* Sonrisa sutil / Lengüita rosada traviesa */}

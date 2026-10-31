@@ -1,9 +1,12 @@
 // components/dashboard/pet/types.ts
-// Tipos e interfaces para la mascota caminante interactiva Shimeji (Toothless Dragon)
+// Tipos e interfaces para la mascota interactiva Shimeji (Cyber Dragon).
 
 export type DragonAction =
   | 'idle'
   | 'walk'
+  | 'look'
+  | 'sit'
+  | 'fly'
   | 'spark'
   | 'snack'
   | 'tumble'
@@ -12,7 +15,6 @@ export type DragonAction =
   | 'fall'
 
 export type DragonDirection = 'left' | 'right'
-
 export type DragonPetPreference = 'active' | 'sleep' | 'hidden'
 
 export interface DragonCoordinates {

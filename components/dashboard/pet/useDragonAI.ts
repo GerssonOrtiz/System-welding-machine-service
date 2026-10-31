@@ -13,44 +13,92 @@ import {
 
 const PET_WIDTH = 150
 const PET_HEIGHT = 125
-const GROUND_OFFSET = 18 // Distancia desde el fondo de la pantalla
-const WALK_SPEED = 1.2
+const GROUND_OFFSET = 18
+const WALK_SPEED_MIN = 0.55
+const WALK_SPEED_MAX = 1.45
 const GRAVITY = 0.65
 const TERMINAL_VELOCITY = 14
+
+type TimedAction = Exclude<DragonAction, 'drag' | 'fall' | 'sleep'>
+
+const randomBetween = (min: number, max: number) =>
+  min + Math.random() * (max - min)
 
 export function useDragonAI() {
   const [preference, setPreference] = useState<DragonPetPreference>('active')
   const [action, setAction] = useState<DragonAction>('walk')
   const [direction, setDirection] = useState<DragonDirection>('right')
   const [coords, setCoords] = useState<DragonCoordinates>({ x: 120, y: 0 })
-  const [frameStep, setFrameStep] = useState<number>(0)
-  const [isBlinking, setIsBlinking] = useState<boolean>(false)
-  const [isDragging, setIsDragging] = useState<boolean>(false)
+  const [frameStep, setFrameStep] = useState(0)
+  const [isBlinking, setIsBlinking] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
-  // Referencias para lazo de animación
   const posRef = useRef<DragonCoordinates>({ x: 120, y: 0 })
-  const velRef = useRef<{ vx: number; vy: number }>({ vx: WALK_SPEED, vy: 0 })
+  const velRef = useRef({ vx: WALK_SPEED_MIN, vy: 0 })
   const dirRef = useRef<DragonDirection>('right')
   const actionRef = useRef<DragonAction>('walk')
-  const isDraggingRef = useRef<boolean>(false)
+  const isDraggingRef = useRef(false)
   const prefRef = useRef<DragonPetPreference>('active')
-  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
-  const lastTimeRef = useRef<number>(performance.now())
+  const dragOffsetRef = useRef({ x: 0, y: 0 })
+  const lastTimeRef = useRef(0)
+  const actionEndsAtRef = useRef(0)
+  const directionChangeAtRef = useRef(0)
+  const nextSpeedRef = useRef(WALK_SPEED_MIN)
+  const frameCounterRef = useRef(0)
+  const lastRenderAtRef = useRef(0)
 
-  // Sincronizar refs con states
-  useEffect(() => {
-    actionRef.current = action
-  }, [action])
+  const changeDirection = useCallback((next: DragonDirection) => {
+    dirRef.current = next
+    setDirection(next)
+  }, [])
 
-  useEffect(() => {
-    dirRef.current = direction
-  }, [direction])
+  const chooseNextAction = useCallback((now = performance.now()) => {
+    if (prefRef.current !== 'active' || isDraggingRef.current) return
 
-  useEffect(() => {
-    prefRef.current = preference
-  }, [preference])
+    // Caminatas de duración variable intercaladas con pausas y pequeñas travesuras.
+    const roll = Math.random()
+    let next: TimedAction
+    let duration: number
 
-  // Cargar estado inicial desde localStorage y registrar listener para cambios externos
+    if (roll < 0.43) {
+      next = 'walk'
+      duration = randomBetween(3200, 7600)
+      nextSpeedRef.current = randomBetween(WALK_SPEED_MIN, WALK_SPEED_MAX)
+      directionChangeAtRef.current = now + randomBetween(1200, 4200)
+    } else if (roll < 0.61) {
+      next = 'idle'
+      duration = randomBetween(1600, 3600)
+    } else if (roll < 0.73) {
+      next = 'look'
+      duration = randomBetween(1800, 3300)
+    } else if (roll < 0.83) {
+      next = 'sit'
+      duration = randomBetween(2600, 5200)
+    } else if (roll < 0.89) {
+      next = 'spark'
+      duration = 1900
+    } else if (roll < 0.95) {
+      next = 'snack'
+      duration = 3300
+    } else if (roll < 0.985) {
+      next = 'tumble'
+      duration = 1500
+    } else {
+      next = 'fly'
+      duration = 2200
+    }
+
+    actionRef.current = next
+    setAction(next)
+    actionEndsAtRef.current = now + duration
+
+    // A veces Sparky cambia de idea y mira hacia el otro lado antes de andar.
+    if (next === 'look' && Math.random() < 0.55) {
+      changeDirection(dirRef.current === 'right' ? 'left' : 'right')
+    }
+  }, [changeDirection])
+
+  // Mantener la preferencia y la acción inicial sincronizadas con localStorage.
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -59,279 +107,261 @@ export function useDragonAI() {
       if (saved && ['active', 'sleep', 'hidden'].includes(saved)) {
         setPreference(saved)
         prefRef.current = saved
-        if (saved === 'sleep') setAction('sleep')
+        if (saved === 'sleep') {
+          setAction('sleep')
+          actionRef.current = 'sleep'
+        }
       }
     } catch {
-      // Ignorar fallback de storage si hay bloqueo de cookies
+      // El dashboard sigue funcionando aunque el navegador bloquee localStorage.
     }
 
-    // Inicializar posición sobre el suelo de la ventana
     const groundY = window.innerHeight - PET_HEIGHT - GROUND_OFFSET
-    const initialX = Math.min(Math.max(40, window.innerWidth * 0.2), window.innerWidth - PET_WIDTH - 40)
+    const initialX = Math.min(
+      Math.max(40, window.innerWidth * 0.2),
+      Math.max(12, window.innerWidth - PET_WIDTH - 40),
+    )
     posRef.current = { x: initialX, y: groundY }
     setCoords({ x: initialX, y: groundY })
+    if (prefRef.current === 'active') chooseNextAction(performance.now())
 
-    const handleCustomToggle = (e: Event) => {
-      const customEvent = e as CustomEvent<DragonPetPreference>
-      if (customEvent.detail) {
-        setPreference(customEvent.detail)
-        prefRef.current = customEvent.detail
-        if (customEvent.detail === 'sleep') {
-          setAction('sleep')
-        } else if (customEvent.detail === 'active' && actionRef.current === 'sleep') {
-          setAction('walk')
-        }
+    const handleCustomToggle = (event: Event) => {
+      const next = (event as CustomEvent<DragonPetPreference>).detail
+      if (!next || !['active', 'sleep', 'hidden'].includes(next)) return
+      prefRef.current = next
+      setPreference(next)
+
+      if (next === 'sleep') {
+        actionRef.current = 'sleep'
+        setAction('sleep')
+      } else if (next === 'active') {
+        chooseNextAction()
       }
     }
 
     window.addEventListener(DRAGON_TOGGLE_EVENT, handleCustomToggle)
     return () => window.removeEventListener(DRAGON_TOGGLE_EVENT, handleCustomToggle)
-  }, [])
+  }, [chooseNextAction])
 
-  // Guardar preferencia
   const updatePreference = useCallback((newPref: DragonPetPreference) => {
-    setPreference(newPref)
     prefRef.current = newPref
+    setPreference(newPref)
+
     try {
       localStorage.setItem(DRAGON_STORAGE_KEY, newPref)
-    } catch {}
+    } catch {
+      // Preferencia en memoria como fallback.
+    }
 
     if (newPref === 'sleep') {
+      actionRef.current = 'sleep'
       setAction('sleep')
-    } else if (newPref === 'active' && actionRef.current === 'sleep') {
-      setAction('walk')
     }
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent(DRAGON_TOGGLE_EVENT, { detail: newPref }))
     }
+  }, [chooseNextAction])
+
+  // Parpadeos con intervalos irregulares, evitando parpadear mientras duerme o vuela.
+  useEffect(() => {
+    let blinkTimeout: ReturnType<typeof setTimeout> | undefined
+    let stopped = false
+
+    const scheduleBlink = () => {
+      blinkTimeout = setTimeout(() => {
+        if (stopped) return
+        if (!['sleep', 'fall', 'drag'].includes(actionRef.current) && Math.random() > 0.18) {
+          setIsBlinking(true)
+          setTimeout(() => setIsBlinking(false), 150)
+        }
+        scheduleBlink()
+      }, randomBetween(2400, 5200))
+    }
+
+    scheduleBlink()
+    return () => {
+      stopped = true
+      if (blinkTimeout) clearTimeout(blinkTimeout)
+    }
   }, [])
 
-  // Parpadeo ocular aleatorio
+  // Motor de locomoción: cambia de dirección durante el recorrido y decide cuándo parar.
   useEffect(() => {
-    const blinkInterval = setInterval(() => {
-      if (actionRef.current !== 'sleep' && Math.random() > 0.4) {
-        setIsBlinking(true)
-        setTimeout(() => setIsBlinking(false), 180)
-      }
-    }, 3500)
-    return () => clearInterval(blinkInterval)
-  }, [])
-
-  // Generador de travesuras periódicas si la mascota está 'active'
-  useEffect(() => {
-    if (preference !== 'active') return
-
-    const mischiefTimer = setInterval(() => {
-      if (isDraggingRef.current || prefRef.current !== 'active') return
-
-      const roll = Math.random()
-      if (roll < 0.28) {
-        // Chispita de plasma
-        setAction('spark')
-        setTimeout(() => {
-          if (prefRef.current === 'active' && !isDraggingRef.current) {
-            setAction('walk')
-          }
-        }, 3200)
-      } else if (roll < 0.52) {
-        // Pescadito tostado
-        setAction('snack')
-        setTimeout(() => {
-          if (prefRef.current === 'active' && !isDraggingRef.current) {
-            setAction('walk')
-          }
-        }, 4000)
-      } else if (roll < 0.70) {
-        // Voltereta traviesa
-        setAction('tumble')
-        setTimeout(() => {
-          if (prefRef.current === 'active' && !isDraggingRef.current) {
-            setAction('walk')
-          }
-        }, 1200)
-      } else if (roll < 0.88) {
-        // Pausa pensativa / Curioso
-        setAction('idle')
-        setTimeout(() => {
-          if (prefRef.current === 'active' && !isDraggingRef.current) {
-            // Cambiar de dirección a veces al reanudar
-            if (Math.random() > 0.5) {
-              const newDir = dirRef.current === 'right' ? 'left' : 'right'
-              setDirection(newDir)
-              dirRef.current = newDir
-            }
-            setAction('walk')
-          }
-        }, 2800)
-      }
-    }, 14000)
-
-    return () => clearInterval(mischiefTimer)
-  }, [preference])
-
-  // Ciclo de animación física y movimiento con requestAnimationFrame
-  useEffect(() => {
-    let animId: number
-    let stepCounter = 0
+    let animId = 0
+    lastTimeRef.current = performance.now()
 
     const updatePhysics = (now: number) => {
-      const dt = Math.min((now - lastTimeRef.current) / 1000, 0.1) // clamp dt
+      const dt = Math.min((now - lastTimeRef.current) / 1000, 0.05)
       lastTimeRef.current = now
 
-      // No mover si la pestaña está oculta o si el dragón está oculto
       if (document.visibilityState === 'hidden' || prefRef.current === 'hidden') {
         animId = requestAnimationFrame(updatePhysics)
         return
       }
 
       const groundY = window.innerHeight - PET_HEIGHT - GROUND_OFFSET
-      const maxX = window.innerWidth - PET_WIDTH - 12
       const minX = 12
+      const maxX = Math.max(minX, window.innerWidth - PET_WIDTH - 12)
 
-      // Si está siendo arrastrado por el ratón, las coordenadas las maneja el mousemove
       if (isDraggingRef.current) {
         animId = requestAnimationFrame(updatePhysics)
         return
       }
 
-      // ── FÍSICA DE CAÍDA (GRAVEDAD) ──
-      if (posRef.current.y < groundY - 1) {
+      // Gravedad al soltar a Sparky en el aire o después de un pequeño salto.
+      if (posRef.current.y < groundY - 1 || velRef.current.vy < 0) {
         velRef.current.vy = Math.min(velRef.current.vy + GRAVITY, TERMINAL_VELOCITY)
         posRef.current.y += velRef.current.vy
 
-        // Al planear hacia abajo
-        if (actionRef.current !== 'fall' && actionRef.current !== 'drag') {
+        if (actionRef.current !== 'fall' && actionRef.current !== 'spark') {
+          actionRef.current = 'fall'
           setAction('fall')
         }
 
-        // Toca el suelo
         if (posRef.current.y >= groundY) {
           posRef.current.y = groundY
           velRef.current.vy = 0
           if (prefRef.current === 'sleep') {
+            actionRef.current = 'sleep'
             setAction('sleep')
           } else {
-            setAction('walk')
+            chooseNextAction(now)
           }
         }
 
+        if (now - lastRenderAtRef.current > 32) {
+          setCoords({ ...posRef.current })
+          lastRenderAtRef.current = now
+        }
+        animId = requestAnimationFrame(updatePhysics)
+        return
+      }
+
+      if (prefRef.current === 'sleep') {
+        if (actionRef.current !== 'sleep') {
+          actionRef.current = 'sleep'
+          setAction('sleep')
+        }
+        animId = requestAnimationFrame(updatePhysics)
+        return
+      }
+
+      // El final de cada acción decide el siguiente comportamiento.
+      if (now >= actionEndsAtRef.current && actionEndsAtRef.current > 0) {
+        chooseNextAction(now)
+      }
+
+      if (actionRef.current === 'walk') {
+        // Cambios espontáneos de dirección a mitad de camino, no solo al tocar el borde.
+        if (now >= directionChangeAtRef.current) {
+          if (Math.random() < 0.68) {
+            changeDirection(dirRef.current === 'right' ? 'left' : 'right')
+          }
+          directionChangeAtRef.current = now + randomBetween(1800, 4800)
+        }
+
+        const sign = dirRef.current === 'right' ? 1 : -1
+        posRef.current.x += sign * nextSpeedRef.current * dt * 60
+
+        if (posRef.current.x >= maxX) {
+          posRef.current.x = maxX
+          changeDirection('left')
+          directionChangeAtRef.current = now + randomBetween(1800, 3600)
+        } else if (posRef.current.x <= minX) {
+          posRef.current.x = minX
+          changeDirection('right')
+          directionChangeAtRef.current = now + randomBetween(1800, 3600)
+        }
+
+        frameCounterRef.current += dt * 60
+        if (frameCounterRef.current >= 7) {
+          frameCounterRef.current = 0
+          setFrameStep((prev) => (prev + 1) % 4)
+        }
+      }
+
+      // Limitar renders de posición para que la mascota no fuerce renders a 60 FPS.
+      if (now - lastRenderAtRef.current > 32) {
         setCoords({ ...posRef.current })
-        animId = requestAnimationFrame(updatePhysics)
-        return
+        lastRenderAtRef.current = now
       }
 
-      // Si está en el suelo y en modo sueño o pausado en travesura estática
-      if (
-        prefRef.current === 'sleep' ||
-        actionRef.current === 'sleep' ||
-        actionRef.current === 'spark' ||
-        actionRef.current === 'snack' ||
-        actionRef.current === 'idle'
-      ) {
-        animId = requestAnimationFrame(updatePhysics)
-        return
-      }
-
-      // ── CAMINATA AUTÓNOMA HORIZONTAL ──
-      stepCounter++
-      if (stepCounter % 8 === 0) {
-        setFrameStep((prev) => (prev + 1) % 4)
-      }
-
-      const currentDir = dirRef.current
-      const speed = currentDir === 'right' ? WALK_SPEED : -WALK_SPEED
-
-      posRef.current.x += speed * (dt * 60)
-
-      // Rebote en bordes de la pantalla
-      if (posRef.current.x >= maxX) {
-        posRef.current.x = maxX
-        dirRef.current = 'left'
-        setDirection('left')
-      } else if (posRef.current.x <= minX) {
-        posRef.current.x = minX
-        dirRef.current = 'right'
-        setDirection('right')
-      }
-
-      setCoords({ ...posRef.current })
       animId = requestAnimationFrame(updatePhysics)
     }
 
     animId = requestAnimationFrame(updatePhysics)
     return () => cancelAnimationFrame(animId)
+  }, [changeDirection, chooseNextAction])
+
+  // Recalcular el suelo y mantener a Sparky dentro de la ventana al redimensionar.
+  useEffect(() => {
+    const handleResize = () => {
+      const maxX = Math.max(12, window.innerWidth - PET_WIDTH - 12)
+      const groundY = window.innerHeight - PET_HEIGHT - GROUND_OFFSET
+      posRef.current.x = Math.min(Math.max(12, posRef.current.x), maxX)
+      if (posRef.current.y > groundY) posRef.current.y = groundY
+      setCoords({ ...posRef.current })
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // ── MANEJO DE DRAG & DROP CON EL MOUSE / TOUCH ──
-  const handleDragStart = useCallback(
-    (clientX: number, clientY: number) => {
-      if (preference === 'hidden') return
+  // Drag & drop con mouse y touch mediante Pointer Events.
+  const handleDragStart = useCallback((clientX: number, clientY: number) => {
+    if (prefRef.current === 'hidden') return
 
-      isDraggingRef.current = true
-      setIsDragging(true)
-      setAction('drag')
-      velRef.current.vy = 0
+    isDraggingRef.current = true
+    setIsDragging(true)
+    actionRef.current = 'drag'
+    setAction('drag')
+    velRef.current.vy = 0
+    dragOffsetRef.current = {
+      x: clientX - posRef.current.x,
+      y: clientY - posRef.current.y,
+    }
 
-      dragOffsetRef.current = {
-        x: clientX - posRef.current.x,
-        y: clientY - posRef.current.y,
+    const onPointerMove = (event: PointerEvent) => {
+      if (!isDraggingRef.current) return
+      const newX = Math.max(10, Math.min(window.innerWidth - PET_WIDTH - 10, event.clientX - dragOffsetRef.current.x))
+      const newY = Math.max(10, Math.min(window.innerHeight - PET_HEIGHT - 10, event.clientY - dragOffsetRef.current.y))
+
+      if (event.movementX > 1) changeDirection('right')
+      else if (event.movementX < -1) changeDirection('left')
+
+      posRef.current = { x: newX, y: newY }
+      setCoords({ x: newX, y: newY })
+    }
+
+    const onPointerUp = () => {
+      isDraggingRef.current = false
+      setIsDragging(false)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onPointerUp)
+
+      const groundY = window.innerHeight - PET_HEIGHT - GROUND_OFFSET
+      if (posRef.current.y < groundY - 2) {
+        actionRef.current = 'fall'
+        setAction('fall')
+        velRef.current.vy = 1
+      } else {
+        posRef.current.y = groundY
+        setCoords({ ...posRef.current })
+        chooseNextAction()
       }
+    }
 
-      const onMouseMove = (moveEvt: MouseEvent) => {
-        if (!isDraggingRef.current) return
-        const newX = Math.max(10, Math.min(window.innerWidth - PET_WIDTH - 10, moveEvt.clientX - dragOffsetRef.current.x))
-        const newY = Math.max(10, Math.min(window.innerHeight - PET_HEIGHT - 10, moveEvt.clientY - dragOffsetRef.current.y))
-
-        // Si se mueve horizontalmente mientras se arrastra, acomodar la vista
-        if (moveEvt.movementX > 2) {
-          setDirection('right')
-          dirRef.current = 'right'
-        } else if (moveEvt.movementX < -2) {
-          setDirection('left')
-          dirRef.current = 'left'
-        }
-
-        posRef.current = { x: newX, y: newY }
-        setCoords({ x: newX, y: newY })
-      }
-
-      const onMouseUp = () => {
-        isDraggingRef.current = false
-        setIsDragging(false)
-        window.removeEventListener('mousemove', onMouseMove)
-        window.removeEventListener('mouseup', onMouseUp)
-
-        // Si quedó en el aire, caerá en el siguiente frame con gravedad
-        const groundY = window.innerHeight - PET_HEIGHT - GROUND_OFFSET
-        if (posRef.current.y < groundY - 2) {
-          setAction('fall')
-          velRef.current.vy = 1
-        } else {
-          posRef.current.y = groundY
-          setCoords({ ...posRef.current })
-          setAction(prefRef.current === 'sleep' ? 'sleep' : 'walk')
-        }
-      }
-
-      window.addEventListener('mousemove', onMouseMove)
-      window.addEventListener('mouseup', onMouseUp)
-    },
-    [preference]
-  )
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
+  }, [changeDirection, chooseNextAction])
 
   const triggerPoke = useCallback(() => {
-    if (isDraggingRef.current || preference === 'hidden') return
-
-    // Reacción inmediata al hacer click suave (pequeño brinco y chispita)
+    if (isDraggingRef.current || prefRef.current === 'hidden') return
     velRef.current.vy = -6
+    actionRef.current = 'spark'
     setAction('spark')
-    setTimeout(() => {
-      if (prefRef.current === 'active' && !isDraggingRef.current) {
-        setAction('walk')
-      }
-    }, 2500)
-  }, [preference])
+    actionEndsAtRef.current = performance.now() + 1700
+  }, [])
 
   return {
     preference,
