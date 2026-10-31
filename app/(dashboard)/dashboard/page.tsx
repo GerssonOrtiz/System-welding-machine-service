@@ -78,7 +78,7 @@ export default function DashboardPage() {
     'En espera de repuesto', 
     'En espera de repuesto adicional', 
     'Control de calidad', 
-    'Listo para entrega', 
+    'Servicio culminado', 
     'Entregado', 
     'REVISION', 
     'PRESTAMO'

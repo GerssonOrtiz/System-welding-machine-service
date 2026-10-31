@@ -222,7 +222,7 @@ export default function EquiposPage() {
               <option value="En espera de repuesto adicional">ESPERA REPUESTO ADICIONAL</option>
               <option value="En mantenimiento">EN MANTENIMIENTO</option>
               <option value="Control de calidad">CONTROL DE CALIDAD</option>
-              <option value="Listo para entrega">LISTO PARA ENTREGA</option>
+              <option value="Servicio culminado">SERVICIO CULMINADO</option>
               <option value="Entregado">ENTREGADO</option>
               <option value="REVISION">REVISIÓN (ADMIN)</option>
               <option value="PRESTAMO">PRÉSTAMO (ADMIN)</option>

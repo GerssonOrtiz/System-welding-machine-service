@@ -1,4 +1,4 @@
-# PROJECT_CONTEXT.md — SYNAPSE v2.5
+# PROJECT_CONTEXT.md — SYNAPSE v2.5.1
 > Documento de contexto técnico optimizado para lectura por IA. Contiene arquitectura, estructura, flujos y convenciones. Leer antes de tocar cualquier archivo.
 
 ---
@@ -51,7 +51,7 @@ Next.js App Router
 ├── lib/                   → Lógica de servidor: Supabase, workflow, validaciones, mail
 ├── hooks/                 → Custom hooks (useUser context provider, useRealtimePizarra, etc.)
 ├── types/                 → Tipos TypeScript derivados del esquema de BD
-└── supabase/migrations/   → Historial SQL del esquema (001–019)
+└── supabase/migrations/   → Historial SQL del esquema (001–024)
 ```
 
 **Patrón de renderizado:** Server Components por defecto en `app/`. `app/(dashboard)/layout.tsx` valida sesión en el servidor y alimenta `<UserProvider>` y `<DashboardShell>`, eliminando pantallas de carga infinitas en el cliente. Directiva `'use client'` solo donde se necesita interactividad. Las API Routes actúan como capa de acceso a Supabase desde el cliente.
@@ -143,7 +143,7 @@ Todas las API Routes usan `createServerClient()` de `lib/supabase/server.ts`, sa
 | `equipment/modals/ModalAprobacionVentas.tsx` | Sub-modal: aprobación bifurcada en dos secciones independientes (Repuestos con Fecha de Llegada estimada y Servicios con botones de sugerencias rápidas habituales) + observaciones (estado "Aprobado", inicializa `approved_parts` y `parts_status = 'SIN_REPUESTOS'`) |
 | `equipment/modals/ModalEntregaLogistica.tsx` | Sub-modal de solicitud/entrega de repuestos con items requeridos y notas |
 | `equipment/modals/ModalEntregaRepuestos.tsx` | Modal dedicado de Almacén/Logística para registro directo de entregas (totales o parciales) de repuestos aprobados e ítems adicionales. Filtra exclusivamente repuestos físicos para Logística (excluyendo ítems de tipo 'SERVICIO') |
-| `equipment/modals/ModalCulminadoODP.tsx` | Sub-modal: texto predefinido + subida opcional de archivos PDF y/o enlaces URL para Informe de Servicio y Certificado de VRD + observaciones finales (estado "Listo para entrega") |
+| `equipment/modals/ModalCulminadoODP.tsx` | Sub-modal: texto predefinido + adjuntos opcionales para Informe de Servicio y Certificado de VRD + observaciones finales (estado "Servicio culminado") |
 | `pizarra/PizarraBoard.tsx` | Tablero kanban realtime con columnas de taller (`Aprobado`, `En mantenimiento`). Usa `useRealtimePizarra` |
 | `pizarra/PizarraCard.tsx` | Tarjeta de equipo con estrellas VIP ⭐, efecto glow pulsante y chip independiente de estado de repuestos (`📦 Parcial`, `📦 Listo`, etc.) |
 | `admin/BrandModelManager.tsx` | CRUD de marcas y modelos del catálogo |
@@ -352,7 +352,7 @@ vivian.mamani@cabelab.com → Fijo adicional
 | **Aprobado** | Ventas | Tabla clasificada de repuestos (con fecha de llegada) y servicios aprobados | Filas independientes para repuestos y servicios + fecha estimada + observaciones |
 | **En espera de repuesto** | Logística / Taller | Solicitud o entrega de repuestos | Filas: descripción / cantidad / detalle + observaciones |
 | **Coordinación con el cliente** | Operaciones / Admin | Reply en hilo con cuerpo personalizado | Checkbox "Enviar correo" + campo de texto para cuerpo del correo |
-| **Listo para entrega** | ODP | Texto predefinido de culminado + documentos técnicos (Informe de servicio y Certificado VRD) | Subida PDF opcional, links opcionales + observaciones |
+| **Servicio culminado** | ODP | Texto predefinido de culminado + documentos técnicos (Informe de servicio y Certificado VRD opcionales) | Adjuntos opcionales + observaciones |
 | Otros estados | — | **Sin correo** | — |
 | **Override superadmin** | Superadmin | Correo con banner amarillo de advertencia | Solo si activa el checkbox "notificar por correo" |
 
@@ -426,12 +426,12 @@ const ENTRY_TO = [ ... ]
 ### ✅ Implementado y funcional
  
  - Sistema de roles y autenticación por username completo
-+- **Arquitectura de Autenticación Server-First y Persistencia de Sesión (Next.js 16)**:
-+  - Migración a convención `proxy.ts` de Next.js 16 (reemplazo de `middleware.ts`).
-+  - Propagación obligatoria de cookies de sesión refrescadas en redirecciones HTTP.
-+  - Cliente Supabase de servidor adaptado con `getAll()` / `setAll()`.
-+  - Layout `app/(dashboard)/layout.tsx` transformado en Server Component que alimenta `<UserProvider>` y `<DashboardShell>`, erradicando bloqueos infinitos de `"Autenticando sesión..."` al recargar el navegador.
-+  - Ruta raíz `/` (`app/page.tsx`) dinámica con redirección inteligente según sesión activa y rol.
+- **Arquitectura de Autenticación Server-First y Persistencia de Sesión (Next.js 16)**:
+  - Migración a convención `proxy.ts` de Next.js 16 (reemplazo de `middleware.ts`).
+  - Propagación obligatoria de cookies de sesión refrescadas en redirecciones HTTP.
+  - Cliente Supabase de servidor adaptado con `getAll()` / `setAll()`.
+  - Layout `app/(dashboard)/layout.tsx` transformado en Server Component que alimenta `<UserProvider>` y `<DashboardShell>`, erradicando bloqueos infinitos de `"Autenticando sesión..."` al recargar el navegador.
+  - Ruta raíz `/` (`app/page.tsx`) dinámica con redirección inteligente según sesión activa y rol.
 - **Protección y Restricciones de Edición para Recepción (v2.5)**:
   - Al editar un equipo en estado inicial "En espera de diagnóstico", el rol `recepcion` no tiene acceso ni visual a los campos de N° Informe, Enlace PDF ni a la sección colapsable de Tiempos Operativos, impidiendo su edición tanto en la UI (`EquipmentDetail.tsx`) como a nivel de backend (`PUT /api/equipment/[id]/update`).
 - **Aprobación de Servicio y Repuestos con Fecha Estimada (v2.5)**:
@@ -440,16 +440,14 @@ const ENTRY_TO = [ ... ]
     2. **Servicios Aprobados:** Sección dedicada con chips de inserción inmediata para servicios habituales (*Pintado de tapa*, *Servicio de mantenimiento*, *Informe de servicio*, *Certificado de VRD*, *Reparación de tarjeta*, *Reparación general*) y campo para servicios personalizados.
   - Generación de correo en hilo con dos tablas separadas por tipo (`lib/mail/mailer.ts`).
   - Tabla de "Control de Repuestos" en `EquipmentDetail.tsx` actualizada para indicar el tipo (*Repuesto* / *Servicio*) y la fecha programada de llegada.
-- **Documentación Técnica Final en Culminación de Servicio (v2.5)**:
-  - Sub-modal `ModalCulminadoODP.tsx` enriquecido con opciones para subir el **Informe de Servicio** (archivo PDF y/o enlace web/Drive) y el **Certificado de VRD** (archivo PDF y/o enlace web/Drive), ambos de carácter opcional.
-  - Soporte de subida y despacho vía `FormData` en `StatusChangeModal.tsx` y `app/api/equipment/[id]/update-status/route.ts`.
-  - Persistencia de `service_report_url` y `vrd_certificate_url` en `equipment_records` (Migración 021).
-  - Correo de servicio culminado adjunta los PDFs seleccionados y renderiza accesos directos estilizados para consultar los enlaces.
-  - Ficha técnica (`EquipmentDetail.tsx`) presenta botones de acceso directo a los informes finales y certificados cuando existan.
-+- **Desacoplamiento de Estado de Servicio y Repuestos (ESPECIFICACION_REFACTORIZACION_REPUESTOS_SERVICIO.md — 100% Implementado y Funcional)**:
-+  - **Migración 019**: columnas `parts_status` (`SIN_REPUESTOS`, `PARCIAL`, `COMPLETO`), `approved_parts` (JSONB) y `parts_deliveries` (JSONB).
-+  - Vista `equipment_with_status` actualizada con las nuevas columnas.
-+  - Transiciones de workflow liberadas: `Aprobado` ➔ `En mantenimiento` ➔ `Listo para entrega` sin bloqueo por entrega de piezas físicas.
+- **Documentación Técnica Final en Culminación de Servicio (v2.5.1)**:
+  - Sub-modal `ModalCulminadoODP.tsx` enriquecido con opciones para adjuntar el **Informe de Servicio** y el **Certificado de VRD**, ambos estrictamente opcionales.
+  - Despacho directo vía `FormData` en el correo de culminación (`lib/mail/mailer.ts`), sin forzar persistencia en BD ni condicionar el avance del servicio.
+  - Unificación de estado: prevalece el estado canónico **"Servicio culminado"** tanto en el workflow como en los filtros de Equipos y Dashboard.
+- **Desacoplamiento de Estado de Servicio y Repuestos (ESPECIFICACION_REFACTORIZACION_REPUESTOS_SERVICIO.md — 100% Implementado y Funcional)**:
+  - **Migración 019**: columnas `parts_status` (`SIN_REPUESTOS`, `PARCIAL`, `COMPLETO`), `approved_parts` (JSONB) y `parts_deliveries` (JSONB).
+  - Vista `equipment_with_status` actualizada con las nuevas columnas.
+  - Transiciones de workflow liberadas: `Aprobado` ➔ `En mantenimiento` ➔ `Servicio culminado` sin bloqueo por entrega de piezas físicas.
 +  - Endpoint `/api/equipment/[id]/deliver-parts` para registro de entregas totales o parciales por Almacén/Logística con auditoría en `status_history` y envío de correo en hilo `sendEntregaLogistica`.
 +  - Sub-modal interactivo `ModalEntregaRepuestos.tsx` y botón dedicado en `EquipmentDetail.tsx` con badges duales (servicio y material).
 +  - Tarjetas `PizarraCard.tsx` y tabla `EquipmentTable.tsx` con indicadores visuales de repuestos (`📦 Parcial`, `📦 Listo`, etc.).
@@ -573,6 +571,9 @@ const ENTRY_TO = [ ... ]
 | 019 | `019_service_and_parts_status_separation.sql` | Desacoplamiento de Servicio de Taller vs Repuestos: columnas `parts_status`, `approved_parts`, `parts_deliveries`, recrea vista `equipment_with_status` y transiciones directas |
 | 020 | `020_non_business_days.sql` | Tabla `non_business_days` con RLS para gestión de feriados y días no hábiles considerados en la calculadora predictiva |
 | 021 | `021_service_report_and_vrd_certificate.sql` | Columnas `service_report_url` y `vrd_certificate_url` en `equipment_records` y actualización de vista `equipment_with_status` para documentación técnica de culminación |
+| 022 | `022_workflow_maintenance_to_ready_for_delivery.sql` | Habilita transiciones de culminación hacia `Listo para entrega` y de allí hacia `Entregado` |
+| 023 | `023_fix_catalog_rls.sql` | Corrección de evaluación de rol insensible a mayúsculas para superadmin (`is_superadmin() OR lower(role) = 'superadmin'`) |
+| 024 | `024_unify_servicio_culminado_state.sql` | Unificación oficial a estado canónico `Servicio culminado` y asignación de transiciones (`En mantenimiento -> Servicio culminado -> Entregado`) |
 
 ---
 
@@ -853,7 +854,7 @@ Anteriormente, el flujo trataba `En espera de repuesto` como un estado del workf
 
 1. **Estado del Servicio (Taller Operativo)**:
    - Controla exclusivamente el ciclo de trabajo físico:
-     `Pendiente de aprobación` ➔ `Aprobado` ➔ `En mantenimiento` ➔ `Control de calidad` ➔ `Listo para entrega` ➔ `Entregado`.
+     `Pendiente de aprobación` ➔ `Aprobado` ➔ `En mantenimiento` ➔ `Servicio culminado` ➔ `Entregado`.
    - Operaciones puede iniciar el mantenimiento y avanzar el servicio técnico sin que la falta de entrega física de repuestos congele el sistema.
 
 2. **Estado de Repuestos (Logística / Almacén)**:

@@ -8,6 +8,7 @@ import { ROLE_LABELS } from '@/types/user'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { LogOut, Menu, X } from 'lucide-react'
+import { DragonToggleNavbar } from '@/components/dashboard/pet/DragonToggleNavbar'
 
 interface NavbarProps {
   onMenuToggle?: () => void
@@ -66,8 +67,11 @@ export function Navbar({ onMenuToggle, isMobileMenuOpen }: NavbarProps) {
           </div>
         </div>
 
-        {/* Sección Derecha: Información de usuario y Logout */}
-        <div className="flex items-center gap-3 md:gap-4">
+        {/* Sección Derecha: Selector de Mascota, Información de usuario y Logout */}
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Botón Mascota de Taller (Chimuelo Shimeji) */}
+          <DragonToggleNavbar />
+
           {/* Info del usuario actual en burbuja sutil */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
             <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
