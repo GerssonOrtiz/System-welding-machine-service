@@ -145,7 +145,7 @@ export function DragonPetOverlay() {
           direction={direction}
           isBlinking={isBlinking}
           frameStep={frameStep}
-          scale={2.2}
+          scale={1.8}
         />
       </div>
     </div>

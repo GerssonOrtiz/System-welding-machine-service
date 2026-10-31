@@ -11,9 +11,10 @@ import {
   DRAGON_TOGGLE_EVENT,
 } from './types'
 
-const PET_WIDTH = 150
-const PET_HEIGHT = 125
-const GROUND_OFFSET = 18
+// Dimensiones reales del sprite = viewBox (80×56) × scale (1.8)
+const PET_WIDTH  = 144   // 80 × 1.8
+const PET_HEIGHT = 101   // 56 × 1.8
+const GROUND_OFFSET = 16
 const WALK_SPEED_MIN = 0.55
 const WALK_SPEED_MAX = 1.45
 const GRAVITY = 0.65
