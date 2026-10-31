@@ -248,7 +248,7 @@ export function useDragonAI() {
       }
 
       // El final de cada acción decide el siguiente comportamiento.
-      if (now >= actionEndsAtRef.current && actionEndsAtRef.current > 0) {
+      if (actionRef.current !== 'fly' && now >= actionEndsAtRef.current && actionEndsAtRef.current > 0) {
         chooseNextAction(now)
       }
 

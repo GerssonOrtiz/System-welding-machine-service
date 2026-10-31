@@ -13,12 +13,8 @@ interface PixelToothlessDragonProps {
 }
 
 /**
- * Renderizador SVG nativo estilo pixel art para Chimuelo (Night Fury Toothless)
- * Paleta:
- * - Piel / Escamas: #0c0d12, #161922, #232836 (obsidiana y grafito con reflejos)
- * - Ojos: #10b981 (esmeralda vivo), #059669 (borde), #34d399 (pupila reflectante)
- * - Chispas / Plasma: #00D2FF, #38bdf8, #ffffff
- * - Pescadito snack: #f97316 (salmón asado), #e2e8f0 (espinas), #ef4444 (brasa)
+ * Sparky — dragón pixel art inspirado en una pequeña Furia Nocturna.
+ * SVG vectorial con bordes duros para conservar el aspecto pixel art.
  */
 export function PixelToothlessDragon({
   action,
@@ -27,33 +23,23 @@ export function PixelToothlessDragon({
   frameStep = 0,
   scale = 2.4,
 }: PixelToothlessDragonProps) {
-  // Dimensiones base del lienzo pixel art
-  const width = 64
-  const height = 52
-
-  const isFlipped = direction === 'left'
-
-  // Variaciones de patas según frameStep para 'walk'
-  const isWalkStep = action === 'walk' && frameStep % 2 === 1
-  const isTumble = action === 'tumble'
-  const isSleeping = action === 'sleep'
-  const isDragging = action === 'drag'
-  const isFalling = action === 'fall'
-  const isSpurtingSpark = action === 'spark'
-  const isEatingSnack = action === 'snack'
-  const isSitting = action === 'sit'
-  const isFlying = action === 'fly' || action === 'fall' || action === 'drag'
-  const isLooking = action === 'look'
+  const width = 80
+  const height = 64
+  const flying = action === 'fly' || action === 'fall' || action === 'drag'
+  const sitting = action === 'sit' || action === 'sleep' || action === 'idle' || action === 'look'
+  const walking = action === 'walk'
+  const eating = action === 'snack'
+  const sleeping = action === 'sleep'
+  const looking = action === 'look'
+  const step = frameStep % 2 === 1
 
   return (
     <div
-      className={`dragon-sprite relative select-none pointer-events-none ${action === 'walk' ? 'dragon-walk' : ''} ${isSitting ? 'dragon-sit' : ''} ${isLooking ? 'dragon-look' : ''} ${isFlying ? 'dragon-fly' : ''} ${isSleeping ? 'dragon-sleep' : ''}`}
+      className={`sparky-sprite relative select-none pointer-events-none ${flying ? 'sparky-airborne' : ''} ${walking ? 'sparky-walking' : ''} ${sitting ? 'sparky-resting' : ''} ${sleeping ? 'sparky-sleeping' : ''} ${action === 'tumble' ? 'sparky-tumbling' : ''}`}
       style={{
         width: `${width * scale}px`,
         height: `${height * scale}px`,
-        transform: `${isFlipped ? 'scaleX(-1)' : 'scaleX(1)'} ${
-          isTumble ? 'rotate(180deg)' : ''
-        }`,
+        transform: `${direction === 'left' ? 'scaleX(-1)' : 'scaleX(1)'}`,
         transformOrigin: 'center bottom',
       }}
     >
@@ -61,255 +47,165 @@ export function PixelToothlessDragon({
         viewBox={`0 0 ${width} ${height}`}
         width="100%"
         height="100%"
-        className="w-full h-full"
-        style={{
-          shapeRendering: 'crispEdges',
-          imageRendering: 'pixelated',
-        }}
+        role="img"
+        aria-label="Sparky, mascota cyber dragón"
+        style={{ shapeRendering: 'crispEdges', imageRendering: 'pixelated', overflow: 'visible' }}
       >
-        <style>{`
-          @keyframes dragon-breathe {
-            0%, 100% { transform: translateY(0) scaleY(1); }
-            50% { transform: translateY(-1px) scaleY(1.025); }
-          }
-          @keyframes dragon-tail-sway {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-7deg); }
-          }
-          @keyframes dragon-wing-flap {
-            0%, 100% { transform: scaleY(1); }
-            50% { transform: scaleY(.68); }
-          }
-          @keyframes dragon-hop {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-          }
-          @keyframes dragon-sleep-bob {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(1.5px); }
-          }
-          .dragon-body-motion { transform-box: fill-box; transform-origin: center bottom; animation: dragon-breathe 2.2s ease-in-out infinite; }
-          .dragon-tail-motion { transform-box: fill-box; transform-origin: right center; animation: dragon-tail-sway 1.7s ease-in-out infinite; }
-          .dragon-wing-motion { transform-box: fill-box; transform-origin: center bottom; }
-          .dragon-sprite.dragon-walk .dragon-body-motion { animation-duration: .48s; }
-          .dragon-sprite.dragon-sit .dragon-body-motion { transform: translateY(2px); animation-duration: 3s; }
-          .dragon-sprite.dragon-look .dragon-body-motion { animation: dragon-hop 1.8s ease-in-out infinite; }
-          .dragon-sprite.dragon-fly .dragon-wing-motion { animation: dragon-wing-flap .24s ease-in-out infinite; }
-          .dragon-sprite.dragon-sleep .dragon-body-motion { animation: dragon-sleep-bob 3.2s ease-in-out infinite; }
-        `}</style>
         <defs>
-          <filter id="plasma-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#00D2FF" floodOpacity="0.8" />
+          <filter id="sparky-eye-glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="1.3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
-          <filter id="fire-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="1" floodColor="#f97316" floodOpacity="0.9" />
+          <filter id="sparky-plasma-glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
+        <style>{`
+          @keyframes sparky-breathe { 0%,100%{transform:translateY(0) scaleY(1)} 50%{transform:translateY(-1px) scaleY(1.025)} }
+          @keyframes sparky-tail { 0%,100%{transform:rotate(2deg)} 50%{transform:rotate(-7deg)} }
+          @keyframes sparky-wing { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.48)} }
+          @keyframes sparky-wing-fast { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.28)} }
+          @keyframes sparky-hover { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+          @keyframes sparky-blink { 0%,90%,100%{transform:scaleY(1)} 94%{transform:scaleY(.12)} }
+          @keyframes sparky-z { 0%{opacity:0;transform:translate(0,4px)} 30%{opacity:1} 100%{opacity:0;transform:translate(5px,-10px)} }
+          @keyframes sparky-tumble { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+          .sparky-body { transform-box:fill-box; transform-origin:center bottom; animation:sparky-breathe 2.4s ease-in-out infinite; }
+          .sparky-tail { transform-box:fill-box; transform-origin:100% 50%; animation:sparky-tail 2.1s ease-in-out infinite; }
+          .sparky-wing { transform-box:fill-box; transform-origin:70% 90%; }
+          .sparky-airborne .sparky-wing { animation:sparky-wing-fast .22s ease-in-out infinite; }
+          .sparky-resting .sparky-body { animation-duration:3.5s; }
+          .sparky-walking .sparky-body { animation-duration:.42s; }
+          .sparky-sprite.sparky-airborne { animation:sparky-hover .55s ease-in-out infinite; }
+          .sparky-sleeping .sparky-body { animation-duration:4s; }
+          .sparky-tumbling { animation:sparky-tumble .65s ease-in-out; }
+          .sparky-eye { transform-box:fill-box; transform-origin:center; animation:sparky-blink 4.8s infinite; }
+          @media (prefers-reduced-motion: reduce) { .sparky-sprite *, .sparky-sprite { animation:none!important; } }
+        `}</style>
 
-        {/* ── COLA Y ALETA TIMÓN ROJA / NEGRA DE CHIMUELO ── */}
-        <g id="dragon-tail" className="dragon-tail-motion">
-          {/* Cola curva */}
-          <rect x="6" y="32" width="6" height="4" fill="#0f1117" />
-          <rect x="2" y="30" width="6" height="4" fill="#161922" />
-          <rect x="0" y="26" width="4" height="6" fill="#161922" />
-          
-          {/* Aletas caudales (una negra original, una roja con calavera sutil / prótesis) */}
-          <rect x="0" y="22" width="4" height="5" fill="#e11d48" /> {/* Aleta prótesis roja de Hipo */}
-          <rect x="1" y="23" width="2" height="2" fill="#ffffff" /> {/* Detalle blanco */}
-          <rect x="2" y="31" width="4" height="4" fill="#0c0d12" /> {/* Aleta inferior negra */}
+        {/* Sombra: se estrecha cuando está en el aire */}
+        <ellipse cx="39" cy="58" rx={flying ? 12 : 29} ry={flying ? 2 : 3.2} fill="#050609" opacity={flying ? '.16' : '.32'} />
+
+        {/* Cola larga y flexible con prótesis roja */}
+        <g className="sparky-tail">
+          <path d="M23 43 L15 42 L10 39 L7 35 L8 32 L13 34 L17 36 L25 35 L32 38 L31 43Z" fill="#0b0d12" stroke="#050609" strokeWidth="1.5" />
+          <path d="M11 37 L6 33 L3 29 L8 29 L13 32Z" fill="#252a34" />
+          <path d="M6 29 L2 27 L4 23 L9 24 L11 28Z" fill="#b91c3b" stroke="#101116" strokeWidth="1" />
+          <rect x="4" y="25" width="2" height="2" fill="#fda4af" />
+          <path d="M13 40 L7 38 L5 35" fill="none" stroke="#424957" strokeWidth="1.5" />
         </g>
 
-        {/* ── ALAS (Plegadas o Desplegadas al caer/arrastrar) ── */}
-        <g id="dragon-wings" className="dragon-wing-motion">
-          {isDragging || isFalling || isFlying ? (
-            /* Alas abiertas planeando / pataleando */
-            <g id="wings-open">
-              <path
-                d="M 18 20 L 10 10 L 18 13 L 26 8 L 25 22 Z"
-                fill="#161922"
-                stroke="#0c0d12"
-                strokeWidth="1"
-              />
-              <rect x="12" y="12" width="10" height="2" fill="#232836" />
-              <rect x="15" y="15" width="8" height="2" fill="#1e222e" />
+        {/* Ala posterior */}
+        <g className="sparky-wing" style={{ animationDuration: flying ? '.2s' : '2.8s' }}>
+          <path d={flying ? 'M31 34 L20 8 L29 15 L34 3 L39 16 L49 7 L47 34Z' : 'M29 35 L24 18 L33 23 L39 14 L43 25 L49 21 L47 39Z'} fill="#171b24" stroke="#07090e" strokeWidth="2" />
+          <path d="M28 20 L34 27 L39 17 L42 29 L47 24" fill="none" stroke="#343b49" strokeWidth="2" />
+          <path d="M31 28 L37 32 L43 28" fill="none" stroke="#252c38" strokeWidth="1.5" />
+        </g>
+
+        {/* Cuerpo principal */}
+        <g className="sparky-body">
+          <path d="M18 34 Q20 27 31 27 L48 29 Q57 33 58 43 L53 53 L22 54 L15 47Z" fill="#11141b" stroke="#050609" strokeWidth="2" />
+          <path d="M23 33 Q31 29 43 33 L50 43 L45 51 L24 50 L19 43Z" fill="#202530" />
+          <path d="M28 35 L35 34 L41 38 L39 47 L29 47Z" fill="#292f3b" />
+          <path d="M30 39 L37 39 L38 45 L31 46Z" fill="#343b47" opacity=".65" />
+          {/* pequeñas escamas y reflejos */}
+          <rect x="25" y="30" width="3" height="2" fill="#49515d" />
+          <rect x="34" y="29" width="2" height="2" fill="#515967" />
+          <rect x="42" y="31" width="3" height="2" fill="#3c4451" />
+          <rect x="20" y="44" width="2" height="2" fill="#596270" opacity=".7" />
+
+          {/* Patas: postura sentada o zancada */}
+          {sitting ? (
+            <g fill="#0b0d12" stroke="#050609" strokeWidth="1">
+              <path d="M20 46 L29 46 L30 54 L27 57 L17 56 L16 52Z" />
+              <path d="M39 45 L48 44 L52 52 L49 57 L39 57 L36 53Z" />
+              <path d="M16 54 L29 54 L29 58 L14 58Z" fill="#242a35" />
+              <path d="M38 54 L52 54 L54 58 L37 58Z" fill="#242a35" />
             </g>
           ) : (
-            /* Alas plegadas sobre el lomo */
-            <g id="wings-folded">
-              <rect x="18" y="24" width="12" height="4" fill="#1e222e" />
-              <rect x="20" y="22" width="9" height="3" fill="#2a3040" />
-              <rect x="22" y="20" width="5" height="3" fill="#161922" />
-            </g>
-          )}
-        </g>
-
-        {/* ── CUERPO PRINCIPAL ── */}
-        <g id="dragon-body" className="dragon-body-motion">
-          {/* Sombra base en suelo */}
-          {!isDragging && !isFalling && (
-            <ellipse cx="32" cy="48" rx="20" ry="3.5" fill="#000000" fillOpacity="0.35" />
-          )}
-
-          {/* Torso robusto */}
-          <rect x="12" y="26" width="26" height="15" rx="3" fill="#161922" />
-          <rect x="14" y="28" width="22" height="11" fill="#1c212d" />
-          {/* Escamas de lomo */}
-          <rect x="16" y="25" width="2" height="2" fill="#2e3547" />
-          <rect x="22" y="25" width="2" height="2" fill="#2e3547" />
-          <rect x="28" y="25" width="2" height="2" fill="#2e3547" />
-          <rect x="34" y="25" width="2" height="2" fill="#2e3547" />
-
-          {/* Pecho con reflejo grafito */}
-          <rect x="26" y="32" width="10" height="7" rx="1" fill="#12151c" />
-        </g>
-
-        {/* ── PATITAS (Animadas al caminar o patalear) ── */}
-        <g id="dragon-legs">
-          {isSitting ? (
-            <>
-              <rect x="13" y="40" width="6" height="5" fill="#0c0d12" />
-              <rect x="12" y="44" width="8" height="4" fill="#161922" />
-              <rect x="25" y="40" width="6" height="5" fill="#0c0d12" />
-              <rect x="24" y="44" width="8" height="4" fill="#161922" />
-              <rect x="35" y="40" width="5" height="5" fill="#0c0d12" />
-              <rect x="34" y="44" width="7" height="4" fill="#161922" />
-            </>
-          ) : isDragging ? (
-            /* Pataleo en el aire */
-            <>
-              <rect x="14" y="40" width="4" height="6" fill="#0c0d12" />
-              <rect x="13" y="45" width="6" height="3" fill="#161922" />
-              <rect x="24" y="39" width="4" height="7" fill="#0c0d12" />
-              <rect x="23" y="45" width="6" height="3" fill="#161922" />
-              <rect x="34" y="41" width="4" height="6" fill="#0c0d12" />
-              <rect x="34" y="46" width="6" height="3" fill="#161922" />
-            </>
-          ) : isWalkStep ? (
-            /* Frame 2 de caminata */
-            <>
-              <rect x="15" y="41" width="5" height="5" fill="#0c0d12" />
-              <rect x="14" y="45" width="6" height="3" fill="#161922" />
-              <rect x="24" y="40" width="5" height="4" fill="#0c0d12" />
-              <rect x="25" y="44" width="6" height="3" fill="#161922" />
-              <rect x="34" y="40" width="5" height="6" fill="#0c0d12" />
-              <rect x="33" y="45" width="6" height="3" fill="#161922" />
-            </>
-          ) : (
-            /* Frame 1 o descanso */
-            <>
-              <rect x="14" y="40" width="5" height="6" fill="#0c0d12" />
-              <rect x="13" y="45" width="6" height="3" fill="#161922" />
-              <rect x="25" y="41" width="5" height="5" fill="#0c0d12" />
-              <rect x="24" y="45" width="6" height="3" fill="#161922" />
-              <rect x="35" y="41" width="5" height="5" fill="#0c0d12" />
-              <rect x="35" y="45" width="6" height="3" fill="#161922" />
-            </>
-          )}
-        </g>
-
-        {/* ── CABEZA DE CHIMUELO (Grande, expresiva y con orejitas/alerones) ── */}
-        <g id="dragon-head">
-          {/* Cuello */}
-          <rect x="32" y="24" width="8" height="9" fill="#161922" />
-
-          {/* Base cabeza */}
-          <rect x="34" y="13" width="22" height="16" rx="4" fill="#161922" />
-          <rect x="36" y="15" width="19" height="13" fill="#1a1e29" />
-
-          {/* Orejitas principales (alerones de dragón Furia Nocturna) */}
-          {/* Oreja superior trasera */}
-          <polygon points="36,13 31,4 39,9" fill="#12151c" />
-          <polygon points="36,12 33,6 38,10" fill="#242b3b" />
-          {/* Oreja superior delantera */}
-          <polygon points="42,13 42,3 47,9" fill="#161922" />
-          <polygon points="43,12 43,5 46,10" fill="#2b3346" />
-          {/* Orejitas laterales secundarias */}
-          <polygon points="34,18 29,15 34,16" fill="#12151c" />
-          <polygon points="34,22 28,21 34,20" fill="#12151c" />
-
-          {/* Morro / Hocico redondeado */}
-          <rect x="49" y="19" width="9" height="8" rx="3" fill="#161922" />
-          <rect x="52" y="22" width="2" height="2" fill="#0c0d12" /> {/* Narina */}
-
-          {/* Ojos grandes esmeralda */}
-          {isSleeping ? (
-            /* Ojos cerrados durmiendo: línea suave */
-            <g id="eyes-sleeping">
-              <path d="M 43 20 Q 47 23 51 20" stroke="#10b981" strokeWidth="2" fill="none" strokeLinecap="round" />
-            </g>
-          ) : isBlinking ? (
-            /* Ojos parpadeando */
-            <rect x="43" y="21" width="8" height="2" rx="1" fill="#10b981" />
-          ) : (
-            /* Ojos abiertos luminosos */
-            <g id="eyes-open">
-              {/* Esclerótica esmeralda */}
-              <ellipse cx="47" cy="20" rx="4.5" ry="5.5" fill="#10b981" />
-              {/* Brillo interior verdoso claro */}
-              <ellipse cx="46.5" cy="19.5" rx="3.5" ry="4.5" fill="#34d399" />
-              {/* Pupila de gato/reptil negra */}
-              <ellipse cx="47" cy="20" rx="1.6" ry="4" fill="#09261a" />
-              {/* Reflejos de luz especular blanca */}
-              <circle cx="45.5" cy="18" r="1.2" fill="#ffffff" />
-              <circle cx="48" cy="22" r="0.7" fill="#ffffff" />
+            <g fill="#0b0d12" stroke="#050609" strokeWidth="1">
+              <path d={step ? 'M20 45 L27 46 L25 55 L19 57 L14 55Z' : 'M20 45 L27 46 L30 54 L27 57 L18 56Z'} />
+              <path d={step ? 'M39 45 L46 45 L52 53 L49 57 L41 56Z' : 'M39 45 L46 45 L44 55 L39 57 L35 54Z'} />
+              <path d="M14 55 L27 55 L28 58 L12 58Z" fill="#252b36" />
+              <path d="M38 55 L51 55 L53 58 L36 58Z" fill="#252b36" />
             </g>
           )}
 
-          {isLooking && (
-            <circle cx="49" cy="17" r="1.1" fill="#ffffff" opacity="0.9" />
-          )}
+          {/* Ala visible del primer plano */}
+          <g className="sparky-wing" style={{ animationDuration: flying ? '.19s' : '3.2s' }}>
+            <path d={flying ? 'M31 38 L17 15 L26 19 L29 7 L36 19 L44 13 L43 39Z' : 'M29 37 L22 22 L29 25 L34 18 L39 27 L45 23 L43 41Z'} fill="#252b36" stroke="#080a10" strokeWidth="2" />
+            <path d="M24 24 L31 32 L35 22 L40 33" fill="none" stroke="#424b59" strokeWidth="1.6" />
+            <path d="M28 31 L35 37 L41 31" fill="none" stroke="#171b24" strokeWidth="2" />
+          </g>
 
-          {/* Sonrisa sutil / Lengüita rosada traviesa */}
-          {isEatingSnack ? (
-            <rect x="52" y="25" width="4" height="2" fill="#f43f5e" rx="1" />
+          {/* Cuello y cabeza grande */}
+          <path d="M40 35 L48 31 L55 34 L56 43 L49 47 L41 43Z" fill="#171b24" stroke="#050609" strokeWidth="1.5" />
+          <path d="M31 23 Q30 14 39 12 L49 13 Q57 15 59 23 L57 34 L51 39 L37 37 L31 31Z" fill="#171b24" stroke="#050609" strokeWidth="2" />
+          <path d="M35 19 Q39 14 48 16 L54 21 L53 31 L47 35 L37 32Z" fill="#252b36" />
+
+          {/* Orejas / cuernos característicos */}
+          <path d="M34 17 L27 4 L34 6 L39 15Z" fill="#171b24" stroke="#050609" strokeWidth="1.5" />
+          <path d="M47 15 L53 3 L57 7 L55 19Z" fill="#171b24" stroke="#050609" strokeWidth="1.5" />
+          <path d="M31 9 L34 12 L35 15" fill="none" stroke="#424957" strokeWidth="1.5" />
+          <path d="M52 8 L54 12 L53 16" fill="none" stroke="#424957" strokeWidth="1.5" />
+          {/* Hocico */}
+          <path d="M51 26 L61 25 L65 29 L63 34 L54 35 L50 31Z" fill="#1c212b" stroke="#080a10" strokeWidth="1.5" />
+          <rect x="61" y="28" width="2" height="2" fill="#080a10" />
+          <path d="M55 34 Q59 36 62 33" fill="none" stroke="#080a10" strokeWidth="1" />
+
+          {/* Ojos grandes dorado/verde lima, como la referencia */}
+          {sleeping ? (
+            <path d="M40 25 Q44 29 48 25" fill="none" stroke="#d7c78a" strokeWidth="2" />
           ) : (
-            <path d="M 52 25 Q 55 27 57 24" stroke="#0c0d12" strokeWidth="1" fill="none" />
+            <g className="sparky-eye" filter="url(#sparky-eye-glow)">
+              <ellipse cx="43" cy="24" rx="4.3" ry="5.2" fill="#c9b66e" />
+              <ellipse cx="43" cy="24" rx="3.1" ry="4" fill="#f3e6a4" />
+              <ellipse cx={looking ? 44.2 : 43} cy="24" rx="1.45" ry="3.3" fill="#11130d" />
+              <rect x="41" y="21" width="1.5" height="1.5" fill="#fff8d8" />
+            </g>
           )}
+          {!sleeping && !isBlinking && (
+            <g filter="url(#sparky-eye-glow)">
+              <ellipse cx="53" cy="24" rx="3.5" ry="4.5" fill="#c9b66e" />
+              <ellipse cx="53" cy="24" rx="2.5" ry="3.5" fill="#f3e6a4" />
+              <ellipse cx="53" cy="24" rx="1.2" ry="3" fill="#11130d" />
+              <rect x="51.5" y="21" width="1.2" height="1.2" fill="#fff8d8" />
+            </g>
+          )}
+          {isBlinking && !sleeping && <path d="M39 25 L47 25 M50 25 L56 25" stroke="#d8c77f" strokeWidth="2" />}
         </g>
 
-        {/* ── TRAVESURA 1: CHISPITA DE PLASMA / ARCO ELÉCTRICO ── */}
-        {isSpurtingSpark && (
-          <g id="plasma-spark" filter="url(#plasma-glow)">
-            {/* Bola de plasma azul saliendo de la boca */}
-            <circle cx="61" cy="23" r="3.5" fill="#00D2FF" />
-            <circle cx="61" cy="23" r="1.8" fill="#ffffff" />
-            {/* Rayos / chispas eléctricas */}
-            <path d="M 62 20 L 66 17 L 64 21 L 68 19" stroke="#38bdf8" strokeWidth="1.2" fill="none" />
-            <path d="M 62 25 L 67 27 L 65 24 L 69 25" stroke="#00D2FF" strokeWidth="1" fill="none" />
-            <rect x="58" y="26" width="2" height="2" fill="#ffffff" />
-            <rect x="65" y="22" width="1.5" height="1.5" fill="#ffffff" />
+        {/* Expresiones y efectos */}
+        {action === 'spark' && (
+          <g filter="url(#sparky-plasma-glow)">
+            <path d="M64 28 L70 22 L68 28 L75 25 L70 33 L66 32Z" fill="#00d2ff" stroke="#b8f5ff" strokeWidth="1" />
+            <circle cx="70" cy="29" r="2" fill="#fff" />
           </g>
         )}
-
-        {/* ── TRAVESURA 2: PESCADITO TOSTADO CON LLAMARADA ── */}
-        {isEatingSnack && (
-          <g id="roasted-snack" filter="url(#fire-glow)">
-            {/* Pescadito asado en brocheta */}
-            <line x1="53" y1="26" x2="63" y2="28" stroke="#78350f" strokeWidth="1.5" />
-            {/* Cuerpo del pescadito */}
-            <ellipse cx="60" cy="27" rx="3.5" ry="2" fill="#f97316" />
-            {/* Colita del pez */}
-            <polygon points="63,27 65,25 65,29" fill="#ea580c" />
-            {/* Ojo del pez */}
-            <circle cx="58" cy="26.5" r="0.6" fill="#1c1917" />
-            {/* Humo aromático */}
-            <circle cx="60" cy="23" r="1" fill="#e2e8f0" fillOpacity="0.6" />
-            <circle cx="62" cy="20" r="1.5" fill="#cbd5e1" fillOpacity="0.4" />
+        {eating && (
+          <g>
+            <path d="M61 35 L69 34 L72 37 L68 40 L61 39Z" fill="#f97316" stroke="#7c2d12" strokeWidth="1" />
+            <path d="M68 34 L73 31 L72 37Z" fill="#fb923c" />
+            <circle cx="64" cy="35" r=".7" fill="#111" />
           </g>
         )}
-
-        {/* ── TRAVESURA 3: Zzz DURMIENDO ── */}
-        {isSleeping && (
-          <g id="sleep-bubbles" className="animate-pulse">
-            <text x="49" y="10" fill="#38bdf8" fontSize="6" fontFamily="monospace" fontWeight="bold">
-              z
-            </text>
-            <text x="54" y="6" fill="#00D2FF" fontSize="7" fontFamily="monospace" fontWeight="bold">
-              Z
-            </text>
-            <text x="59" y="2" fill="#67e8f9" fontSize="8" fontFamily="monospace" fontWeight="bold">
-              Z
-            </text>
+        {sleeping && (
+          <g fill="#38bdf8" fontFamily="monospace" fontWeight="bold">
+            <text x="59" y="15" fontSize="6" style={{ animation: 'sparky-z 2s ease-out infinite' }}>z</text>
+            <text x="65" y="10" fontSize="8" style={{ animation: 'sparky-z 2s .55s ease-out infinite' }}>Z</text>
+          </g>
+        )}
+        {action === 'fly' && (
+          <g fill="#67e8f9" opacity=".9">
+            <rect x="11" y="19" width="3" height="1" />
+            <rect x="7" y="23" width="5" height="1" />
+            <rect x="13" y="27" width="2" height="1" />
+          </g>
+        )}
+        {action === 'fall' && (
+          <g fill="#94a3b8" opacity=".75">
+            <path d="M12 12 L9 17 L12 16 L10 21" fill="none" stroke="#94a3b8" strokeWidth="1.5" />
+            <path d="M18 17 L16 22" fill="none" stroke="#94a3b8" strokeWidth="1.2" />
           </g>
         )}
       </svg>
