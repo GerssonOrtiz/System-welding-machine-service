@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import { Sidebar } from '@/components/layout/Sidebar'
-import DashboardFreeMascots from '@/components/mascot/DashboardFreeMascots'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -68,11 +67,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
           {children}
         </main>
       </div>
-
-      
-      
-      {/* Mascota AI / Tech Companion Widget */}
-      <DashboardFreeMascots />
     </div>
   )
 }
