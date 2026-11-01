@@ -179,7 +179,7 @@ export default function PublicEquipmentFrPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-xs font-bold text-text-muted uppercase tracking-wider">
                     <Cpu className="w-4 h-4 text-amber-glow" />
-                    <span>Equipo Industrial</span>
+                    <span>Equipo</span>
                   </div>
                   <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">
                     {entry.brand} <span className="text-amber-glow">{entry.model}</span>
