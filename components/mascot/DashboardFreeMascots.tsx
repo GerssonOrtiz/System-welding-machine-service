@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { MasterRenderCharacter } from './MasterRenderCharacter';
+import { ArticulatedDragonAI } from './ArticulatedDragonAI';
+import { ArticulatedFoxTech } from './ArticulatedFoxTech';
 import { X, Sparkles, Swords } from 'lucide-react';
 
-type PetAction = 'idle' | 'walk' | 'run' | 'fly' | 'jump' | 'attack' | 'hit' | 'celebrate';
+type PetAction = 'idle' | 'walk' | 'run' | 'fly' | 'jump' | 'attack' | 'hit';
 
 interface PetEntity {
   x: number;
@@ -16,7 +17,7 @@ interface PetEntity {
   direction: 'left' | 'right';
   action: PetAction;
   actionTimer: number;
-  state: 'walking' | 'flying' | 'battling' | 'resting';
+  state: 'walking' | 'flying' | 'battling';
 }
 
 export default function DashboardFreeMascots() {
@@ -25,7 +26,7 @@ export default function DashboardFreeMascots() {
   const [battleLog, setBattleLog] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
-  // Ancho y alto de pantalla
+  // Límites dinámicos de pantalla
   const [bounds, setBounds] = useState({ w: 1200, h: 800 });
 
   useEffect(() => {
@@ -40,18 +41,13 @@ export default function DashboardFreeMascots() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Coordenada Y de la parte inferior fija (franja inferior del dashboard)
-  // Dejamos 80px de margen sobre el fondo de la pantalla
-  const bottomLaneY = bounds.h - 95;
-  const flightY = bounds.h - 170; // Vuelo bajo sobre la franja inferior
-
-  // Entidades
+  // Entidades confinadas en la parte inferior del dashboard
   const dragonRef = useRef<PetEntity>({
-    x: 180,
+    x: 200,
     y: 700,
     vx: 0,
     vy: 0,
-    targetX: 350,
+    targetX: 380,
     targetY: 700,
     direction: 'right',
     action: 'walk',
@@ -60,11 +56,11 @@ export default function DashboardFreeMascots() {
   });
 
   const foxRef = useRef<PetEntity>({
-    x: 550,
+    x: 600,
     y: 700,
     vx: 0,
     vy: 0,
-    targetX: 720,
+    targetX: 750,
     targetY: 700,
     direction: 'left',
     action: 'walk',
@@ -74,7 +70,6 @@ export default function DashboardFreeMascots() {
 
   const [, setRenderTrigger] = useState(0);
 
-  // Bucle de física delimitado en la parte inferior del dashboard
   useEffect(() => {
     if (!enabled) return;
 
@@ -83,77 +78,71 @@ export default function DashboardFreeMascots() {
 
       const dragon = dragonRef.current;
       const fox = foxRef.current;
-      const currentBottomY = bounds.h - 95;
-      const currentFlightY = bounds.h - 165;
+      const groundY = bounds.h - 90;
+      const flightY = bounds.h - 180;
 
       const dx = fox.x - dragon.x;
       const dy = fox.y - dragon.y;
       const distance = Math.hypot(dx, dy);
 
-      // --- Inteligencia y Decisiones: Dragón AI ---
+      // --- Dragón AI: Decisión de comportamiento ---
       dragon.actionTimer--;
       if (dragon.actionTimer <= 0) {
         if (battleMode) {
           dragon.state = 'battling';
-          dragon.targetX = fox.x + (dx > 0 ? -100 : 100);
-          dragon.targetY = Math.random() > 0.5 ? currentFlightY : currentBottomY;
-          dragon.actionTimer = 40 + Math.floor(Math.random() * 30);
+          dragon.targetX = fox.x + (dx > 0 ? -95 : 95);
+          dragon.targetY = Math.random() > 0.4 ? flightY : groundY;
+          dragon.actionTimer = 35 + Math.floor(Math.random() * 30);
         } else {
-          // Alternar entre caminar y vuelo bajo en la franja inferior
-          const flyChance = Math.random() > 0.55;
-          if (flyChance) {
+          const shouldFly = Math.random() > 0.6;
+          if (shouldFly) {
             dragon.state = 'flying';
             dragon.action = 'fly';
-            dragon.targetX = 60 + Math.random() * (bounds.w - 180);
-            dragon.targetY = currentFlightY;
+            dragon.targetX = 80 + Math.random() * (bounds.w - 220);
+            dragon.targetY = flightY;
             dragon.actionTimer = 80 + Math.floor(Math.random() * 50);
           } else {
             dragon.state = 'walking';
             dragon.action = 'walk';
-            dragon.targetX = 60 + Math.random() * (bounds.w - 180);
-            dragon.targetY = currentBottomY;
+            dragon.targetX = 80 + Math.random() * (bounds.w - 220);
+            dragon.targetY = groundY;
             dragon.actionTimer = 70 + Math.floor(Math.random() * 50);
           }
         }
       }
 
-      // --- Inteligencia y Decisiones: Zorro Tech ---
+      // --- Zorro Tech: Decisión de comportamiento ---
       fox.actionTimer--;
       if (fox.actionTimer <= 0) {
         if (battleMode) {
           fox.state = 'battling';
-          fox.targetX = dragon.x + (dx > 0 ? 100 : -100);
-          fox.targetY = currentBottomY;
-          fox.actionTimer = 35 + Math.floor(Math.random() * 30);
+          fox.targetX = dragon.x + (dx > 0 ? 95 : -95);
+          fox.targetY = groundY;
+          fox.actionTimer = 30 + Math.floor(Math.random() * 30);
         } else {
           fox.state = 'walking';
-          fox.action = Math.random() > 0.35 ? 'run' : 'jump';
-          fox.targetX = 60 + Math.random() * (bounds.w - 180);
-          fox.targetY = currentBottomY;
+          fox.action = Math.random() > 0.4 ? 'run' : 'jump';
+          fox.targetX = 80 + Math.random() * (bounds.w - 220);
+          fox.targetY = groundY;
           fox.actionTimer = 60 + Math.floor(Math.random() * 45);
         }
       }
 
-      // --- Interacciones y Combates ---
-      if (battleMode && distance < 135) {
+      // --- Combates e Interacciones Dinámicas ---
+      if (battleMode && distance < 130) {
         if (Math.random() > 0.5) {
           dragon.action = 'attack';
           fox.action = 'hit';
-          setBattleLog('💥 ¡Dragón AI lanza ráfaga de plasma cian!');
+          setBattleLog('💥 ¡Dragón AI dispara plasma cian!');
         } else {
           fox.action = 'attack';
           dragon.action = 'hit';
-          setBattleLog('⚡ ¡Zorro Tech embiste con ráfaga ámbar!');
+          setBattleLog('⚡ ¡Zorro Tech ataca con ráfaga ámbar!');
         }
-      } else if (!battleMode && distance < 140 && Math.random() < 0.04) {
-        dragon.action = 'celebrate';
-        fox.action = 'celebrate';
-        setBattleLog('✨ Dragón AI y Zorro Tech coordinan datos de taller');
-        setTimeout(() => setBattleLog(null), 2500);
       }
 
-      // Interpolación suave para Dragón
-      const dSpeed = dragon.state === 'flying' ? 3.6 : 2.5;
+      // Física de desplazamiento del Dragón (paso a 4 patas o vuelo)
+      const dSpeed = dragon.state === 'flying' ? 3.8 : 2.6;
       const dAngle = Math.atan2(dragon.targetY - dragon.y, dragon.targetX - dragon.x);
       if (Math.hypot(dragon.targetX - dragon.x, dragon.targetY - dragon.y) > 6) {
         dragon.vx = Math.cos(dAngle) * dSpeed;
@@ -170,8 +159,8 @@ export default function DashboardFreeMascots() {
         else if (dragon.action !== 'attack' && dragon.action !== 'hit') dragon.action = 'idle';
       }
 
-      // Interpolación suave para Zorro
-      const fSpeed = fox.state === 'battling' ? 4.2 : 3.0;
+      // Física de desplazamiento del Zorro (carrera ágil a 4 patas)
+      const fSpeed = fox.state === 'battling' ? 4.2 : 3.2;
       const fAngle = Math.atan2(fox.targetY - fox.y, fox.targetX - fox.x);
       if (Math.hypot(fox.targetX - fox.x, fox.targetY - fox.y) > 6) {
         fox.vx = Math.cos(fAngle) * fSpeed;
@@ -187,7 +176,7 @@ export default function DashboardFreeMascots() {
       }
 
       setRenderTrigger((r) => r + 1);
-    }, 50);
+    }, 45);
 
     return () => clearInterval(interval);
   }, [enabled, battleMode, bounds]);
@@ -207,12 +196,13 @@ export default function DashboardFreeMascots() {
 
   const dragon = dragonRef.current;
   const fox = foxRef.current;
+  const flightY = bounds.h - 180;
 
   return (
     <>
-      {/* ── Contenedor libre en franja inferior (pointer-events-none para no bloquear controles) ── */}
+      {/* ── Franja Inferior Interactiva (pointer-events-none para no bloquear el dashboard) ── */}
       <div className="fixed inset-0 pointer-events-none z-30 overflow-hidden select-none">
-        {/* Dragón AI con Render 3D de alta fidelidad */}
+        {/* Dragón AI Cuadrúpedo y Articulado */}
         <div
           className="absolute transition-all ease-linear pointer-events-auto cursor-pointer"
           style={{
@@ -229,15 +219,14 @@ export default function DashboardFreeMascots() {
           }}
           title="Dragón AI (Haz clic para hacerlo volar)"
         >
-          <MasterRenderCharacter
-            kind="dragon-ai"
-            action={dragon.action}
+          <ArticulatedDragonAI
+            action={dragon.action === 'fly' ? 'fly' : dragon.action === 'attack' ? 'attack' : dragon.action === 'hit' ? 'hit' : dragon.action === 'walk' ? 'walk' : 'idle'}
             direction={dragon.direction}
             tick={tick}
           />
         </div>
 
-        {/* Zorro Tech con Render 3D de alta fidelidad */}
+        {/* Zorro Tech Cuadrúpedo y Articulado */}
         <div
           className="absolute transition-all ease-linear pointer-events-auto cursor-pointer"
           style={{
@@ -247,35 +236,33 @@ export default function DashboardFreeMascots() {
           }}
           onClick={() => {
             fox.action = 'jump';
-            setBattleLog('🦊 ¡Zorro Tech da un salto!');
+            setBattleLog('🦊 ¡Zorro Tech da un salto ágil!');
             setTimeout(() => setBattleLog(null), 2000);
           }}
           title="Zorro Tech (Haz clic para hacerlo saltar)"
         >
-          <MasterRenderCharacter
-            kind="fox-tech"
-            action={fox.action}
+          <ArticulatedFoxTech
+            action={fox.action === 'run' ? 'run' : fox.action === 'jump' ? 'jump' : fox.action === 'attack' ? 'attack' : fox.action === 'hit' ? 'hit' : 'idle'}
             direction={fox.direction}
             tick={tick}
           />
         </div>
       </div>
 
-      {/* ── Barra de Control Minimalista en la esquina inferior ── */}
+      {/* ── Barra de Control en Esquina Inferior ── */}
       <div className="fixed bottom-3 right-4 z-40 flex items-center gap-2 bg-bg-surface/90 border border-white/10 px-3 py-1.5 rounded-2xl backdrop-blur-xl shadow-2xl">
-        {/* Banner de eventos o combate */}
         {battleLog && (
           <span className="text-[11px] text-cyan-300 font-mono pr-2 border-r border-white/10 animate-pulse hidden sm:inline">
             {battleLog}
           </span>
         )}
 
-        {/* Botón Modo Pelea / Jugar */}
+        {/* Botón Pelear / Jugar */}
         <button
           onClick={() => {
             const nextMode = !battleMode;
             setBattleMode(nextMode);
-            setBattleLog(nextMode ? '⚔️ ¡Modo Combate activado!' : '🤝 ¡Modo Exploración!');
+            setBattleLog(nextMode ? '⚔️ ¡Modo Combate activo!' : '🤝 ¡Modo Taller tranquilo!');
             setTimeout(() => setBattleLog(null), 2500);
           }}
           className={`px-2.5 py-1 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${
@@ -283,13 +270,13 @@ export default function DashboardFreeMascots() {
               ? 'bg-red-500/20 text-red-400 border border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.4)]'
               : 'bg-white/5 text-text-secondary hover:text-cyan-400 border border-white/10'
           }`}
-          title={battleMode ? 'Desactivar combate' : 'Hacer que peleen o jueguen'}
+          title={battleMode ? 'Detener combate' : 'Activar combate'}
         >
           <Swords className="w-3.5 h-3.5" />
-          <span>{battleMode ? 'Combatiendo' : 'Pelear / Jugar'}</span>
+          <span>{battleMode ? 'En Combate' : 'Pelear / Jugar'}</span>
         </button>
 
-        {/* Botón Cerrar */}
+        {/* Botón Ocultar */}
         <button
           onClick={() => setEnabled(false)}
           className="p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/10 transition-colors"
