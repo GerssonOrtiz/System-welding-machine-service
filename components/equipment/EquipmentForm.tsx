@@ -17,6 +17,7 @@ export interface EquipmentItemState {
   priority_level: number
   client_report: string
   accessories: string
+  condition_in: string
   additional_observations: string
 }
 
@@ -36,6 +37,7 @@ function createEmptyEquipmentItem(index: number, defaultServiceType: 'GARANTIA_C
     priority_level: 0,
     client_report: '',
     accessories: '',
+    condition_in: '',
     additional_observations: '',
   }
 }
@@ -147,6 +149,7 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
           priority_level: eq.priority_level,
           client_report: eq.client_report.trim() || null,
           accessories: eq.accessories.trim() || null,
+          condition_in: eq.condition_in.trim() || null,
           additional_observations: eq.additional_observations.trim() || null,
         })),
       }
@@ -411,16 +414,29 @@ export default function EquipmentForm({ onSuccess, onCancel }: EquipmentFormProp
                         />
                       </div>
 
-                      <div className="space-y-1 md:col-span-2">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
+                          Condición física de ingreso
+                        </label>
+                        <textarea
+                          value={eq.condition_in}
+                          onChange={(e) => handleUpdateItem(eq.id, 'condition_in', e.target.value)}
+                          placeholder="ej: EQUIPO OPERATIVO CON DESGASTE, GOLPE EN TAPA LATERAL"
+                          rows={2}
+                          className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue rounded-lg px-3 py-1.5 text-xs focus:outline-none transition-all resize-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
                         <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
                           Observaciones adicionales
                         </label>
-                        <input
-                          type="text"
+                        <textarea
                           value={eq.additional_observations}
                           onChange={(e) => handleUpdateItem(eq.id, 'additional_observations', e.target.value)}
-                          placeholder="ej: INGRESA CON GOLPE EN CARCASA DERECHA"
-                          className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue rounded-lg px-3 py-1.5 text-xs focus:outline-none transition-all"
+                          placeholder="ej: REQUIERE PRUEBA DE ARRASTRE Y REVISIÓN DE VENTILADOR"
+                          rows={2}
+                          className="w-full bg-bg-elevated border border-border-subtle focus:border-neon-blue rounded-lg px-3 py-1.5 text-xs focus:outline-none transition-all resize-none"
                         />
                       </div>
                     </div>

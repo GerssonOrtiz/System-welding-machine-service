@@ -118,6 +118,8 @@ export default function EquipmentDetail({
   const [editSerial, setEditSerial] = useState('')
   const [editReportNumber, setEditReportNumber] = useState('')
   const [editReportUrl, setEditReportUrl] = useState('')
+  const [editServiceReportUrl, setEditServiceReportUrl] = useState('')
+  const [editVrdCertificateUrl, setEditVrdCertificateUrl] = useState('')
   const [editServiceType, setEditServiceType] = useState('')
   const [editDateIn, setEditDateIn] = useState('')
   const [editClientReport, setEditClientReport] = useState('')
@@ -206,6 +208,8 @@ export default function EquipmentDetail({
     setEditSerial(equipment.serial_number || '')
     setEditReportNumber(equipment.report_number || '')
     setEditReportUrl((equipment as any).report_url || '')
+    setEditServiceReportUrl((equipment as any).service_report_url || '')
+    setEditVrdCertificateUrl((equipment as any).vrd_certificate_url || '')
     setEditServiceType(equipment.service_type || 'REVISION_GENERAL')
     setEditPriorityLevel(equipment.priority_level || (equipment.is_priority ? 1 : 0))
     if (equipment.date_in) {
@@ -249,6 +253,8 @@ export default function EquipmentDetail({
           serial_number: editSerial,
           report_number: editReportNumber,
           report_url: editReportUrl,
+          service_report_url: editServiceReportUrl,
+          vrd_certificate_url: editVrdCertificateUrl,
           service_type: editServiceType,
           priority_level: editPriorityLevel,
           is_priority: editPriorityLevel > 0,
@@ -541,6 +547,10 @@ export default function EquipmentDetail({
                               <input type="text" value={editReportNumber} onChange={(e) => setEditReportNumber(e.target.value)} placeholder="Ej: INF-001" className={`${inputCls} font-mono`} />
                               <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Enlace PDF:</span>
                               <input type="url" value={editReportUrl} onChange={(e) => setEditReportUrl(e.target.value)} placeholder="https://drive.google.com/..." className={`${inputCls} font-mono`} />
+                              <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Informe Servicio:</span>
+                              <input type="url" value={editServiceReportUrl} onChange={(e) => setEditServiceReportUrl(e.target.value)} placeholder="https://drive.google.com/..." className={`${inputCls} font-mono`} />
+                              <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Certificado VRD:</span>
+                              <input type="url" value={editVrdCertificateUrl} onChange={(e) => setEditVrdCertificateUrl(e.target.value)} placeholder="https://drive.google.com/..." className={`${inputCls} font-mono`} />
                             </>
                           )
                         ) : (

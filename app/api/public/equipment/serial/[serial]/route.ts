@@ -42,6 +42,8 @@ export async function GET(
         date_in,
         report_number,
         report_url,
+        service_report_url,
+        vrd_certificate_url,
         service_type,
         current_status_id,
         workflow_states (
@@ -77,13 +79,17 @@ export async function GET(
       date_in: rec.date_in,
       report_number: rec.report_number,
       report_url: rec.report_url,
+      service_report_url: rec.service_report_url,
+      vrd_certificate_url: rec.vrd_certificate_url,
       service_type: rec.service_type,
       status_name: rec.workflow_states?.name || 'En proceso',
       status_color: rec.workflow_states?.color || '#00E5FF',
     }))
 
-    // Buscar el informe más reciente disponible que tenga report_url
+    // Buscar documentos técnicos más recientes disponibles
     const latestReportWithUrl = interventions.find((i) => Boolean(i.report_url)) || null
+    const latestServiceReportWithUrl = interventions.find((i) => Boolean(i.service_report_url)) || null
+    const latestVrdWithUrl = interventions.find((i) => Boolean(i.vrd_certificate_url)) || null
 
     const machineInfo = {
       serial_number: records[0].serial_number,
@@ -93,6 +99,8 @@ export async function GET(
       total_interventions: records.length,
       latest_report_url: latestReportWithUrl ? latestReportWithUrl.report_url : null,
       latest_report_number: latestReportWithUrl ? latestReportWithUrl.report_number : null,
+      latest_service_report_url: latestServiceReportWithUrl ? latestServiceReportWithUrl.service_report_url : null,
+      latest_vrd_certificate_url: latestVrdWithUrl ? latestVrdWithUrl.vrd_certificate_url : null,
       last_service: records[0].date_in,
     }
 

@@ -1,4 +1,4 @@
-﻿// components/equipment/modals/ModalEntregaRepuestos.tsx
+// components/equipment/modals/ModalEntregaRepuestos.tsx
 // Modal dedicado para que Logística (almacen, admin, superadmin) registre
 // entregas de repuestos de forma independiente al estado del servicio.
 // Muestra la lista de ítems solicitados como checkboxes y permite agregar
@@ -23,7 +23,7 @@ interface ModalEntregaRepuestosProps {
 // Ítem de la lista de solicitud con su checkbox de entrega
 interface CheckedPart {
   partId:      string          // corresponde a ApprovedPartItem.id
-  codigo?:     string          // c'digo del repuesto si existe
+  codigo?:     string          // código del repuesto si existe
   descripcion: string
   cantSolicitada: number
   cantEntregada:  number       // ya entregada anteriormente
@@ -34,6 +34,7 @@ interface CheckedPart {
 
 // Ítem extra (no estaba en la solicitud original)
 interface ExtraRow {
+  codigo:      string
   descripcion: string
   cantidad:    string
   nota:        string
@@ -96,7 +97,7 @@ export default function ModalEntregaRepuestos({
 
   // ── Helpers para extraRows ───────────────────────────────────────────────────
   const addExtraRow = () =>
-    setExtraRows((prev) => [...prev, { descripcion: '', cantidad: '1', nota: '' }])
+    setExtraRows((prev) => [...prev, { codigo: '', descripcion: '', cantidad: '1', nota: '' }])
 
   const removeExtraRow = (idx: number) =>
     setExtraRows((prev) => prev.filter((_, i) => i !== idx))
@@ -329,7 +330,8 @@ export default function ModalEntregaRepuestos({
 
               {extraRows.length > 0 && (
                 <>
-                  <div className="grid grid-cols-[1fr_70px_120px_32px] gap-1.5 px-1">
+                  <div className="grid grid-cols-[90px_1fr_70px_120px_32px] gap-1.5 px-1">
+                    <span className="text-[9px] font-bold text-text-muted uppercase">Código</span>
                     <span className="text-[9px] font-bold text-text-muted uppercase">Descripción</span>
                     <span className="text-[9px] font-bold text-text-muted uppercase text-center">Cant.</span>
                     <span className="text-[9px] font-bold text-text-muted uppercase">Nota / Compatible</span>
@@ -337,7 +339,14 @@ export default function ModalEntregaRepuestos({
                   </div>
 
                   {extraRows.map((row, idx) => (
-                    <div key={idx} className="grid grid-cols-[1fr_70px_120px_32px] gap-1.5 items-center">
+                    <div key={idx} className="grid grid-cols-[90px_1fr_70px_120px_32px] gap-1.5 items-center">
+                      <input
+                        type="text"
+                        value={row.codigo}
+                        onChange={(e) => updateExtraRow(idx, 'codigo', e.target.value)}
+                        placeholder="Código"
+                        className={inputCls}
+                      />
                       <input
                         type="text"
                         value={row.descripcion}

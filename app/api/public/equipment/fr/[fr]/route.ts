@@ -34,6 +34,8 @@ export async function GET(
         date_in,
         report_number,
         report_url,
+        service_report_url,
+        vrd_certificate_url,
         service_type,
         current_status_id,
         workflow_states (
@@ -67,6 +69,8 @@ export async function GET(
           date_in: rec.date_in,
           report_number: rec.report_number,
           report_url: rec.report_url,
+          service_report_url: rec.service_report_url,
+          vrd_certificate_url: rec.vrd_certificate_url,
           service_type: rec.service_type,
           status_name: rec.workflow_states?.name || 'En proceso',
           status_color: rec.workflow_states?.color || '#00E5FF',

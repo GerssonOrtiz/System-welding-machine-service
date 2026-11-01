@@ -16,6 +16,7 @@ import {
   Hash,
   ShieldCheck,
   Info,
+  CheckCircle2,
 } from 'lucide-react'
 
 interface EntryData {
@@ -28,6 +29,8 @@ interface EntryData {
   date_in: string
   report_number: string | null
   report_url: string | null
+  service_report_url?: string | null
+  vrd_certificate_url?: string | null
   service_type: string
   status_name: string
   status_color: string
@@ -249,19 +252,19 @@ export default function PublicEquipmentFrPage() {
               </div>
             </div>
 
-            {/* Informe técnico */}
-            <div className="relative bg-gradient-to-br from-bg-surface via-bg-surface/90 to-bg-surface border-2 border-amber-core/40 rounded-3xl p-6 md:p-8 shadow-amber-glow">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            {/* Documentación técnica y certificados */}
+            <div className="relative bg-gradient-to-br from-bg-surface via-bg-surface/90 to-bg-surface border-2 border-amber-core/40 rounded-3xl p-6 md:p-8 shadow-amber-glow space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-amber-core/20 border border-amber-core/40 flex items-center justify-center text-amber-glow shadow-sm">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
                     <h2 className="text-sm font-black uppercase tracking-wider text-white">
-                      Informe Técnico de Servicio
+                      Documentación Técnica y Certificados
                     </h2>
                     <p className="text-[11px] text-text-muted">
-                      Diagnóstico y reporte oficial emitido por CABELAB
+                      Diagnósticos, informes de servicio y certificados emitidos por CABELAB
                     </p>
                   </div>
                 </div>
@@ -273,24 +276,66 @@ export default function PublicEquipmentFrPage() {
                 )}
               </div>
 
-              {entry.report_url ? (
-                <div className="mt-4 pt-4 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <p className="text-xs text-text-secondary leading-relaxed">
-                    El documento técnico está digitalizado y listo para consulta o descarga.
-                  </p>
+              {/* Botones de Documentos */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {entry.report_url ? (
                   <a
                     href={entry.report_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-core to-amber-glow text-bg-forge font-black text-xs uppercase tracking-wider rounded-xl shadow-amber-glow hover:shadow-vip-amber transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="flex items-center justify-between gap-2 p-3.5 rounded-2xl bg-amber-core/10 border border-amber-core/30 text-amber-glow hover:bg-amber-core/20 hover:scale-[1.01] transition-all"
                   >
-                    <span>Ver / Descargar Informe PDF</span>
-                    <ExternalLink className="w-4 h-4" />
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <FileText className="w-4 h-4 shrink-0 text-amber-core" />
+                      <div className="text-left truncate">
+                        <span className="block text-xs font-bold text-white uppercase tracking-wider truncate">Diagnóstico</span>
+                        <span className="block text-[10px] text-amber-glow/80">Informe preliminar</span>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                   </a>
-                </div>
-              ) : (
-                <div className="mt-4 pt-4 border-t border-white/[0.08] text-xs text-text-muted italic">
-                  El informe digitalizado de este servicio se encuentra en proceso de validación técnica o archivo interno.
+                ) : null}
+
+                {entry.service_report_url ? (
+                  <a
+                    href={entry.service_report_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 hover:scale-[1.01] transition-all"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                      <div className="text-left truncate">
+                        <span className="block text-xs font-bold text-white uppercase tracking-wider truncate">Informe Servicio</span>
+                        <span className="block text-[10px] text-emerald-400/80">Servicio culminado</span>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                  </a>
+                ) : null}
+
+                {entry.vrd_certificate_url ? (
+                  <a
+                    href={entry.vrd_certificate_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500/20 hover:scale-[1.01] transition-all"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <ShieldCheck className="w-4 h-4 shrink-0 text-purple-400" />
+                      <div className="text-left truncate">
+                        <span className="block text-xs font-bold text-white uppercase tracking-wider truncate">Certificado VRD</span>
+                        <span className="block text-[10px] text-purple-400/80">Seguridad eléctrica</span>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                  </a>
+                ) : null}
+              </div>
+
+              {!entry.report_url && !entry.service_report_url && !entry.vrd_certificate_url && (
+                <div className="text-xs text-text-muted italic">
+                  Los documentos técnicos digitalizados de este servicio se encuentran en proceso de validación técnica o archivo interno.
                 </div>
               )}
             </div>

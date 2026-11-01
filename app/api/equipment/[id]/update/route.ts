@@ -69,10 +69,12 @@ export async function PUT(
     if (body.model !== undefined) updateData.model = body.model.trim() ? body.model.trim().toUpperCase() : 'S/M'
     if (body.serial_number !== undefined) updateData.serial_number = body.serial_number.trim() ? body.serial_number.trim().toUpperCase() : 'N/S'
     
-    // Solo admin y superadmin pueden asignar o modificar N° de informe y URL del PDF
+    // Solo admin y superadmin pueden asignar o modificar N° de informe, URL del PDF, informe de servicio y certificado VRD
     if (!isRecepcion) {
       if (body.report_number !== undefined) updateData.report_number = body.report_number.trim().toUpperCase() || null
       if (body.report_url !== undefined) updateData.report_url = body.report_url?.trim() || null
+      if (body.service_report_url !== undefined) updateData.service_report_url = body.service_report_url?.trim() || null
+      if (body.vrd_certificate_url !== undefined) updateData.vrd_certificate_url = body.vrd_certificate_url?.trim() || null
     }
     if (body.client_report !== undefined) updateData.client_report = body.client_report.trim().toUpperCase() || null
     if (body.accessories !== undefined) updateData.accessories = body.accessories.trim().toUpperCase() || null
