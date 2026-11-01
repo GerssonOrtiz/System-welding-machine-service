@@ -7,8 +7,7 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { DragonPetOverlay } from '@/components/dashboard/pet/DragonPetOverlay'
-import MascotWidget from '@/components/mascot/MascotWidget'
+import DashboardFreeMascots from '@/components/mascot/DashboardFreeMascots'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -70,11 +69,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
         </main>
       </div>
 
-      {/* Mascota Interactiva Shimeji Toothless Dragon (Overlay aislado en pointer-events-none) */}
-      <DragonPetOverlay />
-
+      
+      
       {/* Mascota AI / Tech Companion Widget */}
-      <MascotWidget />
+      <DashboardFreeMascots />
     </div>
   )
 }
