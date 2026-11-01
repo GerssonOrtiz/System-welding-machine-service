@@ -132,7 +132,7 @@ export default function PartManager() {
               Registrar Nuevo Repuesto
             </h3>
             <p className="text-[11px] text-text-secondary">
-              Ingresa los datos técnicos y define la compatibilidad con modelos de motosoldadoras
+              Ingresa los datos técnicos y define la compatibilidad con modelos de equipos
             </p>
           </div>
         </div>

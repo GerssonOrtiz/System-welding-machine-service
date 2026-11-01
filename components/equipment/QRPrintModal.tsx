@@ -240,7 +240,7 @@ export default function QRPrintModal({
           <div className="flex items-center justify-between border-b border-[#1E293B] pb-3 mb-5">
             <Dialog.Title className="text-sm font-bold text-[#00E5FF] flex items-center gap-2 uppercase tracking-wider">
               <QrCode className="w-4 h-4" />
-              <span>Etiqueta QR para Motosoldadora</span>
+              <span>Etiqueta QR para Equipo</span>
             </Dialog.Title>
             <button
               onClick={onClose}

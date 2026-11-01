@@ -226,7 +226,7 @@ export default function BrandModelManager() {
                 Modelos por Marca
               </h3>
               <p className="text-[11px] text-text-secondary">
-                {models.length} modelos de motosoldadoras asociados
+                {models.length} modelos de equipos asociados
               </p>
             </div>
           </div>

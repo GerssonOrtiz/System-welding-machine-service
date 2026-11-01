@@ -179,7 +179,7 @@ export default function PublicEquipmentFrPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-xs font-bold text-text-muted uppercase tracking-wider">
                     <Cpu className="w-4 h-4 text-amber-glow" />
-                    <span>Motosoldadora / Equipo de Soldadura</span>
+                    <span>Equipo Industrial</span>
                   </div>
                   <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">
                     {entry.brand} <span className="text-amber-glow">{entry.model}</span>
@@ -316,7 +316,7 @@ export default function PublicEquipmentFrPage() {
           </span>
         </div>
         <p className="font-medium text-text-secondary">
-          Taller de Mantenimiento y Diagnóstico de Motosoldadoras
+          Centro de Servicios Técnicos y Diagnóstico Integral
         </p>
         <p className="text-[11px] text-text-muted">
           Arequipa, Perú • Sistema de Trazabilidad Operativa v2.5

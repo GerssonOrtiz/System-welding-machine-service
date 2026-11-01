@@ -101,7 +101,7 @@ export default function EquiposPage() {
   }
 
   const getPageDescription = () => {
-    if (role === 'recepcion') return 'Registro de nuevos ingresos y entrega de motosoldadoras culminadas.'
+    if (role === 'recepcion') return 'Registro de nuevos ingresos y entrega de equipos culminadas.'
     if (role === 'almacen') return 'Bandeja de equipos pendientes de entrega de repuestos técnicos.'
     if (role === 'visualizador') return 'Búsqueda e historial completo de todos los equipos del sistema.'
     return 'Seguimiento completo de todos los equipos en proceso activo.'

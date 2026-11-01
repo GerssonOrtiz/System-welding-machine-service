@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     default: "SYNAPSE — Plataforma de Gestión Operativa",
     template: "%s | SYNAPSE",
   },
-  description: "Plataforma de gestión operativa de mantenimiento de motosoldadoras para CABELAB — Arequipa, Perú.",
+  description: "Plataforma de gestión operativa de mantenimiento de equipos para CABELAB — Arequipa, Perú.",
   authors: [{ name: "Br. Gersson Ortiz" }],
 };
 
