@@ -312,7 +312,12 @@ export async function POST(
       isCulminadoODP(targetNameLower) ||
       shouldSendCoordinationEmail
 
-    if (requiresEmail) {
+    const isLoadTest = request.headers.get('x-load-test') === 'true';
+    if (isLoadTest) {
+      console.log('[POST update-status] Test de carga activo (x-load-test=true). Omitiendo envio a Resend para proteger cuota y latencia.');
+    }
+
+    if (requiresEmail && !isLoadTest) {
       if (!eq.email_thread_id) {
         mailWarning = 'El equipo no tiene un hilo de correo previo registrado, por lo que no se pudo enviar la notificación en hilo.'
       } else {

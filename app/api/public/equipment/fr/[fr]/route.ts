@@ -55,28 +55,36 @@ export async function GET(
 
     const rec = rawData as any
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        found: true,
-        entry: {
-          id: rec.id,
-          fr_number: rec.fr_number,
-          serial_number: rec.serial_number,
-          brand: rec.brand,
-          model: rec.model,
-          client_name: rec.client_name,
-          date_in: rec.date_in,
-          report_number: rec.report_number,
-          report_url: rec.report_url,
-          service_report_url: rec.service_report_url,
-          vrd_certificate_url: rec.vrd_certificate_url,
-          service_type: rec.service_type,
-          status_name: rec.workflow_states?.name || 'En proceso',
-          status_color: rec.workflow_states?.color || '#00E5FF',
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          found: true,
+          entry: {
+            id: rec.id,
+            fr_number: rec.fr_number,
+            serial_number: rec.serial_number,
+            brand: rec.brand,
+            model: rec.model,
+            client_name: rec.client_name,
+            date_in: rec.date_in,
+            report_number: rec.report_number,
+            report_url: rec.report_url,
+            service_report_url: rec.service_report_url,
+            vrd_certificate_url: rec.vrd_certificate_url,
+            service_type: rec.service_type,
+            status_name: rec.workflow_states?.name || 'En proceso',
+            status_color: rec.workflow_states?.color || '#00E5FF',
+          },
         },
       },
-    })
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        },
+      }
+    )
   } catch (err: any) {
     console.error('[GET /api/public/equipment/fr] Unexpected error:', err)
     return NextResponse.json({ success: false, error: 'Error interno del servidor' }, { status: 500 })

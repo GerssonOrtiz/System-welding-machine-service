@@ -104,14 +104,22 @@ export async function GET(
       last_service: records[0].date_in,
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        found: true,
-        machineInfo,
-        interventions,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          found: true,
+          machineInfo,
+          interventions,
+        },
       },
-    })
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        },
+      }
+    )
   } catch (err: any) {
     console.error('[GET /api/public/equipment/serial] Unexpected error:', err)
     return NextResponse.json({ success: false, error: 'Error interno del servidor' }, { status: 500 })
