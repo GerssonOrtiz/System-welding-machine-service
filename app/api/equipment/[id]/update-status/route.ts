@@ -109,6 +109,9 @@ export async function POST(
     }
     const eq = equipment as any
 
+    // OCC: capturar el estado actual como snapshot para validación de concurrencia
+    const expectedStatusId = eq.current_status_id
+
     // 6. Verificar terminal
     const isTerminal = await WorkflowEngine.isTerminal(eq.current_status_id)
     if (isTerminal) {
@@ -267,14 +270,24 @@ export async function POST(
       }
       updateData.parts_status   = 'SIN_REPUESTOS'
     }
-    // 12. Actualizar BD
-    const { error: updateError } = await (supabase.from('equipment_records') as any)
+    // 12. Actualizar BD con OCC: verificar que current_status_id no haya cambiado
+    const { data: updatedRows, error: updateError } = await (supabase.from('equipment_records') as any)
       .update(updateData)
       .eq('id', equipmentId)
+      .eq('current_status_id', expectedStatusId)
+      .select('id')
 
     if (updateError) {
       console.error('[POST update-status] DB update error:', updateError)
       return NextResponse.json({ success: false, error: 'Error al actualizar el estado' }, { status: 500 })
+    }
+
+    // OCC: si no se actualizó ninguna fila, el estado fue modificado concurrentemente
+    if (!updatedRows || updatedRows.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Conflicto de concurrencia: el estado del equipo fue modificado por otro usuario. Recargue la página e intente de nuevo.' },
+        { status: 409 }
+      )
     }
 
     // 13. Disparar correo específico según el estado destino si corresponde

@@ -20,17 +20,27 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Sanitizar caracteres reservados de PostgREST para prevenir inyección de filtros
+    const sanitizedQuery = searchQuery.replace(/[(),.*%\\]/g, '')
+
+    if (sanitizedQuery.length < 2) {
+      return NextResponse.json(
+        { success: false, error: 'El término de búsqueda contiene demasiados caracteres especiales' },
+        { status: 400 }
+      )
+    }
+
     // 4. Buscar coincidencias en la vista usando ilike sobre campos clave
     let query = supabase
       .from('equipment_with_status')
       .select('*')
       .or(
-        `fr_number.ilike.%${searchQuery}%,` +
-        `client_name.ilike.%${searchQuery}%,` +
-        `brand.ilike.%${searchQuery}%,` +
-        `model.ilike.%${searchQuery}%,` +
-        `serial_number.ilike.%${searchQuery}%,` +
-        `status_name.ilike.%${searchQuery}%`
+        `fr_number.ilike.%${sanitizedQuery}%,` +
+        `client_name.ilike.%${sanitizedQuery}%,` +
+        `brand.ilike.%${sanitizedQuery}%,` +
+        `model.ilike.%${sanitizedQuery}%,` +
+        `serial_number.ilike.%${sanitizedQuery}%,` +
+        `status_name.ilike.%${sanitizedQuery}%`
       )
 
     // Si no se pide incluir entregados, filtrar por is_terminal

@@ -87,6 +87,16 @@ export async function DELETE(request: NextRequest) {
     if (!authResult.ok) return authResult.error
     const { supabase } = authResult.ctx
 
+    // Salvaguarda: exigir confirmación explícita para prevenir purgas accidentales
+    const { searchParams } = new URL(request.url)
+    const confirmPurge = searchParams.get('confirm_purge')
+    if (confirmPurge !== 'PURGE_ALL_EQUIPMENT') {
+      return NextResponse.json(
+        { success: false, error: 'Operación destructiva: se requiere el parámetro confirm_purge=PURGE_ALL_EQUIPMENT para confirmar el borrado masivo de equipos.' },
+        { status: 400 }
+      )
+    }
+
     // 4. Eliminar todos los registros de la tabla
     const { error: deleteError } = await supabase
       .from('equipment_records')

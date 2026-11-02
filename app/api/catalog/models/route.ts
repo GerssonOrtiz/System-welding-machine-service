@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
+    const authResult = await requireAuth()
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     const { searchParams } = new URL(request.url)
     const rawBrand = searchParams.get('brand')

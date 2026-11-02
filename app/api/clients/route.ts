@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    // 1. Verificar sesión (opcional dependiendo de si el form es público, pero por seguridad lo dejamos)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-    }
+    const authResult = await requireAuth()
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     // 2. Obtener nombres únicos de clientes desde equipment_records
     const { data, error } = await supabase

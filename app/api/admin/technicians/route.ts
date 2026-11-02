@@ -1,21 +1,15 @@
 // app/api/admin/technicians/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { requireSuperadmin } from '@/lib/api/auth'
 
 /**
  * GET: Listar todos los técnicos (incluyendo inactivos para gestión)
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    // Verificar superadmin
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-
-    const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single()
-    const activeProfile = profile as any
-    if (activeProfile?.role !== 'superadmin') return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     const { data: techs, error } = await supabase
       .from('technicians')
@@ -35,13 +29,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 })
-
-    const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single()
-    const activeProfile = profile as any
-    if (activeProfile?.role !== 'superadmin') return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     const body = await request.json()
     const { name } = body

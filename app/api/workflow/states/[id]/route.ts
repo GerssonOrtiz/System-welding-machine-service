@@ -1,31 +1,6 @@
 // app/api/workflow/states/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
-
-// Middleware check helper
-async function checkSuperadmin(supabase: any) {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
-    return { error: 'No autorizado', status: 401 }
-  }
-
-  const { data: userProfile } = await supabase
-    .from('user_profiles')
-    .select('role, is_active, is_superadmin')
-    .eq('id', session.user.id)
-    .single()
-
-  const activeProfile = userProfile as any
-  if (!activeProfile || !activeProfile.is_active) {
-    return { error: 'Cuenta no activa', status: 403 }
-  }
-
-  if (activeProfile.role !== 'superadmin' || !activeProfile.is_superadmin) {
-    return { error: 'Acceso denegado. Solo el superadmin puede realizar esta acción', status: 403 }
-  }
-
-  return { success: true }
-}
+import { requireSuperadmin } from '@/lib/api/auth'
 
 export async function PUT(
   request: NextRequest,
@@ -33,11 +8,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerClient()
-    const check = await checkSuperadmin(supabase)
-    if (check.error) {
-      return NextResponse.json({ success: false, error: check.error }, { status: check.status })
-    }
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     const stateId = parseInt(id, 10)
     if (isNaN(stateId)) {
@@ -110,11 +83,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerClient()
-    const check = await checkSuperadmin(supabase)
-    if (check.error) {
-      return NextResponse.json({ success: false, error: check.error }, { status: check.status })
-    }
+    const authResult = await requireSuperadmin()
+    if (!authResult.ok) return authResult.error
+    const { supabase } = authResult.ctx
 
     const stateId = parseInt(id, 10)
     if (isNaN(stateId)) {

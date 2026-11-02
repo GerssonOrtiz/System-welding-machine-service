@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+PRESENTACION_CLIENTE_SYNAPSE.md
+PROJECT_CONTEXT.md
+plan_ejecucion_synapse.md
+AGENTS.md
+CLAUDE.md
+
+# reportes
+reports/
+

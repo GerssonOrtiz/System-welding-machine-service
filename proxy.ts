@@ -56,8 +56,12 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  // 2. Sin sesión: redirigir a login
+  // 2. Sin sesión: redirigir a login (o 401 JSON para rutas API)
   if (!user) {
+    // Para rutas de API, responder con JSON 401 en lugar de redirect
+    if (pathname.startsWith('/api')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const loginRedirect = NextResponse.redirect(new URL('/login', request.url))
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       loginRedirect.cookies.set(cookie.name, cookie.value, cookie)

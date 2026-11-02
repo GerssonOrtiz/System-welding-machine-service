@@ -29,12 +29,20 @@ export async function POST(
     // 4. Verificar que el usuario objetivo exista
     const { data: targetProfile, error: fetchError } = await adminSupabase
       .from('user_profiles')
-      .select('id, username')
+      .select('id, username, is_superadmin')
       .eq('id', targetUserId)
       .single()
 
     if (fetchError || !targetProfile) {
       return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
+    }
+
+    // 4.1. Protección de jerarquía: no permitir resetear contraseña de superadmin
+    if (targetProfile.is_superadmin) {
+      return NextResponse.json(
+        { success: false, error: 'No se puede resetear la contraseña de un superadmin por esta vía' },
+        { status: 403 }
+      )
     }
 
     // 5. Actualizar la contraseña en Supabase Auth
