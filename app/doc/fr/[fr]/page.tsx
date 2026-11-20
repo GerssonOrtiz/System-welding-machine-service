@@ -34,6 +34,8 @@ interface EntryData {
   service_type: string
   status_name: string
   status_color: string
+  quote_status?: string
+  is_terminal?: boolean
 }
 
 interface ApiResponse {

@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "SYNAPSE · arquitectura del servicio de soldadura",
+    "locale": "es",
+    "output": ".archify/architecture-synapse-20261102-231604/synapse-arquitectura.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/GerssonOrtiz/System-welding-machine-service.git",
+      "provider": "github",
+      "revision": "1af21e046fa126442f6bf5bc3f9f123680c7b6ce"
+    },
+    "views": [
+      {
+        "id": "flujo-taller",
+        "label": "Flujo de taller",
+        "focus": ["staff", "edge", "app", "api", "db", "realtime", "mailer"],
+        "note": "Recepción, pizarra en vivo, transición con OCC y correo en hilo."
+      },
+      {
+        "id": "logistica",
+        "label": "Logística de repuestos",
+        "focus": ["app", "api", "db", "mailer"],
+        "note": "parts_status avanza en paralelo sin bloquear el estado del servicio."
+      },
+      {
+        "id": "qr-publico",
+        "label": "QR público",
+        "focus": ["mobile", "publicapi", "db"],
+        "note": "Lectura sin sesión con service_role y solo SELECT."
+      },
+      {
+        "id": "seguridad",
+        "label": "Sesión y datos",
+        "focus": ["edge", "app", "api", "db"],
+        "note": "Sesión en el Edge, getUser() en servidor y RLS en PostgreSQL."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "staff",
+      "type": "external",
+      "label": "Equipo de taller",
+      "sublabel": "6 roles operativos",
+      "icon": "person",
+      "pos": [40, 360],
+      "size": [110, 64],
+      "sources": [
+        { "path": "types/user.ts", "line": 26, "end_line": 33, "label": "roles operativos" }
+      ]
+    },
+    {
+      "id": "edge",
+      "type": "security",
+      "label": "Edge Proxy",
+      "sublabel": "proxy.ts · sesión + RBAC",
+      "icon": "security",
+      "pos": [220, 360],
+      "size": [125, 64],
+      "sources": [
+        { "path": "proxy.ts", "line": 13, "end_line": 20 },
+        { "path": "proxy.ts", "line": 60, "end_line": 70, "label": "401 en API" },
+        { "path": "proxy.ts", "line": 101, "end_line": 109, "label": "barrera superadmin" }
+      ]
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "Next.js 16 App Router",
+      "sublabel": "RSC + Pizarra + Expediente",
+      "icon": "frontend",
+      "pos": [415, 360],
+      "size": [140, 72],
+      "sources": [
+        { "path": "app/(dashboard)/layout.tsx", "line": 16, "end_line": 36, "label": "sesión en servidor" },
+        { "path": "app/(dashboard)/pizarra/page.tsx", "line": 172, "end_line": 175, "label": "tablero" },
+        { "path": "components/pizarra/PizarraBoard.tsx", "line": 5, "end_line": 15, "label": "hook en vivo" }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Route Handlers",
+      "sublabel": "equipos · partes · KPIs",
+      "icon": "backend",
+      "pos": [625, 360],
+      "size": [130, 72],
+      "sources": [
+        { "path": "app/api/equipment/create/route.ts", "line": 8, "end_line": 24, "label": "ingreso individual o lote" },
+        { "path": "app/api/equipment/[id]/update-status/route.ts", "line": 273, "end_line": 291, "label": "update condicional OCC" },
+        { "path": "app/api/equipment/[id]/deliver-parts/route.ts", "line": 40, "end_line": 57, "label": "entrega de repuestos" }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "Supabase PostgreSQL",
+      "sublabel": "Auth · RLS · triggers",
+      "icon": "database",
+      "pos": [830, 340],
+      "size": [160, 120],
+      "sources": [
+        { "path": "supabase/migrations/003_equipment_records.sql", "line": 11, "end_line": 33, "label": "equipment_records" },
+        { "path": "supabase/migrations/004_status_history.sql", "line": 23, "end_line": 33, "label": "trigger de auditoría" },
+        { "path": "supabase/migrations/019_service_and_parts_status_separation.sql", "line": 4, "end_line": 9, "label": "parts_status + JSONB" }
+      ]
+    },
+    {
+      "id": "realtime",
+      "type": "messagebus",
+      "label": "Supabase Realtime",
+      "sublabel": "postgres_changes",
+      "icon": "messagebus",
+      "pos": [830, 180],
+      "size": [160, 64],
+      "sources": [
+        { "path": "hooks/useRealtimePizarra.ts", "line": 46, "end_line": 54, "label": "suscripción" },
+        { "path": "hooks/useRealtimePizarra.ts", "line": 76, "end_line": 112, "label": "INSERT / UPDATE / DELETE" }
+      ]
+    },
+    {
+      "id": "mailer",
+      "type": "backend",
+      "label": "Mailer · Resend",
+      "sublabel": "hilos RFC 2822 · warning",
+      "icon": "backend",
+      "pos": [615, 180],
+      "size": [150, 68],
+      "sources": [
+        { "path": "lib/mail/mailer.ts", "line": 748, "end_line": 770, "label": "In-Reply-To / References" },
+        { "path": "lib/mail/mailer.ts", "line": 785, "end_line": 820, "label": "envío y Message-ID" }
+      ]
+    },
+    {
+      "id": "publicapi",
+      "type": "backend",
+      "label": "API pública /api/public",
+      "sublabel": "service role · solo lectura",
+      "icon": "security",
+      "pos": [830, 540],
+      "size": [160, 72],
+      "sources": [
+        { "path": "app/api/public/equipment/serial/[serial]/route.ts", "line": 29, "end_line": 35, "label": "admin client" },
+        { "path": "app/api/public/equipment/serial/[serial]/route.ts", "line": 107, "end_line": 121, "label": "respuesta cacheada" }
+      ]
+    },
+    {
+      "id": "mobile",
+      "type": "external",
+      "label": "Cliente en campo",
+      "sublabel": "escaneo QR sin sesión",
+      "icon": "person",
+      "pos": [840, 700],
+      "size": [140, 60],
+      "sources": [
+        { "path": "app/doc/[serial]/page.tsx", "line": 69, "end_line": 73, "label": "consulta por serial" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Supabase · PostgreSQL + Realtime",
+      "wraps": ["db", "realtime"]
+    },
+    {
+      "kind": "security-group",
+      "label": "service_role · solo SELECT",
+      "wraps": ["publicapi"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "staff-edge",
+      "from": "staff",
+      "to": "edge",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-app",
+      "from": "edge",
+      "to": "app",
+      "label": "sesión"
+    },
+    {
+      "id": "app-api",
+      "from": "app",
+      "to": "api",
+      "label": "fetch"
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "db",
+      "label": "OCC",
+      "variant": "emphasis"
+    },
+    {
+      "id": "app-db",
+      "from": "app",
+      "to": "db",
+      "label": "SELECT (RLS)",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [[485, 490], [770, 490], [770, 400]],
+      "labelAt": [680, 490],
+      "labelDy": -12
+    },
+    {
+      "id": "db-realtime",
+      "from": "db",
+      "to": "realtime",
+      "label": "postgres_changes",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "realtime-app",
+      "from": "realtime",
+      "to": "app",
+      "label": "WebSocket push",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [[910, 120], [485, 120]],
+      "labelAt": [700, 120],
+      "labelDy": -12
+    },
+    {
+      "id": "api-mailer",
+      "from": "api",
+      "to": "mailer",
+      "label": "reply en hilo",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "mobile-public",
+      "from": "mobile",
+      "to": "publicapi",
+      "label": "GET /doc",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "public-db",
+      "from": "publicapi",
+      "to": "db",
+      "label": "SELECT",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ciclo de taller",
+      "items": [
+        "En espera de diagnóstico → En diagnóstico → Pendiente de aprobación → Aprobado → En mantenimiento → Servicio culminado → Entregado.",
+        "Cada avance valida rol y expected_status_id: si otro operador cambió el estado, la API responde 409 y la pizarra revalida.",
+        "El trigger de PostgreSQL copia cada cambio a status_history; un override de superadmin queda marcado con is_override."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Repuestos desacoplados",
+      "items": [
+        "parts_status: SIN_REPUESTOS → PARCIAL → COMPLETO, calculado solo con repuestos físicos (tipo ≠ SERVICIO).",
+        "Entregas y devoluciones se acumulan en approved_parts y parts_deliveries (JSONB) sin mover current_status_id.",
+        "Los servicios de mano de obra se marcan con toggle-service y no alteran el estado ni la logística."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Identidad y permisos",
+      "items": [
+        "Seis roles: superadmin, admin, operaciones, recepcion, almacen y visualizador.",
+        "proxy.ts renueva cookies, bloquea cuentas inactivas, exige superadmin en /admin/* y devuelve 401 JSON en /api/*.",
+        "El layout de dashboard valida getUser() y user_profiles antes de hidratar; el cliente nunca confía en getSession()."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Correo y analítica",
+      "items": [
+        "Un batch_id agrupa N equipos y produce un solo correo de ingreso; el Message-ID se guarda como email_thread_id.",
+        "Cada transición y entrega responde con In-Reply-To y References; si Resend falla, la escritura en BD se conserva y la UI recibe warning.",
+        "Auditoría de modelos: p20/p80 por fase, días hábiles (non_business_days) y NLP de notas para clasificar causas de retraso."
+      ]
+    }
+  ]
+}

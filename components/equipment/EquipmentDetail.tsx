@@ -40,7 +40,10 @@ import { Undo2 } from 'lucide-react'
 import {
   PARTS_STATUS_LABELS,
   PARTS_STATUS_COLORS,
+  QUOTE_STATUS_LABELS,
+  QUOTE_STATUS_COLORS,
   type PartsStatus,
+  type QuoteStatus,
   type ApprovedPartItem,
 } from '@/types/equipment'
 
@@ -167,6 +170,31 @@ export default function EquipmentDetail({
       toast.error(err.message || 'Error al actualizar el servicio')
     } finally {
       setTogglingServiceId(null)
+    }
+  }
+
+  const [isUpdatingQuote, setIsUpdatingQuote] = useState(false)
+
+  const handleUpdateQuoteStatus = async (newQuoteStatus: QuoteStatus) => {
+    setIsUpdatingQuote(true)
+    try {
+      const res = await fetch(`/api/equipment/${equipmentId}/update-quote-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quote_status: newQuoteStatus }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Error al actualizar el estado de cotización')
+      }
+      toast.success(`Estado de cotización: ${QUOTE_STATUS_LABELS[newQuoteStatus]}`)
+      mutate()
+      if (onStatusUpdated) onStatusUpdated()
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.message || 'Error al actualizar el estado de cotización')
+    } finally {
+      setIsUpdatingQuote(false)
     }
   }
 
@@ -340,6 +368,17 @@ export default function EquipmentDetail({
                     </span>
                   )
                 })()}
+                {/* Badge de estado de cotización (Recepción) */}
+                {equipment && (() => {
+                  const qs = ((equipment as any).quote_status ?? 'PENDIENTE') as QuoteStatus
+                  const colors = QUOTE_STATUS_COLORS[qs] ?? QUOTE_STATUS_COLORS['PENDIENTE']
+                  const label = QUOTE_STATUS_LABELS[qs] ?? 'Pendiente de Cotización'
+                  return (
+                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${colors.bg} ${colors.text} ${colors.border}`}>
+                      {label}
+                    </span>
+                  )
+                })()}
               </div>
               <button
                 onClick={onClose}
@@ -432,6 +471,25 @@ export default function EquipmentDetail({
                           Devolver Repuesto
                         </button>
                       )}
+
+                    {/* Selector de Estado Paralelo de Cotización para Recepción / Admin */}
+                    {['recepcion', 'admin', 'superadmin'].includes(role || '') && !isEditing && (
+                      <div className="flex items-center gap-1.5 bg-bg-elevated/40 border border-amber-border/30 rounded-lg px-2.5 py-1">
+                        <span className="text-[10px] font-bold text-text-forge-mid uppercase tracking-wider">
+                          Cotización:
+                        </span>
+                        <select
+                          disabled={isUpdatingQuote}
+                          value={((equipment as any).quote_status as QuoteStatus) || 'PENDIENTE'}
+                          onChange={(e) => handleUpdateQuoteStatus(e.target.value as QuoteStatus)}
+                          className="bg-bg-elevated border border-border-subtle rounded text-[11px] font-bold text-amber-glow py-1 px-1.5 focus:border-amber-glow focus:outline-none cursor-pointer"
+                        >
+                          <option value="PENDIENTE">PENDIENTE DE COTIZACIÓN</option>
+                          <option value="EN_COTIZACION">COTIZANDO (EN PROCESO)</option>
+                          <option value="COTIZACION_LISTA">COTIZACIÓN LISTA</option>
+                        </select>
+                      </div>
+                    )}
 
                     {(canAdvance || isSuperadmin) && !isEditing && (
                       <button
@@ -600,6 +658,18 @@ export default function EquipmentDetail({
                                 </a>
                               </>
                             )}
+                            {/* Estado paralelo de Cotización */}
+                            <span className="text-text-secondary font-semibold uppercase whitespace-nowrap">Cotización:</span>
+                            {(() => {
+                              const qs = ((equipment as any).quote_status ?? 'PENDIENTE') as QuoteStatus
+                              const colors = QUOTE_STATUS_COLORS[qs] ?? QUOTE_STATUS_COLORS['PENDIENTE']
+                              const label = QUOTE_STATUS_LABELS[qs] ?? 'Pendiente de Cotización'
+                              return (
+                                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold border ${colors.bg} ${colors.text} ${colors.border}`}>
+                                  {label}
+                                </span>
+                              )
+                            })()}
                           </>
                         )}
                       </div>

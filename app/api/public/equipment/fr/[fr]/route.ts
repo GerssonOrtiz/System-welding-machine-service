@@ -37,10 +37,12 @@ export async function GET(
         service_report_url,
         vrd_certificate_url,
         service_type,
+        quote_status,
         current_status_id,
         workflow_states (
           name,
-          color
+          color,
+          is_terminal
         )
       `)
       .ilike('fr_number', cleanFr)
@@ -54,6 +56,18 @@ export async function GET(
     }
 
     const rec = rawData as any
+    const statusName = (rec.workflow_states?.name || '').trim()
+    const statusNameLower = statusName.toLowerCase()
+    const isTerminal = rec.workflow_states?.is_terminal === true || statusNameLower === 'entregado'
+    const isPendingApproval = statusNameLower === 'pendiente de aprobación' || statusNameLower === 'pendiente de aprobacion'
+
+    // Regla 1: Informe diagnóstico / final
+    const canShowDiagnostic = isPendingApproval ? rec.quote_status === 'COTIZACION_LISTA' : true
+    const visibleReportUrl = canShowDiagnostic ? (rec.report_url || null) : null
+
+    // Regla 2: Informes de salida (servicio) y VRD solo cuando esté entregado
+    const visibleServiceReportUrl = isTerminal ? (rec.service_report_url || null) : null
+    const visibleVrdUrl = isTerminal ? (rec.vrd_certificate_url || null) : null
 
     return NextResponse.json(
       {
@@ -69,12 +83,14 @@ export async function GET(
             client_name: rec.client_name,
             date_in: rec.date_in,
             report_number: rec.report_number,
-            report_url: rec.report_url,
-            service_report_url: rec.service_report_url,
-            vrd_certificate_url: rec.vrd_certificate_url,
+            report_url: visibleReportUrl,
+            service_report_url: visibleServiceReportUrl,
+            vrd_certificate_url: visibleVrdUrl,
             service_type: rec.service_type,
-            status_name: rec.workflow_states?.name || 'En proceso',
+            quote_status: rec.quote_status || 'PENDIENTE',
+            status_name: statusName || 'En proceso',
             status_color: rec.workflow_states?.color || '#00E5FF',
+            is_terminal: isTerminal,
           },
         },
       },

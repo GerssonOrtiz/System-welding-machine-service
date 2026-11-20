@@ -53,6 +53,24 @@ export interface WorkflowTransitionWithNames extends WorkflowTransition {
 export type StatusHistoryEntry = Database['public']['Tables']['status_history']['Row']
 
 // ─────────────────────────────────────────
+// Sistema de cotizaciones paralelo (Recepción)
+// ─────────────────────────────────────────
+
+export type QuoteStatus = 'PENDIENTE' | 'EN_COTIZACION' | 'COTIZACION_LISTA'
+
+export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
+  PENDIENTE:        'Pendiente de Cotización',
+  EN_COTIZACION:    'Cotizando / En Proceso',
+  COTIZACION_LISTA: 'Cotización Lista',
+}
+
+export const QUOTE_STATUS_COLORS: Record<QuoteStatus, { bg: string; text: string; border: string }> = {
+  PENDIENTE:        { bg: 'bg-zinc-500/10',    text: 'text-zinc-400',    border: 'border-zinc-500/30' },
+  EN_COTIZACION:    { bg: 'bg-amber-500/10',   text: 'text-amber-400',   border: 'border-amber-500/30' },
+  COTIZACION_LISTA: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+}
+
+// ─────────────────────────────────────────
 // Sistema de repuestos desacoplado
 // ─────────────────────────────────────────
 

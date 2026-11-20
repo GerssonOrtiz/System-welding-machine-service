@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "2b8bfb5f-9c7d-47d0-bf7c-874d47046bdf",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\gorti\\Desktop\\System-welding-machine-service\\.archify\\architecture-synapse-20261102-231604\\candidate.json",
+  "output": "C:\\Users\\gorti\\Desktop\\System-welding-machine-service\\.archify\\architecture-synapse-20261102-231604\\synapse-arquitectura.html",
+  "specification": {
+    "sha256": "ab319784e302e57a33b1701ddf08bc3cc8f1684b626052f3b5007ba6c78d89ac",
+    "bytes": 9800
+  },
+  "artifact": {
+    "sha256": "9c97daa2caa0a37d36d7c17abaaabd91828b906da8eb657c277a6683727cecea",
+    "bytes": 857610
+  }
+}

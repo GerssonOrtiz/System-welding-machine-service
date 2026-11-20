@@ -81,6 +81,10 @@ export async function PUT(
     if (body.condition_in !== undefined) updateData.condition_in = body.condition_in.trim().toUpperCase() || null
     if (body.additional_observations !== undefined) updateData.additional_observations = body.additional_observations.trim().toUpperCase() || null
     
+    if (body.quote_status !== undefined && ['PENDIENTE', 'EN_COTIZACION', 'COTIZACION_LISTA'].includes(body.quote_status)) {
+      updateData.quote_status = body.quote_status
+    }
+    
     if (body.service_type !== undefined) updateData.service_type = body.service_type
     if (body.date_in !== undefined) updateData.date_in = body.date_in
     if (body.priority_level !== undefined) {

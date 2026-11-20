@@ -82,6 +82,7 @@ export type Database = {
           model: string
           parts_deliveries?: Json | null
           parts_status?: string | null
+          quote_status?: string | null
           pending_approval_at: string | null
           priority_level?: number | null
           report_number: string | null
@@ -119,6 +120,7 @@ export type Database = {
           model: string
           parts_deliveries?: Json | null
           parts_status?: string | null
+          quote_status?: string | null
           pending_approval_at?: string | null
           priority_level?: number | null
           report_number?: string | null
@@ -156,6 +158,7 @@ export type Database = {
           model?: string
           parts_deliveries?: Json | null
           parts_status?: string | null
+          quote_status?: string | null
           pending_approval_at?: string | null
           priority_level?: number | null
           report_number?: string | null
@@ -473,6 +476,7 @@ export type Database = {
           model: string | null
           parts_deliveries?: Json | null
           parts_status?: string | null
+          quote_status?: string | null
           pending_approval_at: string | null
           phase_1_days: number | null
           phase_2_days: number | null
