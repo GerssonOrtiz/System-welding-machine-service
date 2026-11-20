@@ -5,7 +5,7 @@
 > **Stack Base:** Next.js 16 (App Router, Edge Proxy, React 19) + Supabase (PostgreSQL, Auth SSR, Realtime WebSockets) + Resend Mailer.  
 > **Estado de Implementación:** Optimizaciones Costo-Cero implementadas en código e índices de base de datos (`026_performance_indexes.sql`).
 
----
+-----
 
 ## 1. Arquitectura de Carga y Cuellos de Botella Críticos
 
