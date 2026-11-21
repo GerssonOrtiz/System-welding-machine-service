@@ -75,18 +75,30 @@ export async function POST(
     }
 
     // 3. Registrar en status_history para auditoría
-    await (supabase.from('status_history') as any).insert({
+    const { data: currentState } = await supabase
+      .from('workflow_states')
+      .select('name')
+      .eq('id', equipment.current_status_id)
+      .single()
+
+    const statusName = (currentState as any)?.name ?? 'Desconocido'
+
+    const { error: historyError } = await (supabase.from('status_history') as any).insert({
       equipment_id: equipmentId,
-      previous_status_id: equipment.current_status_id,
-      new_status_id: equipment.current_status_id,
-      changed_by: profile.id,
+      previous_status: statusName,
+      new_status: statusName,
+      changed_by_id: authResult.ctx.userId,
+      changed_by_username: profile.username,
+      changed_by_role: profile.role,
       notes: notes
         ? `[Cotización: ${quote_status}] ${notes}`
         : `Estado de cotización actualizado a "${quote_status}" por Recepción (${profile.username})`,
-      user_role: profile.role,
-    }).catch((err: any) => {
-      console.warn('[POST update-quote-status] Error inserting audit log:', err)
+      is_override: false,
     })
+
+    if (historyError) {
+      console.warn('[POST update-quote-status] Error inserting audit log:', historyError)
+    }
 
     return NextResponse.json({
       success: true,
